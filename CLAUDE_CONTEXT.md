@@ -54,7 +54,7 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 ### Auth & Payments
 - Privy (privy.io) — Google login + hidden Solana wallet
 - Stripe — subscriptions / card payments
-- Flow: `Stripe webhook → Lambda → USDC → smart contract`
+- Flow: `Stripe webhook → listener (ECS) → SQS → site-gen (ECS) → Arweave`
 
 ### Blockchain
 - Solana (Devnet now → Mainnet for launch)
@@ -64,8 +64,8 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 - Metaplex cNFTs — archive (v2, post-hackathon)
 
 ### Backend (AWS)
-- ECS Fargate — `listener` service (persistent process, WebSocket to Helius)
-- Lambda — `site-gen` (SQS-triggered, async Arweave upload)
+- ECS Fargate — `listener` service (persistent process, Helius webhooks + WebSocket fallback)
+- ECS Fargate — `site-gen` service (persistent SQS long-polling loop, Arweave upload)
 - SQS FIFO — task queue between listener and site-gen
 - Neon PostgreSQL + PgBouncer — operational data (job status, logs)
 - AWS Secrets Manager — all private keys and tokens
@@ -83,8 +83,9 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 ```
 Google login → Privy (hidden wallet created)
 Card payment → Stripe
-Stripe webhook → Lambda
-Lambda → USDC → process_payment (smart contract)
+Card payment → Stripe
+Stripe webhook → listener (ECS Fargate, /webhook/stripe)
+Listener → USDC → process_payment (smart contract)
   Contract atomically:
     5%  → token::burn CPI
     15% → ref1 token account (or burn)
@@ -94,9 +95,9 @@ Lambda → USDC → process_payment (smart contract)
     65% → vault PDA (treasury)
   Emits: PaymentProcessed event
 
-Helius webhook → listener (ECS Fargate)
+Helius webhook → listener (ECS Fargate, /webhook/helius)
 Listener → SQS FIFO (job queue)
-site-gen Lambda:
+site-gen (ECS Fargate, SQS long-poll):
   → compile HTML from Handlebars template
   → upload to Arweave via Irys SDK
   → call update_site_url() on-chain (backend keypair)
@@ -107,7 +108,7 @@ User sees: wallet-prefix.codeofdigitaleternity.com
 ### Think-to-Earn
 ```
 User submits content
-Lambda → Claude API scores uniqueness (0-100)
+Backend (ECS) → Claude API scores uniqueness (0-100)
 Backend → award_memory() on-chain → adds memory_score to UserState
 ```
 
@@ -266,9 +267,12 @@ Week 1 — Infrastructure + First Compile
   ✅ WSL2: Rust + Solana CLI + Anchor 0.30.1 installed
   ✅ Smart contract compiles (code_eternal_router.so produced)
   ✅ Program ID auto-generated: pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy
+  ✅ Docker: site-gen/Dockerfile, docker/docker-compose.yml (local dev with LocalStack)
+  ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
+  ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
   □  Replace placeholder pubkeys (FOUNDER_WALLET, BACKEND_AUTHORITY)
   □  anchor deploy --provider.cluster devnet
-  □  AWS infra deployed (ECS, Lambda, SQS, RDS)
+  □  terraform apply (ECR + ECS + SQS provisioned)
   □  Helius webhook configured
 
 Week 2 — Smart Contract Tests
@@ -295,16 +299,21 @@ Week 4 — Frontend + Submit
 ## AWS Infrastructure
 
 ```
-ECS Fargate     listener — persistent, WebSocket to Helius
-Lambda          site-gen — async, triggered by SQS
-SQS FIFO        task queue (MessageGroupId = wallet, dedup by tx signature)
+ECS Fargate     listener  — persistent, Helius webhooks (/webhook/helius) + WebSocket fallback
+ECS Fargate     site-gen  — persistent SQS long-polling loop (20s wait), Arweave upload
+SQS FIFO        task queue (MessageGroupId = wallet, dedup by tx signature, DLQ after 3 retries)
+ECR             code-eternal-listener, code-eternal-site-gen (Docker images)
 Neon PostgreSQL job status, error messages
-Secrets Manager IRYS_PRIVATE_KEY, BACKEND_PRIVATE_KEY, HELIUS_RPC_URL, etc.
+Secrets Manager IRYS_PRIVATE_KEY, BACKEND_PRIVATE_KEY, HELIUS_RPC_URL, DATABASE_URL
 Cloudflare      wildcard DNS: *.codeofdigitaleternity.com
 Vercel          React frontend
 ```
 
-Cost at launch scale: ~$16/month
+Terraform state: `infra/` — manages ECR, ECS cluster + services, SQS, IAM, CloudWatch.
+Deploy: `./scripts/deploy.sh [listener|site-gen|all]`
+Local dev: `docker compose -f docker/docker-compose.yml up`
+
+Cost at launch scale: ~$20/month (2x Fargate 0.25 vCPU + SQS + ECR)
 
 ---
 
