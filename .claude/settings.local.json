@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'avm install 0.30.1 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'avm use 0.30.1 && anchor --version 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'cd /mnt/c/Users/Maksim/Code-Of-Digital-Eternity && anchor build 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'cd /mnt/c/Users/Maksim/Code-Of-Digital-Eternity && cat Anchor.toml')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'cp -r /mnt/c/Users/Maksim/Code-Of-Digital-Eternity ~/code-eternal 2>&1 && echo \"copied\"')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json 2>&1 || echo \"already exists\"')"
+    ]
+  }
+}

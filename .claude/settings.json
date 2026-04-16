@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl -d Ubuntu-22.04 -- bash -c 'sudo apt-get install -y build-essential; which cc')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'which cc && cc --version 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'sudo apt-get install -y build-essential && which cc && cc --version')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -c 'which cc && cc --version 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\" && cd ~/code-eternal && RUST_LOG=debug cargo-build-sbf 2>&1 | head -30')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'find $HOME -name \"platform-tools\" -type d 2>/dev/null; find /tmp -name \"platform-tools\" -type d 2>/dev/null')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'ls ~/.cache/solana/v1.43/platform-tools/ && echo \"---\" && ls ~/.cache/solana/v1.43/platform-tools/rust/bin/ 2>/dev/null | head -5')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'ls -la ~/.cache/solana/v1.43/platform-tools/rust/bin/cargo && ~/.cache/solana/v1.43/platform-tools/rust/bin/cargo --version')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'ls ~/.cache/solana/')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'mount | grep -E \"/tmp|tmpfs\" | head -10')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\" && which cargo-build-sbf && cargo-build-sbf --version 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\" && cargo-build-sbf --force-tools-install 2>&1 | head -20')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'ls ~/.cache/solana/ 2>/dev/null && ls ~/.cache/solana/v1.52/ 2>/dev/null || echo \"v1.52 not downloaded\"')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'curl -fsSL \"https://github.com/anza-xyz/platform-tools/releases/download/v1.52/platform-tools-linux-x86_64.tar.bz2\" -o ~/platform-tools-v1.52.tar.bz2 2>&1 && echo \"downloaded\"')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'mkdir -p ~/.cache/solana/v1.52 && tar -xjf ~/platform-tools-v1.52.tar.bz2 -C ~/.cache/solana/v1.52 2>&1 && echo \"extracted\" && ~/.cache/solana/v1.52/rust/bin/rustc --version')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$PATH\" && cd ~/code-eternal && anchor build 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH\" && cd ~/code-eternal && anchor build 2>&1')",
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH\" && cd ~/code-eternal/programs/code_eternal_router && cargo-build-sbf 2>&1 | head -30')",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ]
+  }
+}
