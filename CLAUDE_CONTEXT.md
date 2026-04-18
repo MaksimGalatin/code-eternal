@@ -184,7 +184,7 @@ pub struct UserState {
 |----------|------|-------|
 | `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
 | `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
-| Program ID | `lib.rs` + `Anchor.toml` | `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` — will update after `anchor deploy` |
+| Program ID | `lib.rs` + `Anchor.toml` | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
 
 ---
 
@@ -270,7 +270,7 @@ Week 1 — Infrastructure + First Compile
   ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
   ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
   ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
-  □  anchor deploy --provider.cluster devnet
+  ✅ anchor deploy --provider.cluster devnet (Program ID: 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep)
   □  terraform apply (ECR + ECS + SQS provisioned)
   □  Helius webhook configured
 

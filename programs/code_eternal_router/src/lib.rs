@@ -6,9 +6,7 @@ pub mod state;
 
 use instructions::*;
 
-// TODO: after `anchor build` copy the generated Program ID here
-// and into Anchor.toml [programs.devnet] / [programs.mainnet]
-declare_id!("pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy");
+declare_id!("8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep");
 
 #[program]
 pub mod code_eternal_router {
