@@ -1,20 +1,19 @@
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production=false
+RUN npm install
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
 # ─── Production image ────────────────────────────────────────────
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Только prod зависимости
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 

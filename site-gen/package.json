@@ -9,7 +9,7 @@
     "dev": "ts-node-dev --respawn src/index.ts"
   },
   "dependencies": {
-    "@irys/sdk": "^0.0.12",
+    "@irys/sdk": "^0.2.11",
     "@solana/web3.js": "^1.91.0",
     "@coral-xyz/anchor": "^0.30.1",
     "@aws-sdk/client-sqs": "^3.600.0",
