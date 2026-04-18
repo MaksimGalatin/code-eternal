@@ -288,7 +288,8 @@ Week 3 — Backend Integration
   □  Full pipeline E2E: payment → site live on Arweave
 
 Week 4 — Frontend + Submit
-  □  React frontend on Vercel (Phantom wallet for hackathon demo)
+  □  Privy.io embedded wallet integration (see Frontend spec below)
+  □  Terminal UI: show public key, SOL/USDC balance, sign test tx on Devnet
   □  3-minute demo video recorded
   □  GitHub README for judges
   □  Submit on Colosseum
@@ -328,6 +329,39 @@ Cost at launch scale: ~$20/month (2x Fargate 0.25 vCPU + SQS + ECR)
 | listener, site-gen | `SQS_QUEUE_URL` | SQS FIFO queue URL |
 | listener, site-gen | `AWS_REGION` | e.g. `us-east-1` |
 | All | `NODE_ENV` | `production` = JSON logs for CloudWatch; otherwise pretty-print |
+
+---
+
+## Frontend — Privy.io Integration Spec
+
+**Goal:** Non-crypto users log in via Google/Email; a non-custodial Solana wallet is silently created under the hood. No Phantom required.
+
+**Stack:** Next.js (app router), React, Tailwind, Solana Web3.js, Anchor, Privy.io (priority over Web3Auth).
+
+**Source:** `app/` directory → Next.js app hosted on Vercel at `app.codeofdigitaleternity.com`.
+
+### Tasks
+
+| # | Task | Notes |
+|---|------|-------|
+| 1 | Wrap app in `PrivyProvider` | Configure `appId` from Privy dashboard |
+| 2 | Login methods | Keep Phantom/Solflare; add Google, Apple, Email (Magic Link) |
+| 3 | Embedded wallet generation | **Must set Solana network in Privy dashboard** (default is EVM). On Google login → check for wallet → silently create if absent |
+| 4 | Show wallet state in Terminal UI | Display public key + SOL/USDC balance after login |
+| 5 | Wire wallet into AnchorProvider | Pass wallet instance from `useWallets()` hook into `AnchorProvider` |
+| 6 | Transaction signing | Privy native confirmation popup appears (no Phantom extension needed) |
+
+### Definition of Done
+
+User visits `app.codeofdigitaleternity.com` → clicks **Login with Google** → sees their Solana address → signs a test transaction on Devnet.
+
+### Environment Variables (frontend)
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_PRIVY_APP_ID` | From Privy dashboard |
+| `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
+| `NEXT_PUBLIC_RPC_URL` | Helius RPC endpoint (public, no secret key) |
 
 ---
 
