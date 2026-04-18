@@ -183,7 +183,7 @@ pub struct UserState {
 
 | Constant | File | How to get |
 |----------|------|-----------|
-| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | `solana-keygen new -o backend-keypair.json` then `solana address -k backend-keypair.json` |
+| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | ✅ `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in AWS Secrets Manager as `BACKEND_PRIVATE_KEY` |
 | `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | Project-controlled wallet (cold wallet or multisig) |
 | Program ID | `lib.rs` + `Anchor.toml` | Auto-generated on first `anchor build`: `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` |
 
