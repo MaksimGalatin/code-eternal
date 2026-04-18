@@ -83,7 +83,6 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 ```
 Google login → Privy (hidden wallet created)
 Card payment → Stripe
-Card payment → Stripe
 Stripe webhook → listener (ECS Fargate, /webhook/stripe)
 Listener → USDC → process_payment (smart contract)
   Contract atomically:
@@ -179,13 +178,13 @@ pub struct UserState {
 
 ---
 
-## Placeholder Pubkeys — MUST Replace Before Deploy
+## Hardcoded Pubkeys
 
-| Constant | File | How to get |
-|----------|------|-----------|
-| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | ✅ `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in AWS Secrets Manager as `BACKEND_PRIVATE_KEY` |
-| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | ✅ `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
-| Program ID | `lib.rs` + `Anchor.toml` | Auto-generated on first `anchor build`: `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` |
+| Constant | File | Value |
+|----------|------|-------|
+| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
+| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
+| Program ID | `lib.rs` + `Anchor.toml` | `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` — will update after `anchor deploy` |
 
 ---
 
@@ -305,7 +304,7 @@ ECS Fargate     site-gen  — persistent SQS long-polling loop (20s wait), Arwea
 SQS FIFO        task queue (MessageGroupId = wallet, dedup by tx signature, DLQ after 3 retries)
 ECR             code-eternal-listener, code-eternal-site-gen (Docker images)
 Neon PostgreSQL job status, error messages
-Secrets Manager IRYS_PRIVATE_KEY, BACKEND_PRIVATE_KEY, HELIUS_RPC_URL, DATABASE_URL
+Secrets Manager IRYS_PRIVATE_KEY, BACKEND_PRIVATE_KEY, HELIUS_RPC_URL, HELIUS_WEBHOOK_SECRET, DATABASE_URL
 Cloudflare      wildcard DNS: *.codeofdigitaleternity.com
 Vercel          React frontend
 ```
@@ -333,12 +332,12 @@ The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (als
 | Service | Variable | Description |
 |---------|----------|-------------|
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
-| listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — set in Helius dashboard, used to verify POST /webhook/helius |
-| site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
-| site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
-| site-gen | `PROGRAM_ID` | Deployed program pubkey |
+| listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — set in Helius dashboard, verifies POST /webhook/helius |
+| listener, site-gen | `PROGRAM_ID` | Deployed program pubkey |
 | listener, site-gen | `SQS_QUEUE_URL` | SQS FIFO queue URL |
 | listener, site-gen | `AWS_REGION` | e.g. `us-east-1` |
+| site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
+| site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
 | All | `NODE_ENV` | `production` = JSON logs for CloudWatch; otherwise pretty-print |
 
 ---
@@ -382,3 +381,9 @@ User visits `app.codeofdigitaleternity.com` → clicks **Login with Google** →
 - `SITE_STATUS_PENDING` constant declared but not used in constraints
 - `handler` name collision in `mod.rs` glob re-exports — rename each to `register_user_handler`, etc.
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
+
+## Security Fixes Applied (2026-04-19)
+
+- `process_payment.rs` — referral token accounts now validated against `payment_mint` before transfer (prevents token confusion attacks)
+- `listener/index.ts` — Helius webhook endpoint requires `Authorization: <HELIUS_WEBHOOK_SECRET>` header (rejects unauthenticated requests with 401)
+- `onPaymentProcessed.ts` — wallet (valid Solana PublicKey), signature, and tier (1/2/3) validated before DB/SQS writes
