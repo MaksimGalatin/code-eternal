@@ -32,7 +32,7 @@ From every payment:
 | Referral L1 | 15% | Or added to burn if slot is empty |
 | Referral L2 | 7% | Or added to burn if slot is empty |
 | Referral L3 | 3% | Or added to burn if slot is empty |
-| Founder wallet | 5% | Maksim Galatin |
+| Ecosystem Fund | 5% | Project-controlled wallet (development, grants, ops) |
 | Vault (treasury) | 65% | Protocol PDA |
 | **Total** | **100%** | ✅ |
 
@@ -91,7 +91,7 @@ Listener → USDC → process_payment (smart contract)
     15% → ref1 token account (or burn)
     7%  → ref2 token account (or burn)
     3%  → ref3 token account (or burn)
-    5%  → founder_token_account
+    5%  → ecosystem_fund_token_account
     65% → vault PDA (treasury)
   Emits: PaymentProcessed event
 
@@ -184,7 +184,7 @@ pub struct UserState {
 | Constant | File | How to get |
 |----------|------|-----------|
 | `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | `solana-keygen new -o backend-keypair.json` then `solana address -k backend-keypair.json` |
-| `FOUNDER_WALLET` | `instructions/process_payment.rs` | Maksim Galatin's Solana wallet address |
+| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | Project-controlled wallet (cold wallet or multisig) |
 | Program ID | `lib.rs` + `Anchor.toml` | Auto-generated on first `anchor build`: `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` |
 
 ---
@@ -270,7 +270,7 @@ Week 1 — Infrastructure + First Compile
   ✅ Docker: site-gen/Dockerfile, docker/docker-compose.yml (local dev with LocalStack)
   ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
   ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
-  □  Replace placeholder pubkeys (FOUNDER_WALLET, BACKEND_AUTHORITY)
+  □  Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
   □  anchor deploy --provider.cluster devnet
   □  terraform apply (ECR + ECS + SQS provisioned)
   □  Helius webhook configured
