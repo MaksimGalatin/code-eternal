@@ -184,7 +184,7 @@ pub struct UserState {
 | Constant | File | How to get |
 |----------|------|-----------|
 | `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | ✅ `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in AWS Secrets Manager as `BACKEND_PRIVATE_KEY` |
-| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | Project-controlled wallet (cold wallet or multisig) |
+| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | ✅ `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
 | Program ID | `lib.rs` + `Anchor.toml` | Auto-generated on first `anchor build`: `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` |
 
 ---
@@ -270,7 +270,7 @@ Week 1 — Infrastructure + First Compile
   ✅ Docker: site-gen/Dockerfile, docker/docker-compose.yml (local dev with LocalStack)
   ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
   ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
-  □  Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
+  ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
   □  anchor deploy --provider.cluster devnet
   □  terraform apply (ECR + ECS + SQS provisioned)
   □  Helius webhook configured

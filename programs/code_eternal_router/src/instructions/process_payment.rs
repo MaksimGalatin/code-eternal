@@ -18,8 +18,9 @@ pub const REF3_BPS: u64 = 300;       // 3%
 pub const VAULT_BPS: u64 = 6500;     // 65%
 // Total: 500+500+1500+700+300+6500 = 10000 ✅
 
-/// TODO: replace with the ecosystem fund wallet pubkey (project-controlled multisig or cold wallet)
-pub const ECOSYSTEM_FUND_WALLET: Pubkey = pubkey!("11111111111111111111111111111111"); // TODO
+/// Ecosystem fund wallet (generated 2026-04-19, Devnet)
+/// Keypair stored in secrets/ecosystem-fund-keypair.json
+pub const ECOSYSTEM_FUND_WALLET: Pubkey = pubkey!("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
 
 #[derive(Accounts)]
 pub struct ProcessPayment<'info> {
