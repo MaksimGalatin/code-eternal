@@ -318,6 +318,16 @@ Cost at launch scale: ~$20/month (2x Fargate 0.25 vCPU + SQS + ECR)
 
 ---
 
+## Secrets Management
+
+All secrets are stored locally in `secrets/credentials.env` (gitignored).
+**When any new secret or keypair is generated, save it there immediately.**
+
+Production values go into AWS Secrets Manager — variable names match the table below exactly.
+The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (also gitignored).
+
+---
+
 ## Environment Variables Required
 
 | Service | Variable | Description |
