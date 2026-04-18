@@ -126,6 +126,25 @@ pub fn handler(
     let payer_auth = ctx.accounts.payer.to_account_info();
     let token_prog = ctx.accounts.token_program.to_account_info();
     let sys_id     = anchor_lang::system_program::ID;
+    let expected_mint = ctx.accounts.payment_mint.key();
+
+    // Validate referral account mints before any transfers — prevents token confusion attacks
+    for ref_account in [
+        &ctx.accounts.ref1_token_account,
+        &ctx.accounts.ref2_token_account,
+        &ctx.accounts.ref3_token_account,
+    ] {
+        if ref_account.key() != sys_id {
+            let data = ref_account.try_borrow_data()?;
+            // SPL TokenAccount mint field is at bytes 0..32
+            require!(data.len() >= 32, CodeEternalError::InvalidReferralMint);
+            let mint_bytes: [u8; 32] = data[0..32].try_into().unwrap();
+            require!(
+                Pubkey::from(mint_bytes) == expected_mint,
+                CodeEternalError::InvalidReferralMint
+            );
+        }
+    }
 
     // 4. Transfer to ecosystem fund (5%)
     transfer_usdc(

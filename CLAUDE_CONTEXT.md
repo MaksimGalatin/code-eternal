@@ -333,6 +333,7 @@ The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (als
 | Service | Variable | Description |
 |---------|----------|-------------|
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
+| listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — set in Helius dashboard, used to verify POST /webhook/helius |
 | site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
 | site-gen | `PROGRAM_ID` | Deployed program pubkey |
