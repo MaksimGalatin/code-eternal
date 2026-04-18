@@ -190,7 +190,8 @@ pub struct UserState {
 
 ## Build Status
 
-**Compiles successfully.** `target/deploy/code_eternal_router.so` produced.
+**Compiles and deployed to Devnet.** `target/deploy/code_eternal_router.so` produced.
+Program ID: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` (deployed 2026-04-19)
 
 ### Compiler Warnings (non-blocking, known issues)
 
@@ -272,7 +273,8 @@ Week 1 — Infrastructure + First Compile
   ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
   ✅ anchor deploy --provider.cluster devnet (Program ID: 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep)
   □  terraform apply (ECR + ECS + SQS provisioned)
-  □  Helius webhook configured
+  □  ./scripts/deploy.sh all (Docker images pushed to ECR, ECS services started)
+  □  Helius webhook configured (set HELIUS_WEBHOOK_SECRET in dashboard + credentials.env)
 
 Week 2 — Smart Contract Tests
   □  process_payment test with mock USDC (verify 65/15/7/3/5/5 split)
