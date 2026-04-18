@@ -1,5 +1,10 @@
 # CODE ETERNAL — Project Context
 
+> **This file is the single source of truth for all project architecture, decisions, and progress.**
+> Claude must update this file automatically whenever: architecture changes, a task is completed, a new secret is generated, a new service or tool is added, or any decision is made that affects how the system works. No separate docs. No README sections. Everything here.
+
+---
+
 ## Team
 
 | Person | Role |
@@ -268,6 +273,7 @@ Week 1 — Infrastructure + First Compile
   ✅ Smart contract compiles (code_eternal_router.so produced)
   ✅ Program ID auto-generated: pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy
   ✅ Docker: site-gen/Dockerfile, docker/docker-compose.yml (local dev with LocalStack)
+  ✅ Docker images build successfully (Node 20, both services ~200-270MB)
   ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
   ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
   ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
@@ -316,6 +322,27 @@ Deploy: `./scripts/deploy.sh [listener|site-gen|all]`
 Local dev: `docker compose -f docker/docker-compose.yml up`
 
 Cost at launch scale: ~$20/month (2x Fargate 0.25 vCPU + SQS + ECR)
+
+---
+
+## Docker Images
+
+Both services build successfully in WSL2 Ubuntu 22.04 using Docker in WSL.
+
+| Image | Size | Base | Build command |
+|-------|------|------|---------------|
+| `code-eternal-listener` | ~201MB | node:20-alpine | `docker build --target production -t code-eternal-listener:latest ./listener` |
+| `code-eternal-site-gen` | ~272MB | node:20-alpine | `docker build --target production -t code-eternal-site-gen:latest ./site-gen` |
+
+**Key decisions:**
+- Node 20 required — `@solana/codecs` and `commander` deps require `>=20`
+- `npm install` used (no lock files) — switch to `npm ci` after lock files are committed
+- `@irys/sdk` upgraded from `^0.0.12` to `^0.2.11` (old version removed from npm)
+
+**To push to ECR** after `terraform apply`:
+```bash
+./scripts/deploy.sh all
+```
 
 ---
 
