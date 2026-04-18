@@ -10,7 +10,7 @@ pub const TIER_2_AMOUNT: u64 = 100_000_000;
 pub const TIER_3_AMOUNT: u64 = 1_000_000_000;
 
 /// Basis points for distribution (10000 = 100%)
-pub const FOUNDER_BPS: u64 = 500;    // 5%
+pub const ECOSYSTEM_FUND_BPS: u64 = 500;    // 5%
 pub const BASE_BURN_BPS: u64 = 500;  // 5% always burned
 pub const REF1_BPS: u64 = 1500;      // 15%
 pub const REF2_BPS: u64 = 700;       // 7%
@@ -18,8 +18,9 @@ pub const REF3_BPS: u64 = 300;       // 3%
 pub const VAULT_BPS: u64 = 6500;     // 65%
 // Total: 500+500+1500+700+300+6500 = 10000 ✅
 
-/// TODO: run `solana address` after CLI setup and replace with the founder wallet pubkey
-pub const FOUNDER_WALLET: Pubkey = pubkey!("11111111111111111111111111111111"); // TODO
+/// Ecosystem fund wallet (generated 2026-04-19, Devnet)
+/// Keypair stored in secrets/ecosystem-fund-keypair.json
+pub const ECOSYSTEM_FUND_WALLET: Pubkey = pubkey!("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
 
 #[derive(Accounts)]
 pub struct ProcessPayment<'info> {
@@ -58,13 +59,13 @@ pub struct ProcessPayment<'info> {
     )]
     pub vault_token_account: Account<'info, TokenAccount>,
 
-    /// Founder's USDC token account — receives 5%
+    /// Ecosystem fund USDC token account — receives 5%
     #[account(
         mut,
-        constraint = founder_token_account.owner == FOUNDER_WALLET @ CodeEternalError::UnauthorizedBackend,
-        constraint = founder_token_account.mint == payment_mint.key(),
+        constraint = ecosystem_fund_token_account.owner == ECOSYSTEM_FUND_WALLET @ CodeEternalError::UnauthorizedBackend,
+        constraint = ecosystem_fund_token_account.mint == payment_mint.key(),
     )]
-    pub founder_token_account: Account<'info, TokenAccount>,
+    pub ecosystem_fund_token_account: Account<'info, TokenAccount>,
 
     /// Referral L1 — either a real token account or System Program ID if no referral
     /// CHECK: if key() == System Program → no referral, otherwise treated as token account
@@ -111,7 +112,7 @@ pub fn handler(
     );
 
     // 3. Calculate distribution
-    let founder_amount = calc_bps(amount_usdc, FOUNDER_BPS)?;
+    let ecosystem_fund_amount = calc_bps(amount_usdc, ECOSYSTEM_FUND_BPS)?;
     let ref1_amount   = calc_bps(amount_usdc, REF1_BPS)?;
     let ref2_amount   = calc_bps(amount_usdc, REF2_BPS)?;
     let ref3_amount   = calc_bps(amount_usdc, REF3_BPS)?;
@@ -125,14 +126,33 @@ pub fn handler(
     let payer_auth = ctx.accounts.payer.to_account_info();
     let token_prog = ctx.accounts.token_program.to_account_info();
     let sys_id     = anchor_lang::system_program::ID;
+    let expected_mint = ctx.accounts.payment_mint.key();
 
-    // 4. Transfer to founder (5%)
+    // Validate referral account mints before any transfers — prevents token confusion attacks
+    for ref_account in [
+        &ctx.accounts.ref1_token_account,
+        &ctx.accounts.ref2_token_account,
+        &ctx.accounts.ref3_token_account,
+    ] {
+        if ref_account.key() != sys_id {
+            let data = ref_account.try_borrow_data()?;
+            // SPL TokenAccount mint field is at bytes 0..32
+            require!(data.len() >= 32, CodeEternalError::InvalidReferralMint);
+            let mint_bytes: [u8; 32] = data[0..32].try_into().unwrap();
+            require!(
+                Pubkey::from(mint_bytes) == expected_mint,
+                CodeEternalError::InvalidReferralMint
+            );
+        }
+    }
+
+    // 4. Transfer to ecosystem fund (5%)
     transfer_usdc(
         payer_ai.clone(),
-        ctx.accounts.founder_token_account.to_account_info(),
+        ctx.accounts.ecosystem_fund_token_account.to_account_info(),
         payer_auth.clone(),
         token_prog.clone(),
-        founder_amount,
+        ecosystem_fund_amount,
     )?;
 
     // 5. Referral L1 (15%) or burn

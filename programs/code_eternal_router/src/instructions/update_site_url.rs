@@ -23,10 +23,9 @@ pub struct UpdateSiteUrl<'info> {
     pub user_wallet: AccountInfo<'info>,
 }
 
-/// Public key of the authorized backend service
-/// TODO: run `solana-keygen new -o backend-keypair.json`
-///       then `solana address -k backend-keypair.json` and paste the pubkey here
-pub const BACKEND_AUTHORITY: Pubkey = pubkey!("11111111111111111111111111111111");
+/// Public key of the authorized backend service (generated 2026-04-19)
+/// Private key stored in AWS Secrets Manager as BACKEND_PRIVATE_KEY (base64)
+pub const BACKEND_AUTHORITY: Pubkey = pubkey!("96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4");
 
 pub fn handler(
     ctx: Context<UpdateSiteUrl>,

@@ -1,4 +1,5 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { PublicKey } from "@solana/web3.js";
 import { logger } from "../utils/logger";
 import { db } from "../utils/db";
 
@@ -11,26 +12,48 @@ export interface PaymentEvent {
   timestamp: number;
 }
 
+const VALID_TIERS = new Set([1, 2, 3]);
+
+function validateEvent(event: any): PaymentEvent {
+  const wallet = event.wallet || event.accounts?.[0];
+  const signature = event.signature;
+  const tier = Number(event.tier);
+
+  if (!signature || typeof signature !== "string" || signature.length < 32) {
+    throw new Error(`Invalid signature: ${signature}`);
+  }
+
+  try {
+    new PublicKey(wallet);
+  } catch {
+    throw new Error(`Invalid wallet address: ${wallet}`);
+  }
+
+  if (!VALID_TIERS.has(tier)) {
+    throw new Error(`Invalid tier: ${tier} — must be 1, 2, or 3`);
+  }
+
+  return {
+    signature,
+    wallet,
+    tier,
+    amountUsdc: Number(event.amountUsdc) || 0,
+    burnAmount: Number(event.burnAmount) || 0,
+    timestamp: Number(event.timestamp) || Math.floor(Date.now() / 1000),
+  };
+}
+
 export async function handlePaymentProcessed(
   event: any,
   sqsClient: SQSClient,
   queueUrl: string
 ): Promise<void> {
-  const jobId = `job_${event.signature}_${Date.now()}`;
-
-  // 1. Parse data from the event
-  const payment: PaymentEvent = {
-    signature: event.signature,
-    wallet: event.wallet || event.accounts?.[0],
-    tier: event.tier || 1,
-    amountUsdc: event.amountUsdc || 0,
-    burnAmount: event.burnAmount || 0,
-    timestamp: event.timestamp || Math.floor(Date.now() / 1000),
-  };
+  const payment = validateEvent(event);
+  const jobId = `job_${payment.signature}_${Date.now()}`;
 
   logger.info(`Processing payment: wallet=${payment.wallet} tier=${payment.tier}`);
 
-  // 2. Write job to DB (operational status)
+  // Write job to DB (operational status)
   await db.query(
     `INSERT INTO site_generation_jobs (id, wallet, tier, tx_signature, status, created_at)
      VALUES ($1, $2, $3, $4, 'pending', NOW())
@@ -38,7 +61,7 @@ export async function handlePaymentProcessed(
     [jobId, payment.wallet, payment.tier, payment.signature]
   );
 
-  // 3. Send task to SQS → site-gen will pick it up
+  // Send task to SQS → site-gen will pick it up
   const message = {
     jobId,
     wallet: payment.wallet,

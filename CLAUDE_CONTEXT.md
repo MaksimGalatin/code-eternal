@@ -32,7 +32,7 @@ From every payment:
 | Referral L1 | 15% | Or added to burn if slot is empty |
 | Referral L2 | 7% | Or added to burn if slot is empty |
 | Referral L3 | 3% | Or added to burn if slot is empty |
-| Founder wallet | 5% | Maksim Galatin |
+| Ecosystem Fund | 5% | Project-controlled wallet (development, grants, ops) |
 | Vault (treasury) | 65% | Protocol PDA |
 | **Total** | **100%** | ✅ |
 
@@ -91,7 +91,7 @@ Listener → USDC → process_payment (smart contract)
     15% → ref1 token account (or burn)
     7%  → ref2 token account (or burn)
     3%  → ref3 token account (or burn)
-    5%  → founder_token_account
+    5%  → ecosystem_fund_token_account
     65% → vault PDA (treasury)
   Emits: PaymentProcessed event
 
@@ -183,8 +183,8 @@ pub struct UserState {
 
 | Constant | File | How to get |
 |----------|------|-----------|
-| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | `solana-keygen new -o backend-keypair.json` then `solana address -k backend-keypair.json` |
-| `FOUNDER_WALLET` | `instructions/process_payment.rs` | Maksim Galatin's Solana wallet address |
+| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | ✅ `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in AWS Secrets Manager as `BACKEND_PRIVATE_KEY` |
+| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | ✅ `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
 | Program ID | `lib.rs` + `Anchor.toml` | Auto-generated on first `anchor build`: `pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy` |
 
 ---
@@ -270,7 +270,7 @@ Week 1 — Infrastructure + First Compile
   ✅ Docker: site-gen/Dockerfile, docker/docker-compose.yml (local dev with LocalStack)
   ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
   ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
-  □  Replace placeholder pubkeys (FOUNDER_WALLET, BACKEND_AUTHORITY)
+  ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
   □  anchor deploy --provider.cluster devnet
   □  terraform apply (ECR + ECS + SQS provisioned)
   □  Helius webhook configured
@@ -318,11 +318,22 @@ Cost at launch scale: ~$20/month (2x Fargate 0.25 vCPU + SQS + ECR)
 
 ---
 
+## Secrets Management
+
+All secrets are stored locally in `secrets/credentials.env` (gitignored).
+**When any new secret or keypair is generated, save it there immediately.**
+
+Production values go into AWS Secrets Manager — variable names match the table below exactly.
+The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (also gitignored).
+
+---
+
 ## Environment Variables Required
 
 | Service | Variable | Description |
 |---------|----------|-------------|
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
+| listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — set in Helius dashboard, used to verify POST /webhook/helius |
 | site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
 | site-gen | `PROGRAM_ID` | Deployed program pubkey |

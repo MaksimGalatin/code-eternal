@@ -28,4 +28,7 @@ pub enum CodeEternalError {
 
     #[msg("Arithmetic overflow in distribution calculation")]
     Overflow,
+
+    #[msg("Referral token account mint does not match payment mint")]
+    InvalidReferralMint,
 }

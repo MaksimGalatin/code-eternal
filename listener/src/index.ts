@@ -24,10 +24,22 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── Helius Webhook endpoint ──────────────────────────────────────
-// Helius pushes POST when our contract emits an event
+const HELIUS_WEBHOOK_SECRET = process.env.HELIUS_WEBHOOK_SECRET;
+
 app.post("/webhook/helius", async (req, res) => {
+  // Verify the request came from Helius
+  const authHeader = req.headers["authorization"];
+  if (!HELIUS_WEBHOOK_SECRET || authHeader !== HELIUS_WEBHOOK_SECRET) {
+    logger.warn("Rejected unauthorized webhook request");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   try {
     const events = req.body;
+    if (!Array.isArray(events)) {
+      return res.status(400).json({ error: "Invalid payload" });
+    }
+
     logger.info(`Received ${events.length} events from Helius`);
 
     for (const event of events) {

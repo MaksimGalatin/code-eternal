@@ -18,7 +18,9 @@
       "Bash(aws ecr *)",
       "Bash(aws ecs *)",
       "Bash(aws sts *)",
-      "Bash(./scripts/deploy.sh *)"
+      "Bash(./scripts/deploy.sh *)",
+      "Bash(git fetch *)",
+      "Bash(git rebase *)"
     ]
   }
 }
