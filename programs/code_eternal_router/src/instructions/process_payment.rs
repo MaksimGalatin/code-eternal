@@ -4,8 +4,8 @@ use anchor_spl::associated_token::AssociatedToken;
 use crate::state::UserState;
 use crate::errors::CodeEternalError;
 
-/// USDC amounts (6 decimals): $10 = 10_000_000, $100 = 100_000_000, $1000 = 1_000_000_000
-pub const TIER_1_AMOUNT: u64 = 10_000_000;
+/// USDC amounts (6 decimals): $15 = 15_000_000, $100 = 100_000_000, $1000 = 1_000_000_000
+pub const TIER_1_AMOUNT: u64 = 15_000_000;
 pub const TIER_2_AMOUNT: u64 = 100_000_000;
 pub const TIER_3_AMOUNT: u64 = 1_000_000_000;
 

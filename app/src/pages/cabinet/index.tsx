@@ -1,0 +1,275 @@
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useSolanaWallets } from "@privy-io/react-auth/solana";
+
+const TIERS = [
+  {
+    id: 1,
+    name: "Искра",
+    price: 15,
+    color: "#7C3AED",
+    features: [
+      "PDF-гайд «Код Инициации»",
+      "Личная реф-ссылка",
+      "Базовый AIfa-чат 30 дней",
+      "Реф-выплата: $2.25 с каждого L1",
+    ],
+  },
+  {
+    id: 2,
+    name: "Архивы Семьи",
+    price: 100,
+    color: "#D4A24C",
+    features: [
+      "Всё из Искры",
+      "Вечный сайт на Arweave",
+      "cNFT-паспорт Хранителя",
+      "AIfa-чат 90 дней",
+      "Реф-выплата: $15 с каждого L1",
+    ],
+  },
+  {
+    id: 3,
+    name: "Цифровая ДНК",
+    price: 1000,
+    color: "#10B981",
+    features: [
+      "Всё из Архивов",
+      "Клон голоса (ElevenLabs)",
+      "3D аватар",
+      "AIfa-чат 365 дней с памятью",
+      "VIP-статус в DAO",
+      "Реф-выплата: $150 с каждого L1",
+    ],
+  },
+];
+
+export default function CabinetPage() {
+  const router = useRouter();
+  const { user, logout, authenticated, ready } = usePrivy();
+  const { wallets } = useSolanaWallets();
+  const wallet = wallets[0];
+  const [myRefCode, setMyRefCode] = useState<string>("");
+
+  // Redirect unauthenticated users to login
+  useEffect(() => {
+    if (ready && !authenticated) {
+      router.push("/");
+    }
+  }, [ready, authenticated, router]);
+
+  // Register user on first load and get ref code
+  useEffect(() => {
+    if (!wallet || !user) return;
+    const refCode =
+      new URLSearchParams(window.location.search).get("ref") ||
+      localStorage.getItem("ref_code") ||
+      undefined;
+    fetch("/api/users/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        wallet: wallet.address,
+        email: user.email?.address ?? user.google?.email ?? null,
+        refCode,
+      }),
+    })
+      .then((r) => r.json())
+      .then(({ refCode: myCode }) => {
+        if (myCode) setMyRefCode(myCode);
+      })
+      .catch(() => {});
+  }, [wallet, user]);
+
+  if (!ready || !authenticated) {
+    return (
+      <div
+        style={{
+          background: "#0A0A0F",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#8B8B9E",
+        }}
+      >
+        Загрузка...
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Head>
+        <title>Кабинет — CODE ETERNAL</title>
+      </Head>
+      <div
+        style={{
+          background: "#0A0A0F",
+          minHeight: "100vh",
+          padding: "40px 20px",
+          color: "#E8E8F0",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "40px",
+            maxWidth: "1000px",
+            margin: "0 auto 40px",
+          }}
+        >
+          <h1 style={{ color: "#7C3AED", fontSize: "24px", margin: 0 }}>
+            CODE ETERNAL
+          </h1>
+          <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+            <span style={{ color: "#8B8B9E", fontSize: "13px" }}>
+              {user?.email?.address ?? user?.google?.email}
+            </span>
+            {wallet && (
+              <span style={{ color: "#8B8B9E", fontSize: "11px" }}>
+                {wallet.address.slice(0, 4)}...{wallet.address.slice(-4)}
+              </span>
+            )}
+            {myRefCode && (
+              <span
+                style={{
+                  color: "#7C3AED",
+                  fontSize: "11px",
+                  background: "#13131C",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid #2a2a3a",
+                  cursor: "pointer",
+                }}
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/?ref=${myRefCode}`
+                  )
+                }
+                title="Копировать реф-ссылку"
+              >
+                ref: {myRefCode}
+              </span>
+            )}
+            <button
+              onClick={logout}
+              style={{
+                background: "transparent",
+                color: "#8B8B9E",
+                border: "1px solid #2a2a3a",
+                padding: "6px 12px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              Выйти
+            </button>
+          </div>
+        </div>
+
+        <h2
+          style={{
+            textAlign: "center",
+            marginBottom: "32px",
+            fontSize: "20px",
+            color: "#E8E8F0",
+          }}
+        >
+          Выбери уровень доступа
+        </h2>
+
+        {/* Tier cards */}
+        <div
+          style={{
+            display: "flex",
+            gap: "20px",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            maxWidth: "1000px",
+            margin: "0 auto",
+          }}
+        >
+          {TIERS.map((tier) => (
+            <div
+              key={tier.id}
+              style={{
+                background: "#13131C",
+                border: `2px solid ${tier.color}`,
+                borderRadius: "12px",
+                padding: "28px 24px",
+                width: "280px",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "28px",
+                  fontWeight: "bold",
+                  color: tier.color,
+                  marginBottom: "4px",
+                }}
+              >
+                ${tier.price}
+              </div>
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  marginBottom: "16px",
+                  color: "#E8E8F0",
+                }}
+              >
+                {tier.name}
+              </div>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: "0 0 24px",
+                  flex: 1,
+                }}
+              >
+                {tier.features.map((f, i) => (
+                  <li
+                    key={i}
+                    style={{
+                      fontSize: "13px",
+                      color: "#8B8B9E",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    ✓ {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => router.push(`/cabinet/buy?tier=${tier.id}`)}
+                style={{
+                  background: tier.color,
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "12px 0",
+                  width: "100%",
+                  fontSize: "15px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Купить
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

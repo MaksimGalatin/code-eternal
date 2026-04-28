@@ -21,7 +21,7 @@ Working on AI tooling (MCP servers, developer skills) at a large Baltic bank in 
 
 A Web3 service on Solana where a regular person who knows nothing about crypto:
 1. Logs in via Google (Privy — hidden wallet)
-2. Pays by card $10/$100/$1000 (Stripe)
+2. Pays by card $15/$100/$1000 (MoonPay via Privy)
 3. Gets a personal AI companion (AIfa)
 4. Gets an **eternal site on Arweave** — cannot be deleted, lives forever
 5. Earns $CODE tokens for unique content (Think-to-Earn / Proof-of-Memory)
