@@ -9,6 +9,10 @@ const SOLANA_RPC = process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana
 const solanaConnectors = toSolanaWalletConnectors();
 
 export default function App({ Component, pageProps }: AppProps) {
+  if (!PRIVY_APP_ID) {
+    return <Component {...pageProps} />;
+  }
+
   return (
     <PrivyProvider
       appId={PRIVY_APP_ID}
