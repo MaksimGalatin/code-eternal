@@ -5,6 +5,14 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
@@ -35,10 +43,10 @@ resource "aws_ecr_repository" "site_gen" {
 # ─── SQS FIFO Queue ───────────────────────────────────────────────
 
 resource "aws_sqs_queue" "jobs_dlq" {
-  name                      = "code-eternal-jobs-dlq.fifo"
-  fifo_queue                = true
+  name                        = "code-eternal-jobs-dlq.fifo"
+  fifo_queue                  = true
   content_based_deduplication = true
-  message_retention_seconds = 1209600 # 14 days
+  message_retention_seconds   = 1209600 # 14 days
 }
 
 resource "aws_sqs_queue" "jobs" {
@@ -52,6 +60,24 @@ resource "aws_sqs_queue" "jobs" {
     deadLetterTargetArn = aws_sqs_queue.jobs_dlq.arn
     maxReceiveCount     = 3
   })
+}
+
+# ─── Helius Webhook Secret ─────────────────────────────────────────
+# Auto-generated once; stored in Secrets Manager; injected into listener
+
+resource "random_password" "webhook_secret" {
+  length  = 40
+  special = false
+}
+
+resource "aws_secretsmanager_secret" "helius_webhook_secret" {
+  name                    = "code-eternal/helius-webhook-secret"
+  recovery_window_in_days = 0 # allow immediate deletion on terraform destroy
+}
+
+resource "aws_secretsmanager_secret_version" "helius_webhook_secret" {
+  secret_id     = aws_secretsmanager_secret.helius_webhook_secret.id
+  secret_string = random_password.webhook_secret.result
 }
 
 # ─── IAM Role for ECS Tasks ───────────────────────────────────────
@@ -114,7 +140,8 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
           var.helius_rpc_url_secret_arn,
           var.irys_private_key_secret_arn,
           var.backend_private_key_secret_arn,
-          var.database_url_secret_arn
+          var.database_url_secret_arn,
+          aws_secretsmanager_secret.helius_webhook_secret.arn,
         ]
       }
     ]
@@ -144,11 +171,18 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-# ─── Security Group for ECS Tasks ─────────────────────────────────
+# ─── Security Groups ──────────────────────────────────────────────
 
-resource "aws_security_group" "ecs_tasks" {
-  name   = "code-eternal-ecs-tasks"
+resource "aws_security_group" "alb" {
+  name   = "code-eternal-alb"
   vpc_id = var.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port   = 0
@@ -156,12 +190,62 @@ resource "aws_security_group" "ecs_tasks" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
 
+resource "aws_security_group" "ecs_tasks" {
+  name   = "code-eternal-ecs-tasks"
+  vpc_id = var.vpc_id
+
+  # Allow inbound from ALB only
   ingress {
-    from_port   = 3001
-    to_port     = 3002
-    protocol    = "tcp"
+    from_port       = 3001
+    to_port         = 3001
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  # site-gen has no inbound — it only polls SQS
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ─── ALB for listener ─────────────────────────────────────────────
+
+resource "aws_lb" "listener" {
+  name               = "code-eternal-listener"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = var.subnet_ids
+}
+
+resource "aws_lb_target_group" "listener" {
+  name        = "code-eternal-listener"
+  port        = 3001
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip" # required for Fargate awsvpc networking
+
+  health_check {
+    path                = "/health"
+    interval            = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+}
+
+resource "aws_lb_listener" "listener_http" {
+  load_balancer_arn = aws_lb.listener.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.listener.arn
   }
 }
 
@@ -184,15 +268,16 @@ resource "aws_ecs_task_definition" "listener" {
     portMappings = [{ containerPort = 3001, protocol = "tcp" }]
 
     environment = [
-      { name = "NODE_ENV",    value = "production" },
-      { name = "AWS_REGION",  value = var.aws_region },
-      { name = "PROGRAM_ID",  value = var.program_id },
+      { name = "NODE_ENV",      value = "production" },
+      { name = "AWS_REGION",    value = var.aws_region },
+      { name = "PROGRAM_ID",    value = var.program_id },
       { name = "SQS_QUEUE_URL", value = aws_sqs_queue.jobs.url }
     ]
 
     secrets = [
-      { name = "HELIUS_RPC_URL", valueFrom = var.helius_rpc_url_secret_arn },
-      { name = "DATABASE_URL",   valueFrom = var.database_url_secret_arn }
+      { name = "HELIUS_RPC_URL",        valueFrom = var.helius_rpc_url_secret_arn },
+      { name = "HELIUS_WEBHOOK_SECRET", valueFrom = aws_secretsmanager_secret.helius_webhook_secret.arn },
+      { name = "DATABASE_URL",          valueFrom = var.database_url_secret_arn }
     ]
 
     healthCheck = {
@@ -233,9 +318,9 @@ resource "aws_ecs_task_definition" "site_gen" {
     portMappings = [{ containerPort = 3002, protocol = "tcp" }]
 
     environment = [
-      { name = "NODE_ENV",    value = "production" },
-      { name = "AWS_REGION",  value = var.aws_region },
-      { name = "PROGRAM_ID",  value = var.program_id },
+      { name = "NODE_ENV",      value = "production" },
+      { name = "AWS_REGION",    value = var.aws_region },
+      { name = "PROGRAM_ID",    value = var.program_id },
       { name = "SQS_QUEUE_URL", value = aws_sqs_queue.jobs.url }
     ]
 
@@ -280,7 +365,14 @@ resource "aws_ecs_service" "listener" {
     assign_public_ip = true
   }
 
-  # Allow Terraform to update the image without forcing service replacement
+  load_balancer {
+    target_group_arn = aws_lb_target_group.listener.arn
+    container_name   = "listener"
+    container_port   = 3001
+  }
+
+  depends_on = [aws_lb_listener.listener_http]
+
   lifecycle {
     ignore_changes = [task_definition]
   }
@@ -302,4 +394,29 @@ resource "aws_ecs_service" "site_gen" {
   lifecycle {
     ignore_changes = [task_definition]
   }
+}
+
+# ─── Helius Webhook Registration ──────────────────────────────────
+# Registers the webhook via Helius REST API after the ALB is ready.
+# Runs again if the listener URL or program ID changes.
+
+resource "null_resource" "helius_webhook" {
+  triggers = {
+    webhook_url = "http://${aws_lb.listener.dns_name}/webhook/helius"
+    program_id  = var.program_id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      curl -sf -X POST \
+        "https://api.helius.xyz/v0/webhooks?api-key=${var.helius_api_key}" \
+        -H "Content-Type: application/json" \
+        -d "{\"webhookURL\":\"http://${aws_lb.listener.dns_name}/webhook/helius\",\"transactionTypes\":[\"Any\"],\"accountAddresses\":[\"${var.program_id}\"],\"webhookType\":\"enhanced\",\"authHeader\":\"${random_password.webhook_secret.result}\"}"
+    EOT
+  }
+
+  depends_on = [
+    aws_lb_listener.listener_http,
+    aws_secretsmanager_secret_version.helius_webhook_secret,
+  ]
 }

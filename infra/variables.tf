@@ -10,6 +10,11 @@ variable "program_id" {
   description = "Deployed Solana program ID"
 }
 
+variable "helius_api_key" {
+  description = "Helius API key (plain value — used to register the webhook via REST API)"
+  sensitive   = true
+}
+
 variable "helius_rpc_url_secret_arn" {
   description = "ARN of Secrets Manager secret containing HELIUS_RPC_URL"
 }
@@ -40,5 +45,5 @@ variable "vpc_id" {
 
 variable "subnet_ids" {
   type        = list(string)
-  description = "Subnet IDs for ECS tasks (private subnets recommended)"
+  description = "Subnet IDs for ECS tasks"
 }
