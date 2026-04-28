@@ -57,9 +57,9 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 - Vercel — hosting
 
 ### Auth & Payments
-- Privy (privy.io) — Google login + hidden Solana wallet
-- Stripe — subscriptions / card payments
-- Flow: `Stripe webhook → listener (ECS) → SQS → site-gen (ECS) → Arweave`
+- Privy (privy.io) — Google/Email login + hidden Solana wallet (embedded, user never sees seed phrase)
+- MoonPay via Privy `useFundWallet` — card → USDC on-ramp directly to embedded wallet
+- Flow: `MoonPay → USDC on wallet → frontend calls process_payment → Helius webhook → listener → SQS → site-gen → Arweave`
 
 ### Blockchain
 - Solana (Devnet now → Mainnet for launch)
@@ -86,27 +86,37 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 
 ### Payment → Site Generation
 ```
-Google login → Privy (hidden wallet created)
-Card payment → Stripe
-Stripe webhook → listener (ECS Fargate, /webhook/stripe)
-Listener → USDC → process_payment (smart contract)
+Google/Email login → Privy (hidden Solana wallet created automatically)
+User clicks "Купить" → /cabinet/buy?tier=N
+  Option A: MoonPay widget (Privy useFundWallet) → card → USDC on embedded wallet
+  Option B: user already has USDC in Phantom
+
+Frontend calls /api/referrals/chain?wallet=... → gets ref1/ref2/ref3 from Neon DB
+Frontend builds Anchor tx → process_payment (smart contract):
   Contract atomically:
     5%  → token::burn CPI
-    15% → ref1 token account (or burn)
-    7%  → ref2 token account (or burn)
-    3%  → ref3 token account (or burn)
+    15% → ref1 token account (or burn if empty)
+    7%  → ref2 token account (or burn if empty)
+    3%  → ref3 token account (or burn if empty)
     5%  → ecosystem_fund_token_account
     65% → vault PDA (treasury)
   Emits: PaymentProcessed event
 
 Helius webhook → listener (ECS Fargate, /webhook/helius)
-Listener → SQS FIFO (job queue)
+Listener:
+  → writes referral_payments rows to Neon PostgreSQL
+  → writes burn_events row to Neon PostgreSQL
+  → updates users.tier in Neon PostgreSQL
+  → sends email with PDF via Resend
+  → sends Telegram notification via Grammy bot
+  → enqueues site-gen job in SQS FIFO
+
 site-gen (ECS Fargate, SQS long-poll):
-  → compile HTML from Handlebars template
+  → compile HTML from template using user data
   → upload to Arweave via Irys SDK
   → call update_site_url() on-chain (backend keypair)
-  → create Cloudflare subdomain
-User sees: wallet-prefix.codeofdigitaleternity.com
+  → create Cloudflare CNAME subdomain
+User sees: username.codeofdigitaleternity.com
 ```
 
 ### Think-to-Earn
@@ -123,8 +133,21 @@ Backend → award_memory() on-chain → adds memory_score to UserState
 | Data | Storage | Why |
 |------|---------|-----|
 | owner, tier, referrer, arweave_url, memory_score, site_status | Solana PDA (source of truth) | Permanent, trustless |
-| Job status, error logs, tx references | Neon PostgreSQL | Operational, queryable |
+| users, referral_payments, burn_events, site_generation_jobs | Neon PostgreSQL | Operational, queryable |
 | User HTML sites | Arweave | Permanent, uncensorable |
+
+### Neon PostgreSQL Schema
+
+```sql
+users (id, wallet, email, display_name, referrer_id, ref_code, tier, tier_expires,
+       tg_chat_id, tg_link_token, created_at)
+referral_payments (id, payer_wallet, referrer_wallet, level, amount_usdc, tx_hash, tier, created_at)
+burn_events (id, amount, tx_hash, created_at)
+site_generation_jobs (id, wallet, tier, tx_signature, status, created_at)  -- listener writes; site-gen reads
+applications_1000 (id, fio, contact, language, avatar_desc, reason, status, created_at)
+```
+
+Indexes: `users(wallet)`, `users(ref_code)`, `referral_payments(referrer_wallet)`, `referral_payments(payer_wallet)`
 
 ---
 
@@ -268,38 +291,55 @@ anchor deploy --provider.cluster devnet
 ## Hackathon Checklist (deadline May 11, 2026)
 
 ```
-Week 1 — Infrastructure + First Compile
+Infrastructure + Smart Contract
   ✅ WSL2: Rust + Solana CLI + Anchor 0.30.1 installed
   ✅ Smart contract compiles (code_eternal_router.so produced)
-  ✅ Program ID auto-generated: pauVhWF8u77rxx3SYmX6gE5wQDuwyzRpcYCtyJypgZy
-  ✅ Docker: site-gen/Dockerfile, docker/docker-compose.yml (local dev with LocalStack)
-  ✅ Docker images build successfully (Node 20, both services ~200-270MB)
-  ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
-  ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
   ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
   ✅ anchor deploy --provider.cluster devnet (Program ID: 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep)
+  ✅ TIER_1_AMOUNT = $15 (was $10 — fixed 2026-04-29)
+  ✅ Docker images build (listener ~201MB, site-gen ~272MB, node:20-alpine)
+  ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
+  ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
   □  terraform apply (ECR + ECS + SQS provisioned)
   □  ./scripts/deploy.sh all (Docker images pushed to ECR, ECS services started)
-  □  Helius webhook configured (set HELIUS_WEBHOOK_SECRET in dashboard + credentials.env)
+  □  Helius webhook configured (HELIUS_WEBHOOK_SECRET in dashboard + credentials.env)
 
-Week 2 — Smart Contract Tests
-  □  process_payment test with mock USDC (verify 65/15/7/3/5/5 split)
+Smart Contract Tests
+  □  process_payment test with mock USDC (verify 5/5/15/7/3/65 split)
   □  register_user + process_payment E2E on Devnet
   □  update_site_url called by backend keypair
   □  All anchor test green
 
-Week 3 — Backend Integration
-  □  listener reads PaymentProcessed events from Helius
-  □  site-gen generates HTML + uploads to Arweave via Irys
-  □  update_site_url called on-chain with Arweave TX ID
-  □  Full pipeline E2E: payment → site live on Arweave
+Frontend (Pipeline 2.x — Days 2-3)
+  ✅ Next.js 14 app/ created (Pages Router, Tailwind, Privy, purple theme)
+  ✅ Vercel connected to GitHub — auto-deploys on push to main
+  ✅ Pipeline 2.1: Login page — "Войти в Семью" → Google/Email → /cabinet
+  ✅ Pipeline 2.2: /cabinet — three tier cards ($15/$100/$1000) with auth guard
+  □  Set Vercel env vars: NEXT_PUBLIC_PRIVY_APP_ID, DATABASE_URL
+  □  Verify build passes on Vercel (watch for @privy-io/react-auth/solana import)
+  □  Confirm login flow works end-to-end in browser
 
-Week 4 — Frontend + Submit
-  □  Privy.io embedded wallet integration (see Frontend spec below)
-  □  Terminal UI: show public key, SOL/USDC balance, sign test tx on Devnet
-  □  3-minute demo video recorded
-  □  GitHub README for judges
-  □  Submit on Colosseum
+Backend + Payment (Pipeline 3.x — Days 4-7)
+  □  Pipeline 3.1: /cabinet/buy — MoonPay + smart contract call
+  □  Pipeline 3.2: /api/users/register + /api/referrals/chain (Neon pg)
+  □  Pipeline 3.2: Create Neon DB tables (users, referral_payments, burn_events)
+  □  Pipeline 3.3: listener → Resend email with PDF on PaymentProcessed
+
+Site + NFT (Pipeline 4.x — Days 8-11)
+  □  Pipeline 4.1: /cabinet/create-site form → Arweave → Cloudflare subdomain
+  □  Pipeline 4.2: cNFT Guardian Passport mint (Metaplex Bubblegum)
+
+Widgets + Bots (Pipeline 5.x — Days 12-13)
+  □  Pipeline 5.1: IncomeWidget + /api/referrals/income
+  □  Pipeline 5.2: BurnCounter + /api/stats/burned
+  □  Pipeline 5.3: /cabinet/apply-1000 form + email to architect
+  □  Pipeline 5.4: Telegram bot (Grammy) — referral push notifications
+
+Final (Days 14-15)
+  □  Open GitHub repo public (May 9)
+  □  README.md for judges
+  □  Record 2 videos (demo + pitch)
+  □  Submit on Colosseum (May 10, before 23:59)
 ```
 
 ---
@@ -362,45 +402,94 @@ The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (als
 |---------|----------|-------------|
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
 | listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — set in Helius dashboard, verifies POST /webhook/helius |
-| listener, site-gen | `PROGRAM_ID` | Deployed program pubkey |
+| listener, site-gen | `PROGRAM_ID` | `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` |
 | listener, site-gen | `SQS_QUEUE_URL` | SQS FIFO queue URL |
 | listener, site-gen | `AWS_REGION` | e.g. `us-east-1` |
+| listener, site-gen | `DATABASE_URL` | Neon PostgreSQL connection string |
+| listener | `RESEND_API_KEY` | From resend.com — email delivery |
+| listener | `TELEGRAM_BOT_TOKEN` | From @BotFather — Grammy bot token |
+| listener | `SUPABASE_URL` | ⚠️ Not used — keep blank, Neon is used instead |
 | site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
+| site-gen | `CF_API_TOKEN` | Cloudflare API token (Edit zone DNS permission) |
+| site-gen | `CF_ZONE_ID` | Cloudflare Zone ID for codeofdigitaleternity.com |
+| Next.js (Vercel) | `NEXT_PUBLIC_PRIVY_APP_ID` | From privy.io dashboard |
+| Next.js (Vercel) | `NEXT_PUBLIC_RPC_URL` | Helius RPC (public) |
+| Next.js (Vercel) | `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
+| Next.js (Vercel) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
 | All | `NODE_ENV` | `production` = JSON logs for CloudWatch; otherwise pretty-print |
 
 ---
 
-## Frontend — Privy.io Integration Spec
+## Frontend — Architecture & Status
 
-**Goal:** Non-crypto users log in via Google/Email; a non-custodial Solana wallet is silently created under the hood. No Phantom required.
+**Stack:** Next.js 14 (Pages Router), React, Tailwind, Solana Web3.js, Anchor, Privy.io
+**Source:** `app/` directory → Vercel, connected to GitHub (auto-deploy on push to `main`)
+**URL:** `app.codeofdigitaleternity.com`
+**Theme:** Dark purple (#7C3AED accent, #0A0A0F background) — per ТЗ design
 
-**Stack:** Next.js (app router), React, Tailwind, Solana Web3.js, Anchor, Privy.io (priority over Web3Auth).
+### Key Architecture Decisions
 
-**Source:** `app/` directory → Next.js app hosted on Vercel at `app.codeofdigitaleternity.com`.
+| Decision | Reason |
+|----------|--------|
+| Pages Router (not App Router) | Existing codebase; avoids migration cost |
+| Neon PostgreSQL everywhere | No Supabase; same pg Pool used by listener and Next.js API routes |
+| MoonPay via Privy `useFundWallet` | No Stripe; card → USDC directly to embedded wallet |
+| Helius webhooks in listener | More reliable than `connection.onLogs()` WebSocket |
+| Inline styles in cabinet pages | Matches ТЗ exactly; no Tailwind class naming overhead for complex layouts |
 
-### Tasks
+### File Structure
 
-| # | Task | Notes |
-|---|------|-------|
-| 1 | Wrap app in `PrivyProvider` | Configure `appId` from Privy dashboard |
-| 2 | Login methods | Keep Phantom/Solflare; add Google, Apple, Email (Magic Link) |
-| 3 | Embedded wallet generation | **Must set Solana network in Privy dashboard** (default is EVM). On Google login → check for wallet → silently create if absent |
-| 4 | Show wallet state in Terminal UI | Display public key + SOL/USDC balance after login |
-| 5 | Wire wallet into AnchorProvider | Pass wallet instance from `useWallets()` hook into `AnchorProvider` |
-| 6 | Transaction signing | Privy native confirmation popup appears (no Phantom extension needed) |
+```
+app/src/
+├── pages/
+│   ├── _app.tsx              # PrivyProvider (purple, solanaClusters devnet, toSolanaWalletConnectors)
+│   ├── index.tsx             # Login page — "Войти в Семью" → redirects to /cabinet ✅
+│   ├── cabinet/
+│   │   ├── index.tsx         # Three tier cards $15/$100/$1000, auth guard, ref code ✅
+│   │   ├── buy.tsx           # MoonPay + smart contract call (Pipeline 3.1) □
+│   │   ├── create-site.tsx   # Site creation form (Pipeline 4.1) □
+│   │   └── apply-1000.tsx    # $1000 application form (Pipeline 5.3) □
+│   └── api/
+│       ├── users/register.ts          # POST — upsert user, generate ref_code (Pipeline 3.2) □
+│       ├── referrals/chain.ts         # GET — return ref1/ref2/ref3 wallets (Pipeline 3.2) □
+│       ├── referrals/income.ts        # GET — earnings + payment history (Pipeline 5.1) □
+│       ├── stats/burned.ts            # GET — total burn_events sum (Pipeline 5.2) □
+│       ├── sites/generate.ts          # POST — Arweave + Cloudflare subdomain (Pipeline 4.1) □
+│       ├── applications/1000.ts       # POST — save + email architect (Pipeline 5.3) □
+│       └── telegram/link-token.ts     # POST — generate tg_link_token (Pipeline 5.4) □
+├── lib/
+│   ├── db.ts                 # Neon pg Pool with hot-reload guard ✅
+│   └── idl/                  # (future) JSON IDL for Anchor program
+├── idl/
+│   └── code_eternal_router.ts  # Typed IDL for @coral-xyz/anchor ✅
+├── components/
+│   └── Terminal.tsx          # Old terminal UI — kept but not used, can delete post-hackathon
+└── styles/
+    └── globals.css           # Dark base (#0A0A0F), neutral sans-serif
+```
 
-### Definition of Done
+### Environment Variables
 
-User visits `app.codeofdigitaleternity.com` → clicks **Login with Google** → sees their Solana address → signs a test transaction on Devnet.
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Vercel + `.env.local` | From privy.io dashboard |
+| `NEXT_PUBLIC_PROGRAM_ID` | Vercel + `.env.local` | `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` |
+| `NEXT_PUBLIC_RPC_URL` | Vercel + `.env.local` | Helius RPC (public key OK in browser) |
+| `DATABASE_URL` | Vercel (server-only) | Neon connection string for API routes |
 
-### Environment Variables (frontend)
+### npm Dependencies (app/package.json)
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_PRIVY_APP_ID` | From Privy dashboard |
-| `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
-| `NEXT_PUBLIC_RPC_URL` | Helius RPC endpoint (public, no secret key) |
+```json
+"@coral-xyz/anchor": "^0.30.1"
+"@privy-io/react-auth": "^1.82.0"   // includes /solana subpath
+"@solana/web3.js": "^1.98.0"
+"@solana/spl-token": "^0.4.9"
+"nanoid": "^5.0.7"                  // ref_code generation in API routes
+"pg": "^8.13.0"                     // Neon PostgreSQL client
+"resend": "^4.0.0"                  // email delivery
+"next": "14.2.29"
+```
 
 ---
 
