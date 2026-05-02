@@ -18,7 +18,6 @@ RUN apk add --no-cache python3 make g++ && \
     apk del python3 make g++
 
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 
