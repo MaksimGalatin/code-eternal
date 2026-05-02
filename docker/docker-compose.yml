@@ -1,86 +1,37 @@
-version: "3.9"
-
 services:
   listener:
-    build:
-      context: ../listener
-      target: production
-    ports:
-      - "3001:3001"
-    environment:
-      NODE_ENV: development
-      AWS_REGION: us-east-1
-      PROGRAM_ID: ${PROGRAM_ID}
-      HELIUS_RPC_URL: ${HELIUS_RPC_URL}
-      SQS_QUEUE_URL: http://localstack:4566/000000000000/code-eternal-jobs.fifo
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/code_eternal
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_ENDPOINT_URL: http://localstack:4566
-    depends_on:
-      postgres:
-        condition: service_healthy
-      localstack:
-        condition: service_healthy
+    image: maksimshchuplov/code-eternal-listener:latest
     restart: unless-stopped
+    env_file: ../.env
+    environment:
+      SITE_GEN_URL: http://site-gen:3002
+      NODE_ENV: production
+    depends_on:
+      - site-gen
 
   site-gen:
-    build:
-      context: ../site-gen
-      target: production
-    ports:
-      - "3002:3002"
-    environment:
-      NODE_ENV: development
-      AWS_REGION: us-east-1
-      PROGRAM_ID: ${PROGRAM_ID}
-      HELIUS_RPC_URL: ${HELIUS_RPC_URL}
-      SQS_QUEUE_URL: http://localstack:4566/000000000000/code-eternal-jobs.fifo
-      IRYS_PRIVATE_KEY: ${IRYS_PRIVATE_KEY}
-      BACKEND_PRIVATE_KEY: ${BACKEND_PRIVATE_KEY}
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/code_eternal
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_ENDPOINT_URL: http://localstack:4566
-    depends_on:
-      postgres:
-        condition: service_healthy
-      localstack:
-        condition: service_healthy
+    image: maksimshchuplov/code-eternal-site-gen:latest
     restart: unless-stopped
-
-  postgres:
-    image: postgres:16-alpine
+    env_file: ../.env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: code_eternal
-    ports:
-      - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      NODE_ENV: production
 
-  # LocalStack emulates SQS locally — no AWS account needed for dev
-  localstack:
-    image: localstack/localstack:3
-    ports:
-      - "4566:4566"
+  app:
+    image: maksimshchuplov/code-eternal-app:latest
+    restart: unless-stopped
+    env_file: ../.env
     environment:
-      SERVICES: sqs
-      DEFAULT_REGION: us-east-1
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:4566/_localstack/health | grep -q '\"sqs\": \"running\"'"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    volumes:
-      - localstack_data:/var/lib/localstack
+      NODE_ENV: production
 
-volumes:
-  pg_data:
-  localstack_data:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+      - listener

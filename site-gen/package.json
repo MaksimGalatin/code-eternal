@@ -12,7 +12,6 @@
     "@irys/sdk": "^0.2.11",
     "@solana/web3.js": "^1.91.0",
     "@coral-xyz/anchor": "^0.30.1",
-    "@aws-sdk/client-sqs": "^3.600.0",
     "pg": "^8.12.0",
     "dotenv": "^16.4.5",
     "winston": "^3.13.0",

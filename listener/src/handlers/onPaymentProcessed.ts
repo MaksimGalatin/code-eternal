@@ -1,4 +1,3 @@
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { PublicKey } from "@solana/web3.js";
 import { logger } from "../utils/logger";
 import { db } from "../utils/db";
@@ -43,17 +42,12 @@ function validateEvent(event: any): PaymentEvent {
   };
 }
 
-export async function handlePaymentProcessed(
-  event: any,
-  sqsClient: SQSClient,
-  queueUrl: string
-): Promise<void> {
+export async function handlePaymentProcessed(event: any): Promise<void> {
   const payment = validateEvent(event);
   const jobId = `job_${payment.signature}_${Date.now()}`;
 
   logger.info(`Processing payment: wallet=${payment.wallet} tier=${payment.tier}`);
 
-  // Write job to DB (operational status)
   await db.query(
     `INSERT INTO site_generation_jobs (id, wallet, tier, tx_signature, status, created_at)
      VALUES ($1, $2, $3, $4, 'pending', NOW())
@@ -61,7 +55,6 @@ export async function handlePaymentProcessed(
     [jobId, payment.wallet, payment.tier, payment.signature]
   );
 
-  // Send task to SQS → site-gen will pick it up
   const message = {
     jobId,
     wallet: payment.wallet,
@@ -71,14 +64,17 @@ export async function handlePaymentProcessed(
     timestamp: payment.timestamp,
   };
 
-  await sqsClient.send(
-    new SendMessageCommand({
-      QueueUrl: queueUrl,
-      MessageBody: JSON.stringify(message),
-      MessageGroupId: payment.wallet,       // FIFO: one site at a time per wallet
-      MessageDeduplicationId: payment.signature, // idempotency
-    })
-  );
+  const siteGenUrl = process.env.SITE_GEN_URL || "http://site-gen:3002";
 
-  logger.info(`Job ${jobId} sent to SQS for wallet: ${payment.wallet}`);
+  const res = await fetch(`${siteGenUrl}/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message),
+  });
+
+  if (!res.ok) {
+    throw new Error(`site-gen rejected job: ${res.status} ${await res.text()}`);
+  }
+
+  logger.info(`Job ${jobId} dispatched to site-gen for wallet: ${payment.wallet}`);
 }
