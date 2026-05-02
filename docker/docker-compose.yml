@@ -1,6 +1,6 @@
 services:
   listener:
-    image: maksimshchuplov/code-eternal-listener:latest
+    image: maxshchuplov/code-eternal-listener:latest
     restart: unless-stopped
     env_file: ../.env
     environment:
@@ -10,14 +10,14 @@ services:
       - site-gen
 
   site-gen:
-    image: maksimshchuplov/code-eternal-site-gen:latest
+    image: maxshchuplov/code-eternal-site-gen:latest
     restart: unless-stopped
     env_file: ../.env
     environment:
       NODE_ENV: production
 
   app:
-    image: maksimshchuplov/code-eternal-app:latest
+    image: maxshchuplov/code-eternal-app:latest
     restart: unless-stopped
     env_file: ../.env
     environment:
