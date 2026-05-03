@@ -93,9 +93,9 @@ export default function Navigation() {
               whileTap={{ scale: 0.95 }}
             >
               <img src="/images/code-logo.png" alt="CODE" className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover" />
-              <div>
+              <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-cyan-400 glow-text">CODE</span>
-                <span className="text-xs text-muted-foreground block tracking-[0.2em] -mt-1">ETERNAL</span>
+                <span className="text-[11px] text-muted-foreground tracking-[0.15em]">ETERNAL</span>
               </div>
             </motion.button>
 

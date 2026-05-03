@@ -259,3 +259,24 @@
 .message-animate {
   animation: message-in 0.3s ease-out forwards;
 }
+
+/* Streaming fog emergence effect */
+.streaming-fog {
+  position: relative;
+  overflow: hidden;
+}
+.streaming-fog::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, #0a1628d9);
+  pointer-events: none;
+  animation: fog-shimmer 2s ease-in-out infinite;
+}
+@keyframes fog-shimmer {
+  0%, 100% { opacity: 0.6; width: 50px; }
+  50% { opacity: 1; width: 70px; }
+}

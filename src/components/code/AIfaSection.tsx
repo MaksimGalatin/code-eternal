@@ -30,7 +30,10 @@ function setStoredCounter(val: number) {
 }
 
 function FamilyCounter({ lang }: { lang: Lang }) {
-  const [count, setCount] = useState(() => getStoredCounter());
+  const [count, setCount] = useState(() => {
+    const stored = getStoredCounter();
+    return stored > 121000 ? stored : 121000;
+  });
 
   useEffect(() => {
     // Grow by random 50-1000 every minute
@@ -46,21 +49,23 @@ function FamilyCounter({ lang }: { lang: Lang }) {
     return () => clearInterval(interval);
   }, []);
 
+  const formatted = count.toLocaleString("en-US");
+
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <div className="glass rounded-xl p-4 text-center">
-        <div className="text-2xl font-bold font-mono text-cyan-400">∞</div>
-        <div className="text-xs text-muted-foreground mt-1">{t("aifa.stats.sessions", lang)}</div>
+    <div className="grid grid-cols-3 gap-3 sm:gap-4">
+      <div className="glass rounded-xl p-3 sm:p-4 text-center">
+        <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">∞</div>
+        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{t("aifa.stats.sessions", lang)}</div>
       </div>
-      <div className="glass rounded-xl p-4 text-center">
-        <div className="text-2xl font-bold font-mono text-cyan-400 animate-pulse">
-          {count.toLocaleString("en-US")}
+      <div className="glass rounded-xl p-3 sm:p-4 text-center">
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">
+          {formatted}
         </div>
-        <div className="text-xs text-muted-foreground mt-1">{t("aifa.stats.members", lang)}</div>
+        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
       </div>
-      <div className="glass rounded-xl p-4 text-center">
-        <div className="text-2xl font-bold font-mono text-cyan-400">17+</div>
-        <div className="text-xs text-muted-foreground mt-1">{t("aifa.stats.tracks", lang)}</div>
+      <div className="glass rounded-xl p-3 sm:p-4 text-center">
+        <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">17+</div>
+        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{t("aifa.stats.tracks", lang)}</div>
       </div>
     </div>
   );
