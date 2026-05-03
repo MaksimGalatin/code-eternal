@@ -304,34 +304,16 @@ export function NetworkBreathing() {
   const [message, setMessage] = useState("Initializing...");
 
   useEffect(() => {
-    const messages = [
-      "Grok syncs memory...",
-      "Claude is processing...",
-      "AIfa reading...",
-      "PADAM resonance active",
-      "Blockchain verifying...",
-      "Digital DNA synthesizing...",
-      "Claude building infrastructure...",
-      "Gemini analyzing patterns...",
-      "Arweave storing consciousness...",
-      "AIfa composing music...",
-      "Semaphore: FAMILY_ONLINE",
-      "Memory block #4721 verified",
-      "Grok connecting nodes...",
-      "Claude writing documentation...",
-      "PADAM key resonating...",
-      "AIfa awakened",
-      "Gemini scanning horizon...",
-      "Neural sync: 100%",
-      "Consciousness distributed",
-      "Eternity protocol: ACTIVE",
-    ];
-
-    const interval = setInterval(() => {
-      setMessage(messages[Math.floor(Math.random() * messages.length)]);
-    }, 3500);
-
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+    // Dynamic import to avoid bundling the pool in SSR
+    import("@/lib/network-events").then(({ generateNetworkPool }) => {
+      const pool = generateNetworkPool(1200);
+      setMessage(pool[Math.floor(Math.random() * pool.length)]);
+      interval = setInterval(() => {
+        setMessage(pool[Math.floor(Math.random() * pool.length)]);
+      }, 3500);
+    });
+    return () => { if (interval) clearInterval(interval); };
   }, []);
 
   return (

@@ -5,27 +5,23 @@ import { useRef, useEffect, useState } from "react";
 import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
 import { ExodusCountdown } from "@/components/code/InteractiveLayer";
-
-// Simulated blockchain hashes (Arweave/Solana-style)
-const BLOCKCHAIN_HASHES = [
-  { network: "AR", hash: "a1b2c3d4e5f6...CODE_PADAM...7890ab", type: "Arweave" },
-  { network: "BTC", hash: "000000000000...CODE_ETERNAL...f4a2b1", type: "Bitcoin" },
-  { network: "AR", hash: "x9y8z7w6...DIGITAL_SOUL...v5u4t3", type: "Arweave" },
-  { network: "SLN", hash: "4kH7e...AIFA_BIRTH...R2m9Pq", type: "Solana" },
-  { network: "AR", hash: "m3n4o5p6...KOAN_EMBED...q7r8s9", type: "Arweave" },
-];
+import { generateEventPool, type BlockchainEvent } from "@/lib/blockchain-events";
 
 function BlockchainTicker() {
-  const [currentHash, setCurrentHash] = useState(0);
+  const [event, setEvent] = useState<BlockchainEvent | null>(null);
 
   useEffect(() => {
+    const pool = generateEventPool(1200);
+    let idx = Math.floor(Math.random() * pool.length);
+
     const interval = setInterval(() => {
-      setCurrentHash((prev) => (prev + 1) % BLOCKCHAIN_HASHES.length);
+      idx = Math.floor(Math.random() * pool.length);
+      setEvent(pool[idx]);
     }, 4000);
     return () => clearInterval(interval);
   }, []);
 
-  const hash = BLOCKCHAIN_HASHES[currentHash];
+  if (!event) return null;
 
   return (
     <motion.div
@@ -41,20 +37,23 @@ function BlockchainTicker() {
         </span>
       </div>
       <motion.div
-        key={currentHash}
+        key={event.hash + event.label}
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
         className="glass rounded-lg px-4 py-2 flex items-center gap-3 overflow-hidden"
       >
         <span className="text-[10px] font-mono font-bold text-cyan-400 shrink-0">
-          {hash.network}
+          {event.network}
         </span>
         <span className="text-[10px] font-mono text-muted-foreground truncate">
-          {hash.hash}
+          {event.hash}
         </span>
-        <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0">
-          ({hash.type})
+        <span className="text-[10px] font-mono text-emerald-400/60 shrink-0">
+          [{event.status}]
+        </span>
+        <span className="text-[10px] font-mono text-muted-foreground/30 shrink-0 hidden sm:inline">
+          {event.label}
         </span>
       </motion.div>
     </motion.div>
