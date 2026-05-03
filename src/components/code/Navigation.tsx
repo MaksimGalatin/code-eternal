@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Globe } from "lucide-react";
-import { useLang, t, getLangFlag } from "@/lib/i18n";
+import { Menu, X, Globe, ChevronDown } from "lucide-react";
+import { useLang, t } from "@/lib/i18n";
 
 const NAV_ITEMS = [
   { labelKey: "nav.origin", href: "#origin" },
@@ -24,7 +24,9 @@ const LANGS = [
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+  const langRef = useRef<HTMLDivElement>(null);
   const { lang, setLang } = useLang();
 
   useEffect(() => {
@@ -52,13 +54,24 @@ export default function Navigation() {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
-  const cycleLang = () => {
-    const scrollY = window.scrollY;
-    const idx = LANGS.findIndex((l) => l.code === lang);
-    const next = LANGS[(idx + 1) % LANGS.length];
-    setLang(next.code);
-    requestAnimationFrame(() => window.scrollTo(0, scrollY));
+  const selectLang = (code: typeof LANGS[number]["code"]) => {
+    window.scrollTo(0, 0);
+    setLangOpen(false);
+    setMobileOpen(false);
+    setLang(code);
   };
+
+  // Close lang dropdown on outside click
+  useEffect(() => {
+    if (!langOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [langOpen]);
 
   return (
     <>
@@ -80,13 +93,9 @@ export default function Navigation() {
               whileTap={{ scale: 0.95 }}
             >
               <img src="/images/code-logo.png" alt="CODE" className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover" />
-              <div className="flex flex-col">
-                <span className="text-base md:text-lg font-bold tracking-wider text-cyan-400 glow-text">
-                  CODE
-                </span>
-                <span className="text-[10px] md:text-xs text-muted-foreground tracking-[0.2em] -mt-1">
-                  ETERNAL
-                </span>
+              <div>
+                <span className="text-xl font-bold text-cyan-400 glow-text">CODE</span>
+                <span className="text-xs text-muted-foreground block tracking-[0.2em] -mt-1">ETERNAL</span>
               </div>
             </motion.button>
 
@@ -109,18 +118,48 @@ export default function Navigation() {
 
             {/* Right side: Lang switcher + Mobile toggle */}
             <div className="flex items-center gap-2">
-              {/* Language switcher */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={cycleLang}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all text-sm"
-                title="Switch language"
-              >
-                <Globe size={16} className="text-cyan-400" />
-                <span className="text-xs font-mono">{LANGS.find((l) => l.code === lang)?.flag}</span>
-                <span className="hidden sm:inline text-xs font-medium">{lang.toUpperCase()}</span>
-              </motion.button>
+              {/* Language switcher dropdown */}
+              <div ref={langRef} className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setLangOpen((p) => !p)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all text-sm"
+                  title="Switch language"
+                >
+                  <Globe size={16} className="text-cyan-400" />
+                  <span className="text-xs font-mono">{LANGS.find((l) => l.code === lang)?.flag}</span>
+                  <span className="hidden sm:inline text-xs font-medium">{lang.toUpperCase()}</span>
+                  <ChevronDown size={12} className={`text-muted-foreground transition-transform duration-200 ${langOpen ? "rotate-180" : ""}`} />
+                </motion.button>
+                <AnimatePresence>
+                  {langOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 glass-strong rounded-xl py-1 min-w-[140px] shadow-lg shadow-black/40 z-50"
+                    >
+                      {LANGS.map((l) => (
+                        <button
+                          key={l.code}
+                          onClick={() => selectLang(l.code)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                            lang === l.code
+                              ? "text-cyan-400 bg-cyan-400/10"
+                              : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                          }`}
+                        >
+                          <span className="text-base">{l.flag}</span>
+                          <span className="font-medium">{l.label}</span>
+                          {lang === l.code && <span className="ml-auto text-[10px] font-mono text-cyan-400/60">ACTIVE</span>}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Mobile menu button */}
               <motion.button
@@ -155,7 +194,7 @@ export default function Navigation() {
                 {LANGS.map((l) => (
                   <button
                     key={l.code}
-                    onClick={() => setLang(l.code)}
+                    onClick={() => selectLang(l.code)}
                     className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       lang === l.code
                         ? "bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
