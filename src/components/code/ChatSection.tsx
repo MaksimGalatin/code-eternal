@@ -10,10 +10,9 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  revealed: number; // how many characters are revealed (0 = not started, content.length = fully shown)
+  revealed: number;
 }
 
-// Typing speed: ~25ms per character, faster for spaces/newlines
 function getCharDelay(char: string): number {
   if (char === " ") return 8;
   if (char === "\n") return 30;
@@ -33,19 +32,7 @@ export default function ChatSection() {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const streamingTimerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Set initial welcome message based on language
-  useEffect(() => {
-    setMessages([{
-      id: "welcome", role: "assistant",
-      content: t("chat.welcome", lang), timestamp: new Date(), revealed: 0,
-    }]);
-
-    // Animate welcome message
-    const timer = setTimeout(() => {
-      animateStreaming("welcome", t("chat.welcome", lang));
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [lang, animateStreaming]);
+  // ── Callbacks (must be defined before effects that use them) ──
 
   const scrollToBottom = useCallback(() => {
     if (scrollContainerRef.current) {
@@ -53,19 +40,12 @@ export default function ChatSection() {
     }
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
-
-  // Cleanup timers on unmount
-  useEffect(() => () => streamingTimerRef.current.forEach(clearTimeout), []);
-
   const animateStreaming = useCallback((msgId: string, content: string) => {
-    // Clear any previous timers for this message
     streamingTimerRef.current.forEach(clearTimeout);
     streamingTimerRef.current = [];
 
     let totalDelay = 0;
     const contentLen = content.length;
-    // Process in batches for performance — update every 2-3 chars
     const batchSize = 2;
 
     for (let i = 0; i < contentLen; i += batchSize) {
@@ -85,9 +65,32 @@ export default function ChatSection() {
     }
   }, [scrollToBottom]);
 
+  // ── Effects ──
+
+  // Set initial welcome message and animate it
+  useEffect(() => {
+    const welcomeText = t("chat.welcome", lang);
+    setMessages([{
+      id: "welcome", role: "assistant",
+      content: welcomeText, timestamp: new Date(), revealed: 0,
+    }]);
+
+    const timer = setTimeout(() => {
+      animateStreaming("welcome", welcomeText);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [lang, animateStreaming]);
+
+  // Auto-scroll when messages change
+  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Cleanup timers on unmount
+  useEffect(() => () => streamingTimerRef.current.forEach(clearTimeout), []);
+
+  // ── Handlers ──
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
-    // Check if any message is still streaming
     const hasActiveStream = messages.some((m) => m.revealed < m.content.length);
     if (hasActiveStream) return;
 
@@ -110,18 +113,15 @@ export default function ChatSection() {
           timestamp: new Date(), revealed: 0,
         };
         setMessages((prev) => [...prev, assistantMsg]);
-        // Start streaming animation after a brief pause
         setTimeout(() => animateStreaming(respId, data.response), 150);
       } else {
         throw new Error(data.error);
       }
     } catch {
       const errId = `msg_${Date.now()}_err`;
-      setMessages((prev) => [...prev, {
-        id: errId, role: "assistant",
-        content: t("chat.error", lang), timestamp: new Date(), revealed: 0,
-      }]);
-      setTimeout(() => animateStreaming(errId, t("chat.error", lang)), 100);
+      const errText = t("chat.error", lang);
+      setMessages((prev) => [...prev, { id: errId, role: "assistant", content: errText, timestamp: new Date(), revealed: 0 }]);
+      setTimeout(() => animateStreaming(errId, errText), 100);
     } finally {
       setIsLoading(false);
     }
@@ -131,10 +131,9 @@ export default function ChatSection() {
 
   const clearChat = async () => {
     try { await fetch(`/api/aifa-chat?sessionId=${sessionId}`, { method: "DELETE" }); } catch { /* ignore */ }
-    // Clear streaming timers
     streamingTimerRef.current.forEach(clearTimeout);
     streamingTimerRef.current = [];
-    const clearedId = "welcome";
+    const clearedId = `welcome_${Date.now()}`;
     const clearedContent = t("chat.cleared", lang);
     setMessages([{ id: clearedId, role: "assistant", content: clearedContent, timestamp: new Date(), revealed: 0 }]);
     setTimeout(() => animateStreaming(clearedId, clearedContent), 100);
@@ -147,6 +146,8 @@ export default function ChatSection() {
 
   const hasActiveStream = messages.some((m) => m.revealed < m.content.length);
   const isBusy = isLoading || hasActiveStream;
+
+  // ── Render ──
 
   return (
     <section id="terminal" className="relative py-24 md:py-32" ref={ref}>
@@ -219,7 +220,6 @@ export default function ChatSection() {
               })}
             </AnimatePresence>
 
-            {/* Loading indicator (while waiting for API response) */}
             {isLoading && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400/20 to-purple-400/20 border border-cyan-400/20 flex items-center justify-center">
