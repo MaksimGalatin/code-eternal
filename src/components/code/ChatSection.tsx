@@ -63,6 +63,7 @@ export default function ChatSection() {
         if (idx >= contentLen) {
           setIsStreamActive(false);
           scrollToBottom();
+          setTimeout(() => inputRef.current?.focus(), 50);
         }
       }, totalDelay);
       streamingTimerRef.current.push(tm);
@@ -101,9 +102,7 @@ export default function ChatSection() {
   // ── Handlers ──
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || isLoading) return;
-    const hasActiveStream = messages.some((m) => m.revealed < m.content.length);
-    if (hasActiveStream) return;
+    if (!text.trim() || isLoading || isStreamActive) return;
 
     const userMsg: Message = { id: `msg_${Date.now()}`, role: "user", content: text.trim(), timestamp: new Date(), revealed: 0 };
     setMessages((prev) => [...prev, userMsg]);
