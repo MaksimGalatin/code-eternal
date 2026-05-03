@@ -150,8 +150,8 @@ export default function ChatSection() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="border-t border-border p-4 md:p-6">
-            <div className="flex gap-3">
+          <form onSubmit={handleSubmit} className="border-t border-border p-3 md:p-4">
+            <div className="flex items-center gap-3">
               <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
                 placeholder={t("chat.placeholder", lang)} disabled={isLoading}
                 className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />

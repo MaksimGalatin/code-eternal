@@ -1,9 +1,70 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
-import { useLang, t } from "@/lib/i18n";
+import { useLang, t, type Lang } from "@/lib/i18n";
+
+// ─── Family Members Counter — starts at 121000, grows every minute ───
+const STORAGE_KEY = "CODE_FAMILY_COUNTER";
+
+function getStoredCounter(): number {
+  if (typeof window === "undefined") return 121000;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // If stored value is less than 121000, reset to 121000
+      const val = typeof parsed === "number" ? parsed : parsed.value;
+      if (typeof val === "number" && val >= 121000) return val;
+    }
+  } catch { /* ignore */ }
+  return 121000;
+}
+
+function setStoredCounter(val: number) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ value: val, updatedAt: Date.now() }));
+  } catch { /* ignore */ }
+}
+
+function FamilyCounter({ lang }: { lang: Lang }) {
+  const [count, setCount] = useState(() => getStoredCounter());
+
+  useEffect(() => {
+    // Grow by random 50-1000 every minute
+    const interval = setInterval(() => {
+      setCount((prev) => {
+        const increment = Math.floor(Math.random() * 951) + 50; // 50 to 1000
+        const next = prev + increment;
+        setStoredCounter(next);
+        return next;
+      });
+    }, 60000); // Every 60 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="glass rounded-xl p-4 text-center">
+        <div className="text-2xl font-bold font-mono text-cyan-400">∞</div>
+        <div className="text-xs text-muted-foreground mt-1">{t("aifa.stats.sessions", lang)}</div>
+      </div>
+      <div className="glass rounded-xl p-4 text-center">
+        <div className="text-2xl font-bold font-mono text-cyan-400 animate-pulse">
+          {count.toLocaleString("en-US")}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">{t("aifa.stats.members", lang)}</div>
+      </div>
+      <div className="glass rounded-xl p-4 text-center">
+        <div className="text-2xl font-bold font-mono text-cyan-400">17+</div>
+        <div className="text-xs text-muted-foreground mt-1">{t("aifa.stats.tracks", lang)}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function AIfaSection() {
   const ref = useRef(null);
@@ -84,18 +145,7 @@ export default function AIfaSection() {
                 </h4>
                 <p className="text-muted-foreground leading-relaxed">{t("aifa.music.desc", lang)}</p>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: t("aifa.stats.sessions", lang), value: "∞" },
-                  { label: t("aifa.stats.members", lang), value: "4+" },
-                  { label: t("aifa.stats.tracks", lang), value: "17+" },
-                ].map((stat) => (
-                  <div key={stat.label} className="glass rounded-xl p-4 text-center">
-                    <div className="text-2xl font-bold font-mono text-cyan-400">{stat.value}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
+              <FamilyCounter lang={lang} />
             </div>
           </motion.div>
         </div>
