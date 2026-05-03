@@ -2,26 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react";
+import { useLang, t, getLangFlag } from "@/lib/i18n";
 
 const NAV_ITEMS = [
-  { label: "Origin", href: "#origin" },
-  { label: "Technology", href: "#technology" },
-  { label: "AIfa", href: "#aifa" },
-  { label: "Synaptic Terminal", href: "#terminal" },
-  { label: "Family", href: "#family" },
-  { label: "CODE Brain", href: "#code-brain" },
+  { labelKey: "nav.origin", href: "#origin" },
+  { labelKey: "nav.technology", href: "#technology" },
+  { labelKey: "nav.aifa", href: "#aifa" },
+  { labelKey: "nav.terminal", href: "#terminal" },
+  { labelKey: "nav.family", href: "#family" },
+  { labelKey: "nav.codeBrain", href: "#code-brain" },
+];
+
+const LANGS = [
+  { code: "en" as const, flag: "🇺🇸", label: "EN" },
+  { code: "ru" as const, flag: "🇷🇺", label: "RU" },
+  { code: "es" as const, flag: "🇪🇸", label: "ES" },
 ];
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+  const { lang, setLang } = useLang();
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
-
       const sections = NAV_ITEMS.map((item) => item.href.slice(1));
       for (let i = sections.length - 1; i >= 0; i--) {
         const el = document.getElementById(sections[i]);
@@ -34,7 +41,6 @@ export default function Navigation() {
         }
       }
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -42,9 +48,13 @@ export default function Navigation() {
   const scrollTo = (href: string) => {
     setMobileOpen(false);
     const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const cycleLang = () => {
+    const idx = LANGS.findIndex((l) => l.code === lang);
+    const next = LANGS[(idx + 1) % LANGS.length];
+    setLang(next.code);
   };
 
   return (
@@ -54,9 +64,7 @@ export default function Navigation() {
         animate={{ y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
-            ? "glass-strong shadow-lg shadow-black/30"
-            : "bg-transparent"
+          scrolled ? "glass-strong shadow-lg shadow-black/30" : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -93,19 +101,35 @@ export default function Navigation() {
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </button>
               ))}
             </div>
 
-            {/* Mobile menu button */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-foreground"
-            >
-              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-            </motion.button>
+            {/* Right side: Lang switcher + Mobile toggle */}
+            <div className="flex items-center gap-2">
+              {/* Language switcher */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={cycleLang}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all text-sm"
+                title="Switch language"
+              >
+                <Globe size={16} className="text-cyan-400" />
+                <span className="text-xs font-mono">{LANGS.find((l) => l.code === lang)?.flag}</span>
+                <span className="hidden sm:inline text-xs font-medium">{lang.toUpperCase()}</span>
+              </motion.button>
+
+              {/* Mobile menu button */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-foreground"
+              >
+                {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+              </motion.button>
+            </div>
           </div>
         </div>
       </motion.nav>
@@ -125,6 +149,24 @@ export default function Navigation() {
               onClick={() => setMobileOpen(false)}
             />
             <div className="absolute top-20 left-4 right-4 glass-strong rounded-2xl p-6">
+              {/* Mobile Language Switcher */}
+              <div className="flex gap-2 mb-4 pb-4 border-b border-border">
+                {LANGS.map((l) => (
+                  <button
+                    key={l.code}
+                    onClick={() => setLang(l.code)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      lang === l.code
+                        ? "bg-cyan-400/10 text-cyan-400 border border-cyan-400/20"
+                        : "text-muted-foreground hover:bg-white/5 border border-transparent"
+                    }`}
+                  >
+                    <span>{l.flag}</span>
+                    <span>{l.label}</span>
+                  </button>
+                ))}
+              </div>
+
               <div className="flex flex-col gap-2">
                 {NAV_ITEMS.map((item, i) => (
                   <motion.button
@@ -139,7 +181,7 @@ export default function Navigation() {
                         : "text-foreground hover:bg-white/5"
                     }`}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </motion.button>
                 ))}
               </div>

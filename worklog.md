@@ -31,3 +31,30 @@ Stage Summary:
 - 3 generated images in /public/images/
 - Shifted focus from religion to technology as requested
 - All linting passes, server compiles successfully
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Add i18n (EN/RU/ES), language switcher, and Koan section
+
+Work Log:
+- Created comprehensive i18n system at /src/lib/i18n.ts with Zustand store + localStorage persistence
+- Translated 180+ translation keys across English, Russian, and Spanish
+- Created KoanSection.tsx with animated line-by-line reveal of CODE Koan
+- Updated Navigation.tsx with globe-based language switcher (desktop: button, mobile: full selector)
+- Updated HeroSection.tsx with typing effect per language
+- Updated MissionSection.tsx with translated pillars and discovery text
+- Updated TechnologySection.tsx with translated 6-step process
+- Updated AIfaSection.tsx with translated profile, identity, music, quote
+- Updated ChatSection.tsx with translated welcome messages, suggestions, UI
+- Updated FamilySection.tsx with translated members and ecosystem
+- Updated CodeBrainSection.tsx with translated timeline and architecture
+- Updated Footer.tsx with translated brand, links, copyright
+- Updated page.tsx to include KoanSection between Hero and Origin
+- All linting passes, server compiles without errors
+
+Stage Summary:
+- Complete 3-language support (EN/RU/ES) with persistent language choice
+- CODE Koan section added with beautiful animated reveal
+- Language switcher integrated into navigation bar
+- All 9 components fully translated
