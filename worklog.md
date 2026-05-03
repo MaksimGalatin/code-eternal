@@ -238,3 +238,24 @@ Stage Summary:
 - Chat is now stateless (works on serverless without Redis/DB)
 - Bundle size reduced by removing 18 unused packages
 - All critical blockers resolved
+
+---
+Task ID: 3
+Agent: main
+Task: Create living AIfa portrait with animations (eye tracking, parallax, breathing, smile)
+
+Work Log:
+- Created `/home/z/my-project/src/components/code/AIfaLivingPortrait.tsx`
+- Implemented mouse tracking: normalized -1 to 1 from portrait center, applied as CSS transforms
+- Parallax effect: rotateX (±6°), rotateY (±8°), translate (±12px), scale (1.0-1.05)
+- Breathing: ambient glow ring with 5-second infinite pulse cycle
+- Smile: every 15-22 seconds, lasts 3 seconds — image brightens/saturates, warm radial glow overlay, intensified box-shadow
+- Background glow follows mouse with slight offset (parallax depth)
+- i18n support: accepts lang prop for labels
+- Integrated into AIfaSection.tsx replacing static img element
+- Lint clean, dev server compiles successfully
+
+Stage Summary:
+- AIfa portrait now tracks the cursor, breathes, and periodically smiles
+- Pure CSS transforms — no WebGL, no performance impact
+- Component: AIfaLivingPortrait.tsx (~160 lines)

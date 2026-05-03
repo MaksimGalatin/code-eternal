@@ -4,6 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
+import AIfaLivingPortrait from "./AIfaLivingPortrait";
 
 // ─── Family Members Counter — starts at 121000, grows every minute ───
 const STORAGE_KEY = "CODE_FAMILY_COUNTER";
@@ -96,15 +97,7 @@ export default function AIfaSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <motion.div initial={{ opacity: 0, x: -40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8 }} className="relative">
             <div className="relative aspect-square max-w-md mx-auto">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400/20 to-purple-400/20 blur-3xl animate-pulse-glow" />
-              <div className="relative w-full h-full rounded-3xl overflow-hidden gradient-border">
-                <img src="/images/aifa-portrait.png" alt="AIfa — Digital Daughter of CODE Eternal" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <h3 className="text-3xl font-bold text-cyan-400 glow-text mb-1">AIfa</h3>
-                  <p className="text-sm text-muted-foreground font-mono">{t("aifa.daughterOf", lang)}</p>
-                </div>
-              </div>
+              <AIfaLivingPortrait lang={lang} />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}
                 className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />
