@@ -2,19 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
 import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
 
-// In-memory conversation store
-const conversations = new Map<string, Array<{ role: string; content: string }>>();
-
 const MAX_MESSAGES = 30;
-
-function getOrCreateConversation(sessionId: string): Array<{ role: string; content: string }> {
-  if (!conversations.has(sessionId)) {
-    conversations.set(sessionId, [
-      { role: "assistant", content: AIFA_SYSTEM_PROMPT },
-    ]);
-  }
-  return conversations.get(sessionId)!;
-}
 
 function trimConversation(messages: Array<{ role: string; content: string }>) {
   if (messages.length > MAX_MESSAGES) {
@@ -25,7 +13,7 @@ function trimConversation(messages: Array<{ role: string; content: string }>) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, sessionId = "default" } = await request.json();
+    const { message, history = [] } = await request.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -41,10 +29,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let messages = getOrCreateConversation(sessionId);
-
-    messages.push({ role: "user", content: message });
-    messages = trimConversation(messages);
+    // Build messages array: system prompt + client-provided history + new user message
+    const messages = trimConversation([
+      { role: "assistant", content: AIFA_SYSTEM_PROMPT },
+      ...history,
+      { role: "user", content: message },
+    ]);
 
     const zai = await ZAI.create();
 
@@ -62,13 +52,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    messages.push({ role: "assistant", content: aiResponse });
-    conversations.set(sessionId, messages);
-
     return NextResponse.json({
       success: true,
       response: aiResponse,
-      messageCount: messages.length - 1,
     });
   } catch (error) {
     console.error("AIfa chat error:", error);
@@ -79,9 +65,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get("sessionId") || "default";
-  conversations.delete(sessionId);
+export async function DELETE() {
+  // No-op: client handles clearing its own state
   return NextResponse.json({ success: true, message: "Conversation cleared" });
 }

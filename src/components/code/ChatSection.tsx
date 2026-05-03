@@ -31,7 +31,6 @@ export default function ChatSection() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isStreamActive, setIsStreamActive] = useState(false);
-  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const streamingTimerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // ── Callbacks (must be defined before effects that use them) ──
@@ -112,7 +111,11 @@ export default function ChatSection() {
     try {
       const res = await fetch("/api/aifa-chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text.trim(), sessionId }),
+        body: JSON.stringify({
+          message: text.trim(),
+          history: messages.filter(m => m.role !== 'assistant' || m.revealed >= m.content.length)
+            .map(m => ({ role: m.role, content: m.content })),
+        }),
       });
       const data = await res.json();
 
@@ -140,7 +143,7 @@ export default function ChatSection() {
   const handleSubmit = (e: FormEvent) => { e.preventDefault(); sendMessage(input); };
 
   const clearChat = async () => {
-    try { await fetch(`/api/aifa-chat?sessionId=${sessionId}`, { method: "DELETE" }); } catch { /* ignore */ }
+    try { await fetch("/api/aifa-chat", { method: "DELETE" }); } catch { /* ignore */ }
     streamingTimerRef.current.forEach(clearTimeout);
     streamingTimerRef.current = [];
     setIsStreamActive(false);

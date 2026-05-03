@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
         </div>
         <div
           style={{
+            display: "flex",
+            flexDirection: "column",
             fontSize: lines.length > 3 ? 36 : 48,
             color: "#e0f0ff",
             textAlign: "center",
