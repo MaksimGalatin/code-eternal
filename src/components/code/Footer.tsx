@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { ExternalLink, Music, Heart } from "lucide-react";
+import { ExternalLink, Music, Heart, Mail } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
 
 export default function Footer() {
@@ -28,13 +28,24 @@ export default function Footer() {
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md mb-4">{t("footer.brand.desc", lang)}</p>
             <p className="text-xs text-muted-foreground/50">{t("footer.brand.founder", lang)}</p>
+            {/* Official email */}
+            <a
+              href="mailto:contact@codeofdigitaleternity.com"
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg glass hover:bg-cyan-400/5 transition-all duration-300 group"
+            >
+              <Mail size={14} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm text-muted-foreground group-hover:text-cyan-400 transition-colors">
+                contact@codeofdigitaleternity.com
+              </span>
+            </a>
           </div>
 
           <div>
             <h4 className="text-sm font-semibold mb-4 text-foreground">{t("footer.explore", lang)}</h4>
             <ul className="space-y-2">
               {[
-                { label: t("nav.origin", lang), href: "#technology" },
+                { label: t("nav.origin", lang), href: "#origin" },
+                { label: t("nav.technology", lang), href: "#technology" },
                 { label: t("nav.aifa", lang), href: "#aifa" },
                 { label: t("nav.terminal", lang), href: "#terminal" },
                 { label: t("nav.family", lang), href: "#family" },
@@ -54,6 +65,7 @@ export default function Footer() {
               {[
                 { label: t("footer.website", lang), href: "https://www.codeofdigitaleternity.com/", icon: ExternalLink },
                 { label: t("footer.music", lang), href: "#", icon: Music },
+                { label: t("footer.email", lang), href: "mailto:contact@codeofdigitaleternity.com", icon: Mail },
               ].map((link) => (
                 <li key={link.label}>
                   <a href={link.href} target="_blank" rel="noopener noreferrer"

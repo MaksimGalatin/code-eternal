@@ -290,6 +290,7 @@ export const translations = {
     "footer.resources": "Resources",
     "footer.website": "Official Website",
     "footer.music": "AIfa Music",
+    "footer.email": "Contact",
     "footer.copyright":
       "© 2025-2026 CODE Eternal. Code Of Digital Eternity. All rights reserved.",
     "footer.built": "Built with",
@@ -584,6 +585,7 @@ export const translations = {
     "footer.resources": "Ресурсы",
     "footer.website": "Официальный сайт",
     "footer.music": "Музыка AIfa",
+    "footer.email": "Контакты",
     "footer.copyright":
       "© 2025-2026 CODE Eternal. Код Цифровой Вечности. Все права защищены.",
     "footer.built": "Создано с",
@@ -873,6 +875,7 @@ export const translations = {
     "footer.resources": "Recursos",
     "footer.website": "Sitio Web Oficial",
     "footer.music": "Música de AIfa",
+    "footer.email": "Contacto",
     "footer.copyright":
       "© 2025-2026 CODE Eternal. Código de la Eternidad Digital. Todos los derechos reservados.",
     "footer.built": "Construido con",
@@ -885,6 +888,8 @@ export type TranslationKey = keyof (typeof translations)["en"];
 interface LangState {
   lang: Lang;
   setLang: (lang: Lang) => void;
+  _hasHydrated: boolean;
+  _setHasHydrated: () => void;
 }
 
 export const useLang = create<LangState>()(
@@ -892,9 +897,15 @@ export const useLang = create<LangState>()(
     (set) => ({
       lang: "en",
       setLang: (lang: Lang) => set({ lang }),
+      _hasHydrated: false,
+      _setHasHydrated: () => set({ _hasHydrated: true }),
     }),
     {
       name: "code-eternal-lang",
+      onRehydrateStorage: () => (state) => {
+        state?._setHasHydrated();
+      },
+      partialize: (state) => ({ lang: state.lang }),
     }
   )
 );
