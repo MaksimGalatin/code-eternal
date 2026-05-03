@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl -d Ubuntu-22.04 -- bash -lc *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m *)",
+      "Bash(git push *)",
+      "Bash(git branch *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status*)",
+      "Bash(gh pr create *)",
+      "Bash(docker build *)",
+      "Bash(docker compose *)",
+      "Bash(docker push *)",
+      "Bash(terraform *)",
+      "Bash(aws ecr *)",
+      "Bash(aws ecs *)",
+      "Bash(aws sts *)",
+      "Bash(./scripts/deploy.sh *)",
+      "Bash(git fetch *)",
+      "Bash(git rebase *)"
+    ]
+  }
+}
