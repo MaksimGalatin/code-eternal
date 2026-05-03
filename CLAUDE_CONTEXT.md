@@ -327,7 +327,7 @@ Frontend (Pipeline 2.x — Days 2-3)
   ✅ Confirm login flow works end-to-end in browser (Google login → /cabinet, HTTPS)
 
 Backend + Payment (Pipeline 3.x — Days 4-7)
-  □  Pipeline 3.1: /cabinet/buy — MoonPay + smart contract call
+  ✅ Pipeline 3.1: /cabinet/buy — devnet USDC airdrop + smart contract call (register_user + process_payment)
   ✅ Pipeline 3.2: /api/users/register + /api/referrals/chain (Neon pg)
   □  Pipeline 3.3: listener → Resend email with PDF on PaymentProcessed
 
@@ -410,6 +410,30 @@ ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-
 
 ---
 
+## Devnet One-Time Setup (Mock USDC)
+
+Before the buy flow works, run this once from WSL to create the mock USDC token:
+
+```bash
+cd /mnt/c/Users/Maksim/projects/code-eternal/app
+node ../scripts/setup-devnet.js
+```
+
+This creates:
+- A new mock USDC mint (6 decimals) — payer is `~/.config/solana/id.json`
+- A dedicated mint authority keypair (separate from backend authority)
+- Vault ATA (PDA authority, `allowOwnerOffCurve = true`)
+- Ecosystem fund ATA
+
+Output: 3 env vars to add to `secrets/credentials.env`:
+- `NEXT_PUBLIC_USDC_MINT=<mint>`
+- `MOCK_USDC_MINT=<mint>` (server-side)
+- `MOCK_USDC_MINT_AUTHORITY=<base64 keypair>`
+
+Then rebuild Docker image with `--build-arg NEXT_PUBLIC_USDC_MINT=<mint>`.
+
+---
+
 ## Docker Images
 
 All images are ARM64 (linux/arm64), built with `docker buildx` + QEMU in WSL2.
@@ -456,6 +480,9 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Next.js (app) | `NEXT_PUBLIC_PRIVY_APP_ID` | `cmoofvdt4008o0cjps5l8nvnu` — baked in at Docker build time |
 | Next.js (app) | `NEXT_PUBLIC_RPC_URL` | Helius RPC (public key OK in browser) |
 | Next.js (app) | `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
+| Next.js (app) | `NEXT_PUBLIC_USDC_MINT` | Mock USDC mint address (devnet) — baked in at Docker build time via `--build-arg` |
+| Next.js (app) | `MOCK_USDC_MINT` | Same as above, server-side only (for airdrop endpoint) |
+| Next.js (app) | `MOCK_USDC_MINT_AUTHORITY` | Base64 keypair that has mint authority over mock USDC (for devnet airdrop) |
 | Next.js (app) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
 | All | `NODE_ENV` | `production` |
 
@@ -490,7 +517,7 @@ app/src/
 │   ├── index.tsx             # Login page — "Войти в Семью" → redirects to /cabinet ✅
 │   ├── cabinet/
 │   │   ├── index.tsx         # Three tier cards $15/$100/$1000, auth guard, ref code ✅
-│   │   ├── buy.tsx           # MoonPay + smart contract call (Pipeline 3.1) □
+│   │   ├── buy.tsx           # USDC balance + airdrop + register_user + process_payment (Pipeline 3.1) ✅
 │   │   ├── create-site.tsx   # Site creation form (Pipeline 4.1) □
 │   │   └── apply-1000.tsx    # $1000 application form (Pipeline 5.3) □
 │   └── api/
