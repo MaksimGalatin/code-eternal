@@ -92,6 +92,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
+      url: `${SITE_URL}/.well-known/security.txt`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
       url: `${SITE_URL}/humans.txt`,
       lastModified: now,
       changeFrequency: "monthly",

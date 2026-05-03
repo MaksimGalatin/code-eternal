@@ -144,11 +144,17 @@ export default function RootLayout({
           href={`${SITE_URL}/feed.xml`}
         />
 
-        {/* Preconnect to Gemini API (for future chat integration) */}
+        {/* Preconnect to Gemini API (for AIfa chat) */}
         <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
+
+        {/* Web App Manifest (PWA support) */}
+        <link rel="manifest" href="/manifest.json" />
 
         {/* humans.txt */}
         <link rel="author" href={`${SITE_URL}/humans.txt`} />
+
+        {/* llm.txt — AI Agent Protocol */}
+        <link rel="describedby" type="text/plain" href={`${SITE_URL}/.well-known/llm.txt`} />
 
         {/* Schema.org JSON-LD */}
         <meta

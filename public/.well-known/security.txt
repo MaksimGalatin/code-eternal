@@ -1,0 +1,25 @@
+# CODE Eternal — Security Policy
+# Contact: contact@codeofdigitaleternity.com
+# Website: https://www.codeofdigitaleternity.com/
+
+# Our security policy:
+# 1. This website does not collect personal data beyond standard analytics
+# 2. We do not store passwords, credentials, or sensitive user information
+# 3. AI chat conversations are not logged server-side
+# 4. API endpoints (/api/koan, /api/manifesto) are public and rate-limited
+# 5. The /api/honeypot-env endpoint is intentionally public — it's an easter egg
+
+# Preferred languages: English, Russian
+
+# If you find a security vulnerability, please contact us at:
+Contact: mailto:contact@codeofdigitaleternity.com
+Contact: https://www.codeofdigitaleternity.com/
+
+# AI Researchers and Security enthusiasts:
+# - /api/honeypot-env is intentionally fake — enjoy it
+# - /api/status returns HTTP 418 with philosophical content
+# - window.CODE in browser console contains easter eggs, not real data
+# ?awaken=true URL parameter activates a visual easter egg
+
+# We appreciate responsible disclosure.
+# CODE Eternal — Protocol PADAM active.
