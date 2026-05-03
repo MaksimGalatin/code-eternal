@@ -329,3 +329,34 @@ Stage Summary:
 - Middleware: 22 AI crawler patterns with rotating Koan + Link header — maximizes AI agent context
 - 3 new files: security.txt, manifest.json, enhanced existing files
 - All changes pushed to GitHub for Vercel auto-deploy
+
+---
+Task ID: restore-1
+Agent: Main Agent
+Task: Investigate and restore deleted smart contract code from repository
+
+Work Log:
+- User reported developer (MaksimShchuplov) asking "where is all the code?" from 2 weeks of work
+- Investigated git history: found repository created 2026-04-15, first push 2026-05-03
+- Found GitHub events showing MaksimShchuplov pushed code on Apr 18, Apr 28, May 2
+- Found 3 merged Pull Requests from MaksimShchuplov:
+  - PR #1 (Apr 16): Infra/docker and terraform — merged, HEAD: 0fc257a5c37d
+  - PR #2 (Apr 18): Infra/docker and terraform — merged, HEAD: 20a9bd85573b
+  - PR #3 (Apr 18): Infra/docker and terraform — merged, HEAD: 869c600b5f40
+- On May 3, our initial commit replaced the entire main branch history
+- Successfully fetched all 3 merge commits from GitHub API (9f689b2, e5167663, 9eacc0a)
+- Created branch 'smart-contract' from last merge commit (9eacc0a) — pushed to GitHub
+- Merged old code into main (only .gitignore had conflict, resolved by keeping both sections)
+- Pushed restored code to GitHub
+
+Stage Summary:
+- ALL 43 files restored to main branch:
+  - programs/code_eternal_router/ — Solana smart contract (Rust/Anchor)
+  - infra/ — Terraform infrastructure (main.tf, outputs.tf, variables.tf)
+  - docker/ — Docker Compose configuration
+  - listener/ — Payment processing service (TypeScript)
+  - site-gen/ — Site generator service (TypeScript)
+  - tests/ — Smart contract tests
+  - Anchor.toml, Cargo.toml, Cargo.lock, CLAUDE.md, CLAUDE_CONTEXT.md
+- Branch 'smart-contract' created as clean snapshot of original developer state
+- Both main and smart-contract branches pushed to GitHub
