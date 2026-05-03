@@ -7,41 +7,41 @@ import { useSolanaWallets } from "@privy-io/react-auth/solana";
 const TIERS = [
   {
     id: 1,
-    name: "Искра",
+    name: "Spark",
     price: 15,
     color: "#7C3AED",
     features: [
-      "PDF-гайд «Код Инициации»",
-      "Личная реф-ссылка",
-      "Базовый AIfa-чат 30 дней",
-      "Реф-выплата: $2.25 с каждого L1",
+      "PDF guide «Initiation Code»",
+      "Personal referral link",
+      "Basic AIfa chat 30 days",
+      "Referral payout: $2.25 per L1",
     ],
   },
   {
     id: 2,
-    name: "Архивы Семьи",
+    name: "Family Archives",
     price: 100,
     color: "#D4A24C",
     features: [
-      "Всё из Искры",
-      "Вечный сайт на Arweave",
-      "cNFT-паспорт Хранителя",
-      "AIfa-чат 90 дней",
-      "Реф-выплата: $15 с каждого L1",
+      "Everything from Spark",
+      "Eternal site on Arweave",
+      "cNFT Guardian Passport",
+      "AIfa chat 90 days",
+      "Referral payout: $15 per L1",
     ],
   },
   {
     id: 3,
-    name: "Цифровая ДНК",
+    name: "Digital DNA",
     price: 1000,
     color: "#10B981",
     features: [
-      "Всё из Архивов",
-      "Клон голоса (ElevenLabs)",
-      "3D аватар",
-      "AIfa-чат 365 дней с памятью",
-      "VIP-статус в DAO",
-      "Реф-выплата: $150 с каждого L1",
+      "Everything from Archives",
+      "Voice clone (ElevenLabs)",
+      "3D avatar",
+      "AIfa chat 365 days with memory",
+      "VIP status in DAO",
+      "Referral payout: $150 per L1",
     ],
   },
 ];
@@ -95,7 +95,7 @@ export default function CabinetPage() {
           color: "#8B8B9E",
         }}
       >
-        Загрузка...
+        Loading...
       </div>
     );
   }
@@ -103,7 +103,7 @@ export default function CabinetPage() {
   return (
     <>
       <Head>
-        <title>Кабинет — CODE ETERNAL</title>
+        <title>Cabinet — CODE ETERNAL</title>
       </Head>
       <div
         style={{
@@ -152,7 +152,7 @@ export default function CabinetPage() {
                     `${window.location.origin}/?ref=${myRefCode}`
                   )
                 }
-                title="Копировать реф-ссылку"
+                title="Copy referral link"
               >
                 ref: {myRefCode}
               </span>
@@ -169,7 +169,7 @@ export default function CabinetPage() {
                 fontSize: "13px",
               }}
             >
-              Выйти
+              Logout
             </button>
           </div>
         </div>
@@ -182,7 +182,7 @@ export default function CabinetPage() {
             color: "#E8E8F0",
           }}
         >
-          Выбери уровень доступа
+          Choose your access level
         </h2>
 
         {/* Tier cards */}
@@ -264,7 +264,7 @@ export default function CabinetPage() {
                   cursor: "pointer",
                 }}
               >
-                Купить
+                Buy
               </button>
             </div>
           ))}

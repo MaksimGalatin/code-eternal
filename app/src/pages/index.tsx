@@ -50,7 +50,7 @@ export default function HomePage() {
               marginBottom: "8px",
             }}
           >
-            Твоя память живёт вечно
+            Your memory lives forever
           </h1>
           <p
             style={{
@@ -59,7 +59,7 @@ export default function HomePage() {
               marginBottom: "40px",
             }}
           >
-            Вечный сайт на Arweave. Proof of Soul на Solana.
+            Eternal site on Arweave. Proof of Soul on Solana.
           </p>
           <button
             onClick={login}
@@ -76,7 +76,7 @@ export default function HomePage() {
               opacity: ready ? 1 : 0.6,
             }}
           >
-            Войти в Семью
+            Enter the Family
           </button>
         </div>
       </main>

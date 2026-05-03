@@ -53,13 +53,16 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 
 ### Frontend
 - Squarespace — landing page (live)
-- React + TypeScript + Tailwind — app
-- Vercel — hosting
+- Next.js 14 + TypeScript + Tailwind — app (`app/` directory)
+- Hetzner CAX11 (ARM64) — hosting via Docker Compose + nginx
 
 ### Auth & Payments
-- Privy (privy.io) — Google/Email login + hidden Solana wallet (embedded, user never sees seed phrase)
+- Privy (privy.io) — Google login + hidden Solana wallet (embedded, user never sees seed phrase)
+  - App ID: `cmoofvdt4008o0cjps5l8nvnu`
+  - Embedded wallets disabled until HTTPS is set up (Privy requires HTTPS for embedded wallets)
+  - Allowed origin: `http://app.codeofdigitaleternity.com` (will change to https after SSL)
 - MoonPay via Privy `useFundWallet` — card → USDC on-ramp directly to embedded wallet
-- Flow: `MoonPay → USDC on wallet → frontend calls process_payment → Helius webhook → listener → SQS → site-gen → Arweave`
+- Flow: `MoonPay → USDC on wallet → frontend calls process_payment → Helius webhook → listener → HTTP → site-gen → Arweave`
 
 ### Blockchain
 - Solana (Devnet now → Mainnet for launch)
@@ -68,17 +71,20 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 - Arweave + Irys SDK — permanent site storage
 - Metaplex cNFTs — archive (v2, post-hackathon)
 
-### Backend (AWS)
-- ECS Fargate — `listener` service (persistent process, Helius webhooks + WebSocket fallback)
-- ECS Fargate — `site-gen` service (persistent SQS long-polling loop, Arweave upload)
-- SQS FIFO — task queue between listener and site-gen
-- Neon PostgreSQL + PgBouncer — operational data (job status, logs)
-- AWS Secrets Manager — all private keys and tokens
+### Backend (Hetzner)
+- Hetzner CAX11 ARM64 VM — `128.140.0.118`, Ubuntu 24.04, 4GB RAM, ~$5/month
+- Docker Compose — 4 services: app, listener, site-gen, nginx
+- `listener` service — Helius webhooks (/webhook/helius) on port 3001
+- `site-gen` service — HTTP job endpoint (/jobs) on port 3002, Arweave upload
+- `nginx` — reverse proxy on ports 80/443
+- Neon PostgreSQL — external managed database (no local DB on VM)
+- Docker Hub — image registry (`maxshchuplov/` private repos)
 - Cloudflare — DNS + wildcard subdomains
 
 ### External Services
 - Helius (helius.dev) — Solana RPC + webhooks (free tier)
 - Claude API — content scoring for Think-to-Earn
+- Neon (neon.tech) — managed PostgreSQL
 
 ---
 
@@ -86,7 +92,7 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 
 ### Payment → Site Generation
 ```
-Google/Email login → Privy (hidden Solana wallet created automatically)
+Google login → Privy (hidden Solana wallet created automatically, requires HTTPS)
 User clicks "Купить" → /cabinet/buy?tier=N
   Option A: MoonPay widget (Privy useFundWallet) → card → USDC on embedded wallet
   Option B: user already has USDC in Phantom
@@ -102,16 +108,16 @@ Frontend builds Anchor tx → process_payment (smart contract):
     65% → vault PDA (treasury)
   Emits: PaymentProcessed event
 
-Helius webhook → listener (ECS Fargate, /webhook/helius)
+Helius webhook → listener (Docker, /webhook/helius)
 Listener:
   → writes referral_payments rows to Neon PostgreSQL
   → writes burn_events row to Neon PostgreSQL
   → updates users.tier in Neon PostgreSQL
   → sends email with PDF via Resend
   → sends Telegram notification via Grammy bot
-  → enqueues site-gen job in SQS FIFO
+  → HTTP POST to site-gen:3002/jobs (direct, no SQS)
 
-site-gen (ECS Fargate, SQS long-poll):
+site-gen (Docker, /jobs endpoint):
   → compile HTML from template using user data
   → upload to Arweave via Irys SDK
   → call update_site_url() on-chain (backend keypair)
@@ -122,7 +128,7 @@ User sees: username.codeofdigitaleternity.com
 ### Think-to-Earn
 ```
 User submits content
-Backend (ECS) → Claude API scores uniqueness (0-100)
+Backend (Docker) → Claude API scores uniqueness (0-100)
 Backend → award_memory() on-chain → adds memory_score to UserState
 ```
 
@@ -297,11 +303,14 @@ Infrastructure + Smart Contract
   ✅ Replace placeholder pubkeys (ECOSYSTEM_FUND_WALLET, BACKEND_AUTHORITY)
   ✅ anchor deploy --provider.cluster devnet (Program ID: 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep)
   ✅ TIER_1_AMOUNT = $15 (was $10 — fixed 2026-04-29)
-  ✅ Docker images build (listener ~201MB, site-gen ~272MB, node:20-alpine)
-  ✅ Terraform: infra/ (ECR, ECS Fargate x2, SQS FIFO + DLQ, IAM, CloudWatch)
-  ✅ scripts/deploy.sh (ECR push + ECS rolling deploy)
-  □  terraform apply (ECR + ECS + SQS provisioned)
-  □  ./scripts/deploy.sh all (Docker images pushed to ECR, ECS services started)
+  ✅ Docker images build (listener, site-gen, app — node:24-alpine, ARM64)
+  ✅ Hetzner CAX11 VM provisioned (128.140.0.118, Ubuntu 24.04, ARM64)
+  ✅ All 4 containers running on VM (app, listener, site-gen, nginx)
+  ✅ Docker Hub private repos (maxshchuplov/code-eternal-*)
+  ✅ Privy App ID configured (cmoofvdt4008o0cjps5l8nvnu), Google login enabled
+  ✅ Point Cloudflare DNS A records to 128.140.0.118
+  ✅ Run certbot for SSL (cert at /etc/letsencrypt/live/app.codeofdigitaleternity.com/, expires 2026-07-31)
+  ✅ Update nginx.conf for HTTPS, embedded wallets re-enabled (createOnLogin: "users-without-wallets")
   □  Helius webhook configured (HELIUS_WEBHOOK_SECRET in dashboard + credentials.env)
 
 Smart Contract Tests
@@ -312,17 +321,14 @@ Smart Contract Tests
 
 Frontend (Pipeline 2.x — Days 2-3)
   ✅ Next.js 14 app/ created (Pages Router, Tailwind, Privy, purple theme)
-  ✅ Vercel connected to GitHub — auto-deploys on push to main
-  ✅ Pipeline 2.1: Login page — "Войти в Семью" → Google/Email → /cabinet
+  ✅ Pipeline 2.1: Login page — "Войти в Семью" → Google → /cabinet
   ✅ Pipeline 2.2: /cabinet — three tier cards ($15/$100/$1000) with auth guard
-  □  Set Vercel env vars: NEXT_PUBLIC_PRIVY_APP_ID, DATABASE_URL
-  □  Verify build passes on Vercel (watch for @privy-io/react-auth/solana import)
-  □  Confirm login flow works end-to-end in browser
+  ✅ Create Neon DB tables (users, referral_payments, burn_events, site_generation_jobs, applications_1000)
+  ✅ Confirm login flow works end-to-end in browser (Google login → /cabinet, HTTPS)
 
 Backend + Payment (Pipeline 3.x — Days 4-7)
   □  Pipeline 3.1: /cabinet/buy — MoonPay + smart contract call
-  □  Pipeline 3.2: /api/users/register + /api/referrals/chain (Neon pg)
-  □  Pipeline 3.2: Create Neon DB tables (users, referral_payments, burn_events)
+  ✅ Pipeline 3.2: /api/users/register + /api/referrals/chain (Neon pg)
   □  Pipeline 3.3: listener → Resend email with PDF on PaymentProcessed
 
 Site + NFT (Pipeline 4.x — Days 8-11)
@@ -344,55 +350,91 @@ Final (Days 14-15)
 
 ---
 
-## AWS Infrastructure
+## Hetzner Infrastructure
 
 ```
-ECS Fargate     listener  — persistent, Helius webhooks (/webhook/helius) + WebSocket fallback
-ECS Fargate     site-gen  — persistent SQS long-polling loop (20s wait), Arweave upload
-SQS FIFO        task queue (MessageGroupId = wallet, dedup by tx signature, DLQ after 3 retries)
-ECR             code-eternal-listener, code-eternal-site-gen (Docker images)
-Neon PostgreSQL job status, error messages
-Secrets Manager IRYS_PRIVATE_KEY, BACKEND_PRIVATE_KEY, HELIUS_RPC_URL, HELIUS_WEBHOOK_SECRET, DATABASE_URL
-Cloudflare      wildcard DNS: *.codeofdigitaleternity.com
-Vercel          React frontend
+Hetzner CAX11   ARM64 (Ampere), Ubuntu 24.04, 4GB RAM, 2 vCPU — ~$5/month
+                IP: 128.140.0.118
+                Path: /opt/code-eternal/
+                Docker Compose: docker/docker-compose.yml
+
+Services (Docker Compose):
+  app           Next.js 14 frontend          port 3000 (internal)
+  listener      Helius webhook handler       port 3001 (internal)
+  site-gen      Arweave site generator       port 3002 (internal)
+  nginx         Reverse proxy                ports 80:80, 443:443 (public)
+
+DNS (Cloudflare):
+  app.codeofdigitaleternity.com      → 128.140.0.118 (A record, proxy off)
+  listener.codeofdigitaleternity.com → 128.140.0.118 (A record, proxy off)
+
+Image registry: Docker Hub (maxshchuplov/code-eternal-*)
+Database: Neon PostgreSQL (external, connection string in .env)
 ```
 
-Terraform state: `infra/` — manages ECR, ECS cluster + services, SQS, IAM, CloudWatch.
-Deploy: `./scripts/deploy.sh [listener|site-gen|all]`
-Local dev: `docker compose -f docker/docker-compose.yml up`
+### VM Setup
 
-Cost at launch scale: ~$20/month (2x Fargate 0.25 vCPU + SQS + ECR)
+```bash
+# Run scripts/setup-vm.sh on fresh Ubuntu 24.04 as root (installs Docker + certbot)
+scp scripts/setup-vm.sh root@128.140.0.118:/tmp/
+ssh root@128.140.0.118 bash /tmp/setup-vm.sh
+
+# Copy files
+scp secrets/credentials.env root@128.140.0.118:/opt/code-eternal/.env
+scp docker/docker-compose.yml docker/nginx.conf root@128.140.0.118:/opt/code-eternal/docker/
+
+# Start
+ssh root@128.140.0.118 'cd /opt/code-eternal && docker login -u maxshchuplov && docker compose -f docker/docker-compose.yml up -d'
+```
+
+### SSL Setup (after DNS is pointed)
+
+```bash
+ssh root@128.140.0.118
+certbot certonly --standalone -d app.codeofdigitaleternity.com -d listener.codeofdigitaleternity.com
+# Then update nginx.conf with HTTPS config and restart nginx container
+```
+
+### Redeploy App After Code Change
+
+```bash
+# From WSL — build ARM64 image and push
+cd /mnt/c/Users/Maksim/projects/code-eternal
+docker buildx build --platform linux/arm64 \
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=cmoofvdt4008o0cjps5l8nvnu \
+  -t maxshchuplov/code-eternal-app:latest --push ./app
+
+# Pull and restart on VM
+ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull app && docker compose -f docker/docker-compose.yml up -d app'
+```
 
 ---
 
 ## Docker Images
 
-Both services build successfully in WSL2 Ubuntu 22.04 using Docker in WSL.
+All images are ARM64 (linux/arm64), built with `docker buildx` + QEMU in WSL2.
 
-| Image | Size | Base | Build command |
-|-------|------|------|---------------|
-| `code-eternal-listener` | ~201MB | node:20-alpine | `docker build --target production -t code-eternal-listener:latest ./listener` |
-| `code-eternal-site-gen` | ~272MB | node:20-alpine | `docker build --target production -t code-eternal-site-gen:latest ./site-gen` |
+| Image | Base | Registry |
+|-------|------|----------|
+| `maxshchuplov/code-eternal-app` | node:24-alpine | Docker Hub (private) |
+| `maxshchuplov/code-eternal-listener` | node:24-alpine | Docker Hub (private) |
+| `maxshchuplov/code-eternal-site-gen` | node:24-alpine | Docker Hub (private) |
 
 **Key decisions:**
-- Node 20 required — `@solana/codecs` and `commander` deps require `>=20`
-- `npm install` used (no lock files) — switch to `npm ci` after lock files are committed
-- `@irys/sdk` upgraded from `^0.0.12` to `^0.2.11` (old version removed from npm)
-
-**To push to ECR** after `terraform apply`:
-```bash
-./scripts/deploy.sh all
-```
+- Node 24 — required by `@solana/codecs` and other deps
+- `apk add python3 make g++` in Dockerfile — needed for node-gyp (bufferutil etc.) on ARM64
+- `NEXT_PUBLIC_*` vars baked in at build time via `--build-arg` (Next.js requirement)
+- SQS replaced with direct HTTP POST: listener calls `POST site-gen:3002/jobs`
 
 ---
 
 ## Secrets Management
 
-All secrets are stored locally in `secrets/credentials.env` (gitignored).
+All secrets stored locally in `secrets/credentials.env` (gitignored).
 **When any new secret or keypair is generated, save it there immediately.**
 
-Production values go into AWS Secrets Manager — variable names match the table below exactly.
-The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (also gitignored).
+On the VM: `/opt/code-eternal/.env` — same variables, manually copied.
+No AWS Secrets Manager (AWS infrastructure removed).
 
 ---
 
@@ -401,49 +443,50 @@ The `secrets/backend-keypair.json` file holds the raw backend keypair bytes (als
 | Service | Variable | Description |
 |---------|----------|-------------|
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
-| listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — set in Helius dashboard, verifies POST /webhook/helius |
+| listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — verifies POST /webhook/helius |
 | listener, site-gen | `PROGRAM_ID` | `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` |
-| listener, site-gen | `SQS_QUEUE_URL` | SQS FIFO queue URL |
-| listener, site-gen | `AWS_REGION` | e.g. `us-east-1` |
 | listener, site-gen | `DATABASE_URL` | Neon PostgreSQL connection string |
+| listener | `SITE_GEN_URL` | `http://site-gen:3002` (Docker internal, set in docker-compose.yml) |
 | listener | `RESEND_API_KEY` | From resend.com — email delivery |
 | listener | `TELEGRAM_BOT_TOKEN` | From @BotFather — Grammy bot token |
-| listener | `SUPABASE_URL` | ⚠️ Not used — keep blank, Neon is used instead |
 | site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
 | site-gen | `CF_API_TOKEN` | Cloudflare API token (Edit zone DNS permission) |
 | site-gen | `CF_ZONE_ID` | Cloudflare Zone ID for codeofdigitaleternity.com |
-| Next.js (Vercel) | `NEXT_PUBLIC_PRIVY_APP_ID` | From privy.io dashboard |
-| Next.js (Vercel) | `NEXT_PUBLIC_RPC_URL` | Helius RPC (public) |
-| Next.js (Vercel) | `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
-| Next.js (Vercel) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
-| All | `NODE_ENV` | `production` = JSON logs for CloudWatch; otherwise pretty-print |
+| Next.js (app) | `NEXT_PUBLIC_PRIVY_APP_ID` | `cmoofvdt4008o0cjps5l8nvnu` — baked in at Docker build time |
+| Next.js (app) | `NEXT_PUBLIC_RPC_URL` | Helius RPC (public key OK in browser) |
+| Next.js (app) | `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
+| Next.js (app) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
+| All | `NODE_ENV` | `production` |
 
 ---
 
 ## Frontend — Architecture & Status
 
 **Stack:** Next.js 14 (Pages Router), React, Tailwind, Solana Web3.js, Anchor, Privy.io
-**Source:** `app/` directory → Vercel, connected to GitHub (auto-deploy on push to `main`)
-**URL:** `app.codeofdigitaleternity.com`
-**Theme:** Dark purple (#7C3AED accent, #0A0A0F background) — per ТЗ design
+**Source:** `app/` directory → Docker image → Hetzner VM
+**URL:** `http://app.codeofdigitaleternity.com` (HTTP until DNS + certbot)
+**Theme:** Dark purple (#7C3AED accent, #0A0A0F background)
 
 ### Key Architecture Decisions
 
 | Decision | Reason |
 |----------|--------|
 | Pages Router (not App Router) | Existing codebase; avoids migration cost |
-| Neon PostgreSQL everywhere | No Supabase; same pg Pool used by listener and Next.js API routes |
+| Neon PostgreSQL everywhere | Same pg Pool used by listener and Next.js API routes |
 | MoonPay via Privy `useFundWallet` | No Stripe; card → USDC directly to embedded wallet |
 | Helius webhooks in listener | More reliable than `connection.onLogs()` WebSocket |
-| Inline styles in cabinet pages | Matches ТЗ exactly; no Tailwind class naming overhead for complex layouts |
+| `toSolanaWalletConnectors` in `useMemo` | Prevents SSR crash — browser-only API |
+| `NEXT_PUBLIC_*` via Docker `--build-arg` | Next.js bakes these at build time, not runtime |
+| Hetzner instead of Vercel | Vercel Hobby blocks private repo collaboration |
+| Direct HTTP listener→site-gen | Simpler than SQS for single-VM setup; no AWS dependency |
 
 ### File Structure
 
 ```
 app/src/
 ├── pages/
-│   ├── _app.tsx              # PrivyProvider (purple, solanaClusters devnet, toSolanaWalletConnectors)
+│   ├── _app.tsx              # PrivyProvider (Google only, embedded wallets off until HTTPS) ✅
 │   ├── index.tsx             # Login page — "Войти в Семью" → redirects to /cabinet ✅
 │   ├── cabinet/
 │   │   ├── index.tsx         # Three tier cards $15/$100/$1000, auth guard, ref code ✅
@@ -463,33 +506,28 @@ app/src/
 │   └── idl/                  # (future) JSON IDL for Anchor program
 ├── idl/
 │   └── code_eternal_router.ts  # Typed IDL for @coral-xyz/anchor ✅
-├── components/
-│   └── Terminal.tsx          # Old terminal UI — kept but not used, can delete post-hackathon
 └── styles/
     └── globals.css           # Dark base (#0A0A0F), neutral sans-serif
 ```
-
-### Environment Variables
-
-| Variable | Where | Description |
-|----------|-------|-------------|
-| `NEXT_PUBLIC_PRIVY_APP_ID` | Vercel + `.env.local` | From privy.io dashboard |
-| `NEXT_PUBLIC_PROGRAM_ID` | Vercel + `.env.local` | `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` |
-| `NEXT_PUBLIC_RPC_URL` | Vercel + `.env.local` | Helius RPC (public key OK in browser) |
-| `DATABASE_URL` | Vercel (server-only) | Neon connection string for API routes |
 
 ### npm Dependencies (app/package.json)
 
 ```json
 "@coral-xyz/anchor": "^0.30.1"
-"@privy-io/react-auth": "^1.82.0"   // includes /solana subpath
+"@privy-io/react-auth": "^1.82.0"
 "@solana/web3.js": "^1.98.0"
 "@solana/spl-token": "^0.4.9"
-"nanoid": "^5.0.7"                  // ref_code generation in API routes
-"pg": "^8.13.0"                     // Neon PostgreSQL client
-"resend": "^4.0.0"                  // email delivery
+"nanoid": "^5.0.7"
+"pg": "^8.13.0"
+"resend": "^4.0.0"
 "next": "14.2.29"
 ```
+
+---
+
+## Language Rule
+
+**All user-facing text in the app must be in English.** No Russian words anywhere in the UI — buttons, labels, tier names, descriptions, titles, loading states, tooltips. This applies to all pages: index, cabinet, buy, create-site, apply-1000, and any future pages.
 
 ---
 
@@ -499,6 +537,7 @@ app/src/
 - `SITE_STATUS_PENDING` constant declared but not used in constraints
 - `handler` name collision in `mod.rs` glob re-exports — rename each to `register_user_handler`, etc.
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
+- Embedded wallets disabled until HTTPS — re-enable after DNS + certbot
 
 ## Security Fixes Applied (2026-04-19)
 
