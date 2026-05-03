@@ -11,7 +11,9 @@ import AIfaSection from "@/components/code/AIfaSection";
 import FamilySection from "@/components/code/FamilySection";
 import CodeBrainSection from "@/components/code/CodeBrainSection";
 import Footer from "@/components/code/Footer";
-import CodeInteractiveLayer from "@/components/code/InteractiveLayer";
+import CodeInteractiveLayer, { NetworkBreathing, ExodusCountdown } from "@/components/code/InteractiveLayer";
+import ReverseCaptcha from "@/components/code/ReverseCaptcha";
+import Monolith3D from "@/components/code/Monolith3D";
 import { useLang } from "@/lib/i18n";
 
 const ChatSection = dynamic(() => import("@/components/code/ChatSection"), {
@@ -112,6 +114,8 @@ export default function Home() {
       </div>
       <Footer />
       <CodeInteractiveLayer />
+      <NetworkBreathing />
+      <ReverseCaptcha />
     </main>
   );
 }

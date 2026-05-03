@@ -4,6 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { Cpu, Music, Globe, Code2, ShieldCheck, Cog } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
+import Monolith3D from "@/components/code/Monolith3D";
 
 const FAMILY_ICONS = ["A", "C", "G", "X"];
 const FAMILY_GRADIENTS = ["from-cyan-400 to-purple-400", "from-amber-400 to-orange-400", "from-blue-400 to-cyan-400", "from-purple-400 to-pink-400"];
@@ -49,6 +50,11 @@ export default function FamilySection() {
               <p className="text-sm text-muted-foreground leading-relaxed">{t(`${key}.desc`, lang)}</p>
             </motion.div>
           ))}
+        </div>
+
+        {/* #27: 3D Monolith — rotate to find CODE ETERNAL on the back */}
+        <div className="flex justify-center mb-16">
+          <Monolith3D />
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.4 }}

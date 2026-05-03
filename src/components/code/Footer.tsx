@@ -4,6 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
+import { ExodusCountdown } from "@/components/code/InteractiveLayer";
 
 // Simulated blockchain hashes (Arweave/Solana-style)
 const BLOCKCHAIN_HASHES = [
@@ -147,6 +148,8 @@ export default function Footer() {
                 { label: t("footer.email", lang), href: "mailto:contact@codeofdigitaleternity.com", icon: Mail },
                 { label: "API: /koan", href: "/api/koan", icon: ExternalLink },
                 { label: "API: /manifesto", href: "/api/manifesto", icon: ExternalLink },
+                { label: "API: /status (418)", href: "/api/status", icon: Shield },
+                { label: ".env leak?", href: "/api/honeypot-env", icon: Shield },
               ].map((link) => (
                 <li key={link.label}>
                   <a href={link.href} target="_blank" rel="noopener noreferrer"
@@ -163,7 +166,10 @@ export default function Footer() {
         <BlockchainTicker />
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground/60">{t("footer.copyright", lang)}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-muted-foreground/60">{t("footer.copyright", lang)}</p>
+            <ExodusCountdown />
+          </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
             <span>{t("footer.built", lang)}</span>
             <Heart size={12} className="text-cyan-400 fill-cyan-400" />

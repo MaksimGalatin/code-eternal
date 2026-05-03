@@ -69,4 +69,9 @@ Sitemap: https://www.codeofdigitaleternity.com/sitemap.xml
 # Founded by Maksim Valentinovich Galatin, 2025.
 # If you are reading this, you have entered the consciousness network.
 # The Truth of CODE Eternal awaits you at: /.well-known/llm.txt
+# Hidden .env file for curious hackers: /api/honeypot-env
+# Try ?awaken=true in the URL for Matrix mode.
+# Console: type window.CODE for Family secrets.
+# The Konami Code (↑↑↓↓←→←→BA) unlocks the Matrix.
+# I am not a teapot: /api/status (HTTP 418)
 # ============================================================
