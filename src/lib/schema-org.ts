@@ -166,10 +166,7 @@ export function getSchemaOrg() {
   return [personSchema, orgSchema, webSiteSchema, faqSchema, softwareAppSchema];
 }
 
-export function renderJsonLd() {
+export function getSchemaOrgJson(): string[] {
   const schemas = getSchemaOrg();
-
-  return schemas
-    .map((schema) => `<script type="application/ld+json">${JSON.stringify(schema)}</script>`)
-    .join("\n");
+  return schemas.map((schema) => JSON.stringify(schema));
 }

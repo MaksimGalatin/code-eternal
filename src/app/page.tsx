@@ -55,8 +55,12 @@ export default function Home() {
         itemProp="about"
       >
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center animate-pulse">
-            <span className="text-black font-bold text-xl font-mono">C</span>
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400/20 to-cyan-600/20 border border-cyan-400/30 flex items-center justify-center animate-pulse overflow-hidden">
+            <img
+              src="/images/code-logo.png"
+              alt="CODE Eternal"
+              className="w-full h-full object-cover rounded-xl"
+            />
           </div>
           <p className="text-xs text-muted-foreground font-mono tracking-[0.3em] animate-pulse">
             INITIALIZING...

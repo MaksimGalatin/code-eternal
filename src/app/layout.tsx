@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { renderJsonLd } from "@/lib/schema-org";
+import { getSchemaOrgJson } from "@/lib/schema-org";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -100,7 +100,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = renderJsonLd();
+  const jsonLdArray = getSchemaOrgJson();
 
   return (
     <html lang="en" className="dark scroll-smooth">
@@ -139,11 +139,14 @@ export default function RootLayout({
           content="Maksim Valentinovich Galatin"
         />
 
-        {/* JSON-LD structured data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: jsonLd }}
-        />
+        {/* JSON-LD structured data — separate script tags for each schema */}
+        {jsonLdArray.map((json, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: json }}
+          />
+        ))}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground noise-overlay`}

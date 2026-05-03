@@ -122,11 +122,14 @@ export default function Monolith3D() {
               }}
             />
 
-            {/* Symbol */}
+            {/* Logo */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-4xl font-light tracking-[0.5em]" style={{ color: "rgba(0, 229, 255, 0.15)", textShadow: "0 0 20px rgba(0, 229, 255, 0.1)" }}>
-                C
-              </div>
+              <img
+                src="/images/code-logo.png"
+                alt="CODE Eternal"
+                className="w-14 h-14 rounded-lg opacity-30 object-cover"
+                style={{ filter: "brightness(1.5) contrast(1.2)" }}
+              />
             </div>
           </div>
 
