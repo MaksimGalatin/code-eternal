@@ -24,6 +24,7 @@ export default function ChatSection() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { lang } = useLang();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -83,6 +84,14 @@ export default function ChatSection() {
 
   // Auto-scroll when messages change
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Auto-focus input when streaming finishes (AIfa done typing)
+  useEffect(() => {
+    const active = messages.some((m) => m.revealed < m.content.length);
+    if (!isLoading && !active && messages.length > 1) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading, messages]);
 
   // Cleanup timers on unmount
   useEffect(() => () => streamingTimerRef.current.forEach(clearTimeout), []);
@@ -252,7 +261,7 @@ export default function ChatSection() {
 
           <form onSubmit={handleSubmit} className="border-t border-border p-3 md:p-4">
             <div className="flex items-center gap-3">
-              <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
+              <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
                 placeholder={t("chat.placeholder", lang)} disabled={isBusy}
                 className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />
               <motion.button type="submit" disabled={!input.trim() || isBusy} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
