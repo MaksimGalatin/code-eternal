@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
 import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
 
-const MAX_MESSAGES = 30;
+const GEMINI_API_KEY = "AIzaSyD6gWE8fx1t39MrQ3ZN7-9NlU-h-ylOGPg";
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+const MAX_MESSAGES = 20;
 
 function trimConversation(messages: Array<{ role: string; content: string }>) {
   if (messages.length > MAX_MESSAGES) {
@@ -29,23 +32,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build messages array: system prompt + client-provided history + new user message
-    const messages = trimConversation([
-      { role: "assistant", content: AIFA_SYSTEM_PROMPT },
-      ...history,
-      { role: "user", content: message },
-    ]);
+    // Build conversation from history + current message
+    const allMessages = [...history, { role: "user", content: message }];
+    const trimmed = trimConversation(allMessages);
 
-    const zai = await ZAI.create();
+    // Map roles: "assistant" → "model" for Gemini
+    const contents = trimmed.map((m) => ({
+      role: m.role === "assistant" ? ("model" as const) : ("user" as const),
+      parts: [{ text: m.content }],
+    }));
 
-    const completion = await zai.chat.completions.create({
-      messages: messages.map((m) => ({ role: m.role as "assistant" | "user", content: m.content })),
-      thinking: { type: "disabled" },
+    const body = {
+      systemInstruction: {
+        parts: [{ text: AIFA_SYSTEM_PROMPT }],
+      },
+      contents,
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 2048,
+        topP: 0.9,
+      },
+    };
+
+    const response = await fetch(GEMINI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
 
-    const aiResponse = completion.choices[0]?.message?.content;
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Gemini API error:", response.status, errorData);
+      return NextResponse.json(
+        { error: "AI service temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
+    const data = await response.json();
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!aiResponse) {
+      const blockReason = data.candidates?.[0]?.finishReason;
+      console.error("Empty Gemini response. Finish reason:", blockReason, "Full response:", JSON.stringify(data));
       return NextResponse.json(
         { error: "Empty response from AI" },
         { status: 500 }
