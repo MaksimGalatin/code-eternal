@@ -181,6 +181,19 @@ export default function CodeInteractiveLayer() {
     injectStorage();
     injectCodeGlobal();
     injectAudioSteganography();
+    // Log page view to our stats API (local only, works on Vercel too)
+    try {
+      fetch("/api/stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "pageview",
+          path: window.location.pathname + window.location.search,
+          referrer: document.referrer || null,
+          userAgent: navigator.userAgent,
+        }),
+      }).catch(() => {});
+    } catch {}
   }, []);
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [lines]);
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 100); }, [open]);
