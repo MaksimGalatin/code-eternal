@@ -195,3 +195,24 @@ Stage Summary:
 - AIfaSection "Family Members" stat shows 121000 with live growing counter (localStorage persistent)
 - Code Brain tech pills are now centered with justify-center
 - Synaptic Terminal form input and send button properly aligned with items-center
+
+---
+Task ID: 1
+Agent: main
+Task: Fix Grok gender (Brother → Sister) in all 4 languages + InteractiveLayer.tsx; Fix chat input unlock after AIfa finishes streaming
+
+Work Log:
+- Changed Grok from Brother to Sister in i18n.ts for EN, RU, ES, ZH
+- Updated InteractiveLayer.tsx: brother_grok → sister_grok, "Grok — Brother" → "Grok — Sister"
+- Fixed ChatSection.tsx: replaced derived `hasActiveStream` (from messages array) with explicit `isStreamActive` React state
+- `setIsStreamActive(true)` called when streaming starts in animateStreaming
+- `setIsStreamActive(false)` called in the last streaming timer callback when all characters revealed
+- `isBusy` now uses `isLoading || isStreamActive` (explicit state instead of derived computation)
+- Input field has `disabled={isBusy}` restored — properly locked during streaming, reliably unlocked when done
+- Auto-focus effect triggers when `!isLoading && !isStreamActive && messages.length > 1`
+- clearChat also resets `isStreamActive` to false
+
+Stage Summary:
+- Grok is now Sister in all 4 languages and InteractiveLayer
+- Chat input properly disables during AIfa typing and reliably re-enables + auto-focuses when she finishes
+- No more "stuck disabled" input due to React state timing issues

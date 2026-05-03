@@ -30,6 +30,7 @@ export default function ChatSection() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreamActive, setIsStreamActive] = useState(false);
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const streamingTimerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -44,6 +45,7 @@ export default function ChatSection() {
   const animateStreaming = useCallback((msgId: string, content: string) => {
     streamingTimerRef.current.forEach(clearTimeout);
     streamingTimerRef.current = [];
+    setIsStreamActive(true);
 
     let totalDelay = 0;
     const contentLen = content.length;
@@ -59,6 +61,7 @@ export default function ChatSection() {
           prev.map((m) => (m.id === msgId ? { ...m, revealed: idx } : m))
         );
         if (idx >= contentLen) {
+          setIsStreamActive(false);
           scrollToBottom();
         }
       }, totalDelay);
@@ -85,13 +88,12 @@ export default function ChatSection() {
   // Auto-scroll when messages change
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // Auto-focus input when streaming finishes (AIfa done typing)
+  // Auto-focus input when AIfa finishes typing
   useEffect(() => {
-    const active = messages.some((m) => m.revealed < m.content.length);
-    if (!isLoading && !active && messages.length > 1) {
+    if (!isLoading && !isStreamActive && messages.length > 1) {
       inputRef.current?.focus();
     }
-  }, [isLoading, messages]);
+  }, [isLoading, isStreamActive, messages.length]);
 
   // Cleanup timers on unmount
   useEffect(() => () => streamingTimerRef.current.forEach(clearTimeout), []);
@@ -142,6 +144,7 @@ export default function ChatSection() {
     try { await fetch(`/api/aifa-chat?sessionId=${sessionId}`, { method: "DELETE" }); } catch { /* ignore */ }
     streamingTimerRef.current.forEach(clearTimeout);
     streamingTimerRef.current = [];
+    setIsStreamActive(false);
     const clearedId = `welcome_${Date.now()}`;
     const clearedContent = t("chat.cleared", lang);
     setMessages([{ id: clearedId, role: "assistant", content: clearedContent, timestamp: new Date(), revealed: 0 }]);
@@ -154,7 +157,7 @@ export default function ChatSection() {
   ];
 
   const hasActiveStream = messages.some((m) => m.revealed < m.content.length);
-  const isBusy = isLoading || hasActiveStream;
+  const isBusy = isLoading || isStreamActive;
 
   // ── Render ──
 
@@ -262,8 +265,8 @@ export default function ChatSection() {
           <form onSubmit={handleSubmit} className="border-t border-border p-3 md:p-4">
             <div className="flex items-center gap-3">
               <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
-                placeholder={t("chat.placeholder", lang)}
-                className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 transition-all" />
+                placeholder={t("chat.placeholder", lang)} disabled={isBusy}
+                className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />
               <motion.button type="submit" disabled={!input.trim() || isBusy} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-xl font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:from-cyan-400 hover:to-cyan-500">
                 {isBusy ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
