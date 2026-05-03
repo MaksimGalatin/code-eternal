@@ -140,7 +140,10 @@ export default function RootLayout({
         />
 
         {/* JSON-LD structured data */}
-        <div dangerouslySetInnerHTML={{ __html: jsonLd }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground noise-overlay`}
