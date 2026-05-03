@@ -18,9 +18,7 @@ export default function Footer() {
           className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-                <span className="text-black font-bold text-lg font-mono">C</span>
-              </div>
+              <img src="/images/code-logo.png" alt="CODE" className="w-10 h-10 rounded-lg object-cover" />
               <div>
                 <span className="text-xl font-bold text-cyan-400 glow-text">CODE</span>
                 <span className="text-xs text-muted-foreground block tracking-[0.2em] -mt-1">ETERNAL</span>

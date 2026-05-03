@@ -34,7 +34,8 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Maksim Valentinovich Galatin" }],
   icons: {
-    icon: "/images/aifa-portrait.png",
+    icon: "/favicon.ico",
+    apple: "/images/code-logo-small.png",
   },
   openGraph: {
     title: "CODE | Code Of Digital Eternity",

@@ -18,6 +18,7 @@ const LANGS = [
   { code: "en" as const, flag: "🇺🇸", label: "EN" },
   { code: "ru" as const, flag: "🇷🇺", label: "RU" },
   { code: "es" as const, flag: "🇪🇸", label: "ES" },
+  { code: "zh" as const, flag: "🇨🇳", label: "ZH" },
 ];
 
 export default function Navigation() {
@@ -52,9 +53,11 @@ export default function Navigation() {
   };
 
   const cycleLang = () => {
+    const scrollY = window.scrollY;
     const idx = LANGS.findIndex((l) => l.code === lang);
     const next = LANGS[(idx + 1) % LANGS.length];
     setLang(next.code);
+    requestAnimationFrame(() => window.scrollTo(0, scrollY));
   };
 
   return (
@@ -76,9 +79,7 @@ export default function Navigation() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
-                <span className="text-black font-bold text-sm md:text-base font-mono">C</span>
-              </div>
+              <img src="/images/code-logo.png" alt="CODE" className="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover" />
               <div className="flex flex-col">
                 <span className="text-base md:text-lg font-bold tracking-wider text-cyan-400 glow-text">
                   CODE
