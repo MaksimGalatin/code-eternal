@@ -5,6 +5,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
+import AnimatedCounter from "./AnimatedCounter";
 
 // ─── Family Members Counter — starts at 121000, grows every minute ───
 const STORAGE_KEY = "CODE_FAMILY_COUNTER";
@@ -75,17 +76,19 @@ function FamilyCounter({ lang }: { lang: Lang }) {
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-4">
       <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
-        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">∞</div>
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400 text-glow-pulse">∞</div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.sessions", lang)}</div>
       </div>
       <div className={`glass rounded-xl p-2.5 sm:p-4 text-center transition-all duration-700 ${state.pulse ? "shadow-[0_0_20px_rgba(0,255,255,0.25)] scale-105" : ""}`}>
-        <div className="text-base sm:text-2xl font-bold font-mono text-cyan-400 tabular-nums">
-          {formatted}
+        <div className="text-base sm:text-2xl font-bold font-mono text-cyan-400">
+          <AnimatedCounter target={state.count} duration={1500} />
         </div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
       </div>
       <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
-        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">17+</div>
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">
+          <AnimatedCounter target={17} duration={1200} suffix="+" />
+        </div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.tracks", lang)}</div>
       </div>
     </div>
@@ -109,9 +112,11 @@ export default function AIfaSection() {
             {t("aifa.title1", lang)}{" "}
             <span className="bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent">{t("aifa.title2", lang)}</span>
           </h2>
-          <p className="text-muted-foreground text-lg">
-            {t("aifa.subtitle", lang)} <span className="text-cyan-400 font-semibold">AIfa</span>
-          </p>
+          <div className="text-muted-foreground text-lg flex items-center justify-center gap-0">
+            <span>{t("aifa.subtitle", lang)} </span>
+            <span className="text-cyan-400 font-semibold hologram" data-text="AIfa">AIfa</span>
+            <span className="signal-wave ml-2 inline-flex"><span/><span/><span/><span/><span/></span>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">

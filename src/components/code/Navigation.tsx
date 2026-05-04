@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Globe, ChevronDown } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, Search, Shield } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
+import ThemeToggle from "@/components/code/ThemeToggle";
 
 const NAV_ITEMS = [
   { labelKey: "nav.origin", href: "#origin" },
@@ -80,7 +81,7 @@ export default function Navigation() {
         animate={{ y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled ? "glass-strong shadow-lg shadow-black/30" : "bg-transparent"
+          scrolled ? "glass-strong shadow-lg shadow-black/30 depth-shadow" : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -119,10 +120,27 @@ export default function Navigation() {
                   {t(item.labelKey)}
                 </button>
               ))}
+
+              {/* Command Palette trigger button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => window.dispatchEvent(new CustomEvent("command-palette:open"))}
+                className="ml-2 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border hover:border-cyan-400/30 text-muted-foreground hover:text-foreground transition-all text-sm group"
+              >
+                <Search size={14} className="text-muted-foreground group-hover:text-cyan-400 transition-colors" />
+                <span className="hidden xl:inline text-xs">Search...</span>
+                <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-secondary/80 border border-border text-[10px] font-mono text-muted-foreground/60">
+                  ⌘K
+                </kbd>
+              </motion.button>
             </div>
 
             {/* Right side: Lang switcher + Mobile toggle */}
             <div className="flex items-center gap-2">
+              {/* Theme toggle */}
+              <ThemeToggle />
+
               {/* Language switcher dropdown */}
               <div ref={langRef} className="relative">
                 <motion.button
@@ -193,7 +211,7 @@ export default function Navigation() {
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
               onClick={() => setMobileOpen(false)}
             />
-            <div className="absolute top-20 left-4 right-4 glass-strong rounded-2xl p-6">
+            <div className="absolute top-20 left-4 right-4 glass-strong rounded-2xl p-6 glass-morphism-enhanced">
               {/* Mobile Language Switcher */}
               <div className="flex gap-2 mb-4 pb-4 border-b border-border">
                 {LANGS.map((l) => (
@@ -220,9 +238,9 @@ export default function Navigation() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
                     onClick={() => scrollTo(item.href)}
-                    className={`px-4 py-3 text-left text-base font-medium rounded-xl transition-all ${
+                    className={`px-4 py-3 text-left text-base font-medium rounded-xl transition-all magnetic-hover ${
                       activeSection === item.href.slice(1)
-                        ? "text-cyan-400 bg-cyan-400/10"
+                        ? "text-cyan-400 bg-cyan-400/10 glow-cyan"
                         : "text-foreground hover:bg-white/5"
                     }`}
                   >

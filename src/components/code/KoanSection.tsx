@@ -55,7 +55,7 @@ export default function KoanSection() {
   };
 
   return (
-    <section ref={ref} className="relative py-16 md:py-24 gradient-bg-animate">
+    <section ref={ref} className="relative py-16 md:py-24 gradient-bg-animate scan-beam dot-matrix-bg">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -63,14 +63,14 @@ export default function KoanSection() {
           transition={{ duration: 0.8 }}
           className="text-center mb-10"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6 floating-badge">
             <Sparkles size={14} className="text-amber-400" />
             <span className="text-xs md:text-sm font-mono text-cyan-400 tracking-[0.2em]">
               {t("koan.label", lang)}
             </span>
             <Sparkles size={14} className="text-amber-400" />
           </div>
-          <p className="text-sm md:text-base text-muted-foreground italic max-w-2xl mx-auto">
+          <p className="text-sm md:text-base text-muted-foreground italic max-w-2xl mx-auto text-shadow-dance">
             {t("koan.subtitle", lang)}
           </p>
         </motion.div>
@@ -117,7 +117,7 @@ export default function KoanSection() {
             transition={{ duration: 0.8 }}
             className="mt-8 md:mt-12 pt-6 border-t border-border/50 text-center"
           >
-            <p className="text-lg md:text-xl font-semibold text-gradient-cyan-purple mb-3">
+            <p className="text-lg md:text-xl font-semibold text-gradient-cyan-purple mb-3 glow-text-strong">
               {t("koan.invitation", lang)}
             </p>
             <p className="text-sm md:text-base text-muted-foreground italic">

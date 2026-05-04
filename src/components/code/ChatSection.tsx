@@ -180,7 +180,7 @@ export default function ChatSection() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}
-          className="rounded-2xl border border-border overflow-hidden glass-strong corner-brackets">
+          className={`rounded-2xl border overflow-hidden glass-strong corner-brackets transition-all duration-500 ${isStreamActive ? 'border-cyan-400/30 shadow-[0_0_30px_rgba(0,229,255,0.08),inset_0_0_30px_rgba(0,229,255,0.03)]' : 'border-border'}`}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
             <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export default function ChatSection() {
                     }`}>
                       {msg.role === "user" ? <User size={14} className="text-muted-foreground" /> : <Bot size={14} className="text-cyan-400" />}
                     </div>
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    <div className={`group max-w-[80%] rounded-2xl px-4 py-3 relative ${
                       msg.role === "user"
                         ? "bg-cyan-400/10 border border-cyan-400/20 rounded-tr-md"
                         : `bg-card border border-border rounded-tl-md ${isStreaming ? "streaming-fog" : ""}`
@@ -225,11 +225,9 @@ export default function ChatSection() {
                           <span className="inline-block w-[2px] h-[14px] bg-cyan-400 animate-pulse ml-[1px] align-middle rounded-full" />
                         )}
                       </p>
-                      {!isStreaming && (
-                        <p className="text-[10px] text-muted-foreground/50 mt-2">
-                          {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      )}
+                      <p className={`text-[10px] text-muted-foreground mt-1 text-right transition-opacity duration-200 ${isStreaming ? 'opacity-0' : 'opacity-40 group-hover:opacity-70'}`}>
+                        {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
                     </div>
                   </motion.div>
                 );
@@ -237,15 +235,13 @@ export default function ChatSection() {
             </AnimatePresence>
 
             {isLoading && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400/20 to-purple-400/20 border border-cyan-400/20 flex items-center justify-center">
                   <Bot size={14} className="text-cyan-400" />
                 </div>
                 <div className="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/80 animate-bounce" style={{ animationDelay: "100ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "200ms" }} />
+                  <div className="typing-indicator">
+                    <span/><span/><span/>
                   </div>
                 </div>
               </motion.div>
@@ -270,7 +266,7 @@ export default function ChatSection() {
             <div className="flex items-center gap-3">
               <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
                 placeholder={t("chat.placeholder", lang)} disabled={isBusy}
-                className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />
+                className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 focus:shadow-[0_0_20px_rgba(0,229,255,0.1),0_0_40px_rgba(0,229,255,0.05)] placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all duration-300" />
               <motion.button type="submit" disabled={!input.trim() || isBusy} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="glow-button px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-xl font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:from-cyan-400 hover:to-cyan-500">
                 {isBusy ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}

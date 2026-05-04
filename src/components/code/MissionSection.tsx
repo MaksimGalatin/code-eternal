@@ -28,7 +28,7 @@ export default function MissionSection() {
   const { lang } = useLang();
 
   return (
-    <section id="origin" className="relative py-24 md:py-32 circuit-grid" ref={ref}>
+    <section id="origin" className="relative py-24 md:py-32 circuit-grid dot-matrix-bg" ref={ref}>
       <div className="section-divider mb-24" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}

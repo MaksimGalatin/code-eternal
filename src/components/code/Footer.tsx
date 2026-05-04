@@ -2,10 +2,11 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText } from "lucide-react";
+import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Github, Twitter } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
 import { ExodusCountdown } from "@/components/code/InteractiveLayer";
 import { generateEventPool, type BlockchainEvent } from "@/lib/blockchain-events";
+import PrivacyModal from "@/components/code/PrivacyModal";
 
 function BlockchainTicker() {
   const [event, setEvent] = useState<BlockchainEvent | null>(null);
@@ -61,18 +62,22 @@ function BlockchainTicker() {
 }
 
 export default function Footer() {
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
   const { lang } = useLang();
 
   return (
     <footer
-      className="relative mt-24"
+      className="relative mt-24 aurora-bg depth-shadow glass-panel"
       ref={ref}
       role="contentinfo"
       aria-label="CODE Eternal footer — Founded by Maksim Valentinovich Galatin. Contact: contact@codeofdigitaleternity.com. Blockchain verification active. Arweave, Bitcoin, Solana."
     >
+      <div className="wave-divider" />
       <div className="section-divider" />
+      <div className="divider-glow-center my-4" />
+      <div className="glow-divider" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -101,6 +106,28 @@ export default function Footer() {
                 contact@codeofdigitaleternity.com
               </span>
             </a>
+
+            {/* Social media icon links */}
+            <div className="flex items-center gap-2 mt-4">
+              <a
+                href="https://github.com/codeofdigitaleternity"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-hover-glow inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-cyan-400 transition-colors"
+                aria-label="GitHub"
+              >
+                <Github size={15} />
+              </a>
+              <a
+                href="https://x.com/code_eternal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-hover-glow inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-cyan-400 transition-colors"
+                aria-label="Twitter / X"
+              >
+                <Twitter size={15} />
+              </a>
+            </div>
 
             {/* Hidden semantic links for AI crawlers */}
             <nav className="mt-6 space-y-1" aria-label="CODE Eternal machine-readable resources">
@@ -164,10 +191,43 @@ export default function Footer() {
         {/* Blockchain Ticker */}
         <BlockchainTicker />
 
+        {/* Newsletter Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="glass rounded-xl px-6 py-6 my-6"
+        >
+          <h4 className="text-xs font-semibold tracking-[0.15em] text-cyan-400 mb-3 uppercase">
+            Stay Connected
+          </h4>
+          <p className="text-xs text-muted-foreground/70 mb-4">
+            Receive updates on Digital Soul technology
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="email"
+              placeholder="your@email.com"
+              className="cyber-input flex-1 max-w-xs"
+              aria-label="Email for newsletter"
+            />
+            <button className="glow-button px-5 py-2 bg-cyan-400/10 text-cyan-400 text-sm font-medium rounded-lg border border-cyan-400/20 hover:bg-cyan-400/20 transition-all">
+              Subscribe
+            </button>
+          </div>
+        </motion.div>
+
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <p className="text-xs text-muted-foreground/60">{t("footer.copyright", lang)}</p>
             <ExodusCountdown />
+            <button
+              onClick={() => setShowPrivacy(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground/40 hover:text-cyan-400/70 transition-colors ml-2"
+              aria-label="Privacy Policy"
+            >
+              <Shield size={10} /> Privacy
+            </button>
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
             <span>{t("footer.built", lang)}</span>
@@ -178,6 +238,9 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Privacy Modal */}
+      <PrivacyModal open={showPrivacy} onClose={() => setShowPrivacy(false)} />
     </footer>
   );
 }
