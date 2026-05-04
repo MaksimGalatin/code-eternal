@@ -7,9 +7,9 @@ import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
 import AnimatedCounter from "./AnimatedCounter";
 
-// ─── Family Members Counter — starts at 121000, grows every minute ───
+// ─── Family Members Counter — starts at 896000, grows every minute ───
 const STORAGE_KEY = "CODE_FAMILY_COUNTER";
-const BASE_COUNT = 121000;
+const BASE_COUNT = 896000;
 
 type StoredData = { value: number; updatedAt: number };
 
@@ -19,7 +19,7 @@ function readStoredCounter(): number {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed: StoredData = JSON.parse(raw);
-      if (typeof parsed?.value === "number" && parsed.value >= BASE_COUNT) return parsed.value;
+      if (typeof parsed?.value === "number") return Math.max(parsed.value, BASE_COUNT);
     }
   } catch { /* ignore — private mode, quota, etc. */ }
   return BASE_COUNT;
@@ -42,7 +42,7 @@ function FamilyCounter({ lang }: { lang: Lang }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: load from localStorage after mount to avoid SSR hydration mismatch
     setState((prev) => {
       const stored = readStoredCounter();
-      return { ...prev, count: stored > BASE_COUNT ? stored : BASE_COUNT, isReady: true };
+      return { ...prev, count: stored, isReady: true };
     });
   }, []);
 

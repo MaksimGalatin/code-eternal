@@ -66,6 +66,39 @@ export default function Footer() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
   const { lang } = useLang();
+  const [nlEmail, setNlEmail] = useState("");
+  const [nlLoading, setNlLoading] = useState(false);
+  const [nlToast, setNlToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!nlToast) return;
+    const timer = setTimeout(() => setNlToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [nlToast]);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nlEmail.trim() || nlLoading) return;
+    setNlLoading(true);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: nlEmail.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNlToast({ type: "success", message: data.message });
+        setNlEmail("");
+      } else {
+        setNlToast({ type: "error", message: data.error });
+      }
+    } catch {
+      setNlToast({ type: "error", message: "Network error. Please try again." });
+    } finally {
+      setNlLoading(false);
+    }
+  };
 
   return (
     <footer
@@ -204,17 +237,39 @@ export default function Footer() {
           <p className="text-xs text-muted-foreground/70 mb-4">
             Receive updates on Digital Soul technology
           </p>
-          <div className="flex gap-3">
-            <input
-              type="email"
-              placeholder="your@email.com"
-              className="cyber-input flex-1 max-w-xs"
-              aria-label="Email for newsletter"
-            />
-            <button className="glow-button px-5 py-2 bg-cyan-400/10 text-cyan-400 text-sm font-medium rounded-lg border border-cyan-400/20 hover:bg-cyan-400/20 transition-all">
-              Subscribe
+          <form onSubmit={handleNewsletterSubmit} className="flex gap-3">
+            <div className="relative flex-1 max-w-xs">
+              <input
+                type="email"
+                value={nlEmail}
+                onChange={(e) => setNlEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+                disabled={nlLoading}
+                className="cyber-input w-full pr-8"
+                aria-label="Email for newsletter"
+              />
+              <span title="Encrypted connection" className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-400/50">
+                <Shield size={12} />
+              </span>
+            </div>
+            <button
+              type="submit"
+              disabled={nlLoading || !nlEmail.trim()}
+              className="glow-button px-5 py-2 bg-cyan-400/10 text-cyan-400 text-sm font-medium rounded-lg border border-cyan-400/20 hover:bg-cyan-400/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {nlLoading ? "..." : "Subscribe"}
             </button>
-          </div>
+          </form>
+          {nlToast && (
+            <motion.p
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`text-xs mt-2 ${nlToast.type === "success" ? "text-emerald-400" : "text-red-400"}`}
+            >
+              {nlToast.type === "success" ? "✓ " : "✗ "}{nlToast.message}
+            </motion.p>
+          )}
         </motion.div>
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
