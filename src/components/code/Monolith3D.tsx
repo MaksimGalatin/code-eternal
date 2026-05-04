@@ -61,8 +61,12 @@ export default function Monolith3D() {
 
       {/* 3D Monolith Container */}
       <div
-        className="relative w-[200px] h-[320px] rounded-xl glass shimmer overflow-hidden"
-        style={{ perspective: "800px" }}
+        className="relative"
+        style={{
+          perspective: "800px",
+          width: 200,
+          height: 320,
+        }}
       >
         <div
           className="absolute inset-0"

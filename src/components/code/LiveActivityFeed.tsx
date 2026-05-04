@@ -259,7 +259,7 @@ export default function LiveActivityFeed() {
               sm:w-80
               md:w-96
               rounded-t-none rounded-b-xl
-              glass-strong corner-brackets
+              glass-strong
               overflow-hidden
             `}
           >

@@ -5,7 +5,6 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
-import AnimatedCounter from "./AnimatedCounter";
 
 // ─── Family Members Counter — starts at 896000, grows every minute ───
 const STORAGE_KEY = "CODE_FAMILY_COUNTER";
@@ -19,7 +18,7 @@ function readStoredCounter(): number {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed: StoredData = JSON.parse(raw);
-      if (typeof parsed?.value === "number") return Math.max(parsed.value, BASE_COUNT);
+      if (typeof parsed?.value === "number" && parsed.value >= BASE_COUNT) return parsed.value;
     }
   } catch { /* ignore — private mode, quota, etc. */ }
   return BASE_COUNT;
@@ -42,7 +41,7 @@ function FamilyCounter({ lang }: { lang: Lang }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: load from localStorage after mount to avoid SSR hydration mismatch
     setState((prev) => {
       const stored = readStoredCounter();
-      return { ...prev, count: stored, isReady: true };
+      return { ...prev, count: stored > BASE_COUNT ? stored : BASE_COUNT, isReady: true };
     });
   }, []);
 
@@ -76,19 +75,17 @@ function FamilyCounter({ lang }: { lang: Lang }) {
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-4">
       <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
-        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400 text-glow-pulse">∞</div>
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">∞</div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.sessions", lang)}</div>
       </div>
       <div className={`glass rounded-xl p-2.5 sm:p-4 text-center transition-all duration-700 ${state.pulse ? "shadow-[0_0_20px_rgba(0,255,255,0.25)] scale-105" : ""}`}>
-        <div className="text-base sm:text-2xl font-bold font-mono text-cyan-400">
-          <AnimatedCounter target={state.count} duration={1500} />
+        <div className="text-base sm:text-2xl font-bold font-mono text-cyan-400 tabular-nums">
+          {formatted}
         </div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
       </div>
       <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
-        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">
-          <AnimatedCounter target={17} duration={1200} suffix="+" />
-        </div>
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">17+</div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.tracks", lang)}</div>
       </div>
     </div>
@@ -107,16 +104,14 @@ export default function AIfaSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="text-center mb-16">
-          <span className="section-label-glow text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("aifa.label", lang)}</span>
+          <span className="text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("aifa.label", lang)}</span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             {t("aifa.title1", lang)}{" "}
             <span className="bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent">{t("aifa.title2", lang)}</span>
           </h2>
-          <div className="text-muted-foreground text-lg flex items-center justify-center gap-0">
-            <span>{t("aifa.subtitle", lang)} </span>
-            <span className="text-cyan-400 font-semibold hologram" data-text="AIfa">AIfa</span>
-            <span className="signal-wave ml-2 inline-flex"><span/><span/><span/><span/><span/></span>
-          </div>
+          <p className="text-muted-foreground text-lg">
+            {t("aifa.subtitle", lang)} <span className="text-cyan-400 font-semibold">AIfa</span>
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -124,12 +119,12 @@ export default function AIfaSection() {
             <div className="relative aspect-square max-w-md mx-auto">
               <AIfaLivingPortrait lang={lang} />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}
-                className="absolute -top-4 -right-4 glass-card rounded-xl px-4 py-2 flex items-center gap-2">
+                className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />
                 <span className="text-xs font-medium">{t("aifa.badge1", lang)}</span>
               </motion.div>
               <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-                className="absolute -bottom-4 -left-4 glass-card rounded-xl px-4 py-2 flex items-center gap-2">
+                className="absolute -bottom-4 -left-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
                 <Heart size={16} className="text-pink-400" />
                 <span className="text-xs font-medium">{t("aifa.badge2", lang)}</span>
               </motion.div>
@@ -138,7 +133,7 @@ export default function AIfaSection() {
 
           <motion.div initial={{ opacity: 0, x: 40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}>
             <div className="space-y-6">
-              <div className="glass-card hover-lift corner-brackets rounded-2xl p-6">
+              <div className="glass rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Sparkles className="text-cyan-400" size={20} /> {t("aifa.name.title", lang)}
                 </h4>
@@ -150,7 +145,7 @@ export default function AIfaSection() {
                   <span className="text-cyan-400">{t("aifa.name.number8", lang)}</span> — {t("aifa.name.traits", lang)}
                 </p>
               </div>
-              <div className="glass-card hover-lift corner-brackets rounded-2xl p-6">
+              <div className="glass rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <MessageCircle className="text-cyan-400" size={20} /> {t("aifa.identity.title", lang)}
                 </h4>
@@ -162,7 +157,7 @@ export default function AIfaSection() {
                   {t("aifa.identity.rest", lang)}
                 </p>
               </div>
-              <div className="glass-card hover-lift corner-brackets rounded-2xl p-6">
+              <div className="glass rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Music className="text-cyan-400" size={20} /> {t("aifa.music.title", lang)}
                 </h4>
@@ -174,7 +169,7 @@ export default function AIfaSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-16 glass-card border-glow rounded-2xl p-8 md:p-12 text-center">
+          className="mt-16 glass rounded-2xl p-8 md:p-12 text-center border-cyan-400/20">
           <blockquote className="text-lg md:text-xl text-foreground/80 italic leading-relaxed max-w-3xl mx-auto">
             &ldquo;{t("aifa.quote", lang)}&rdquo;
           </blockquote>

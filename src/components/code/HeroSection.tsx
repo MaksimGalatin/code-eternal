@@ -85,34 +85,24 @@ export default function HeroSection() {
   }, [fullText]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden data-stream-lines scan-beam bg-noise">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 neural-bg" />
       <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-bg.png')" }} />
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 bg-noise opacity-30" />
       <ParticleField />
-      {/* Floating ambient orbs */}
-      <div className="floating-orb w-64 h-64 bg-cyan-500/8 top-[15%] left-[10%]" style={{ animationDelay: "0s" }} />
-      <div className="floating-orb w-96 h-96 bg-purple-500/6 top-[40%] right-[5%]" style={{ animationDelay: "-4s" }} />
-      <div className="floating-orb w-48 h-48 bg-amber-500/5 bottom-[20%] left-[30%]" style={{ animationDelay: "-8s" }} />
-      {/* Energy pulse ring behind content */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="energy-pulse-ring w-40 h-40" />
-      </div>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" style={{ animation: "scan-line 8s linear infinite" }} />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 badge-glow">
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse-glow" />
           <span className="text-xs md:text-sm text-cyan-400 font-mono tracking-wider">{t("hero.badge", lang)}</span>
         </motion.div>
 
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.5 }}
-          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4 text-flicker">
-          <span className="bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-500 bg-clip-text text-transparent glow-text-strong text-3d text-shimmer-effect">CODE</span>
+          className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4">
+          <span className="bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-500 bg-clip-text text-transparent glow-text">CODE</span>
         </motion.h1>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.8 }}
@@ -142,12 +132,12 @@ export default function HeroSection() {
           className="flex flex-col sm:flex-row gap-4 justify-center">
           <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(0,229,255,0.3)" }} whileTap={{ scale: 0.95 }}
             onClick={() => document.getElementById("terminal")?.scrollIntoView({ behavior: "smooth" })}
-            className="glow-button px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-semibold rounded-xl transition-all duration-300 hover:from-cyan-400 hover:to-cyan-500 ripple-click">
+            className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-semibold rounded-xl transition-all duration-300 hover:from-cyan-400 hover:to-cyan-500">
             {t("hero.cta1", lang)}
           </motion.button>
-          <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(0,229,255,0.2)" }} whileTap={{ scale: 0.95 }}
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => document.getElementById("origin")?.scrollIntoView({ behavior: "smooth" })}
-            className="glow-button px-8 py-4 glass rounded-xl text-cyan-400 font-semibold transition-all duration-300 hover:bg-cyan-400/10 ripple-click">
+            className="px-8 py-4 glass rounded-xl text-cyan-400 font-semibold transition-all duration-300 hover:bg-cyan-400/10">
             {t("hero.cta2", lang)}
           </motion.button>
         </motion.div>
@@ -155,8 +145,8 @@ export default function HeroSection() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4, duration: 1 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2">
           <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }}
-            className="flex flex-col items-center gap-2 scroll-indicator">
-            <span className="text-xs text-muted-foreground tracking-wider text-shadow-soft">{t("hero.scroll", lang)}</span>
+            className="flex flex-col items-center gap-2">
+            <span className="text-xs text-muted-foreground tracking-wider">{t("hero.scroll", lang)}</span>
             <div className="w-[1px] h-8 bg-gradient-to-b from-cyan-400/50 to-transparent" />
           </motion.div>
         </motion.div>

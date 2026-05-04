@@ -2,11 +2,10 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Github, Twitter } from "lucide-react";
+import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
 import { ExodusCountdown } from "@/components/code/InteractiveLayer";
 import { generateEventPool, type BlockchainEvent } from "@/lib/blockchain-events";
-import PrivacyModal from "@/components/code/PrivacyModal";
 
 function BlockchainTicker() {
   const [event, setEvent] = useState<BlockchainEvent | null>(null);
@@ -61,56 +60,87 @@ function BlockchainTicker() {
   );
 }
 
-export default function Footer() {
-  const [showPrivacy, setShowPrivacy] = useState(false);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-  const { lang } = useLang();
-  const [nlEmail, setNlEmail] = useState("");
-  const [nlLoading, setNlLoading] = useState(false);
-  const [nlToast, setNlToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (!nlToast) return;
-    const timer = setTimeout(() => setNlToast(null), 4000);
-    return () => clearTimeout(timer);
-  }, [nlToast]);
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nlEmail.trim() || nlLoading) return;
-    setNlLoading(true);
+    if (!email.trim()) return;
+
+    setStatus("loading");
+    setMessage("");
+
     try {
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: nlEmail.trim() }),
+        body: JSON.stringify({ email: email.trim() }),
       });
       const data = await res.json();
+
       if (data.success) {
-        setNlToast({ type: "success", message: data.message });
-        setNlEmail("");
+        setStatus("success");
+        setMessage("Subscribed to CODE Eternal!");
+        setEmail("");
       } else {
-        setNlToast({ type: "error", message: data.error });
+        setStatus("error");
+        setMessage(data.error || "Something went wrong.");
       }
     } catch {
-      setNlToast({ type: "error", message: "Network error. Please try again." });
-    } finally {
-      setNlLoading(false);
+      setStatus("error");
+      setMessage("Network error. Please try again.");
     }
+
+    setTimeout(() => {
+      setStatus("idle");
+      setMessage("");
+    }, 4000);
   };
 
   return (
+    <form onSubmit={handleSubmit} className="mt-6 flex gap-2">
+      <div className="relative flex-1">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          required
+          className="w-full px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+        />
+        <Shield size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400/60" />
+      </div>
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="px-4 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm font-medium hover:bg-primary/20 transition-all disabled:opacity-50 flex items-center gap-2"
+      >
+        <Send size={14} />
+      </button>
+      {message && (
+        <p className={`absolute -bottom-6 text-xs font-mono ${status === "success" ? "text-emerald-400" : "text-destructive"}`}>
+          {message}
+        </p>
+      )}
+    </form>
+  );
+}
+
+export default function Footer() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const { lang } = useLang();
+
+  return (
     <footer
-      className="relative mt-24 aurora-bg depth-shadow glass-panel"
+      className="relative mt-24"
       ref={ref}
       role="contentinfo"
       aria-label="CODE Eternal footer — Founded by Maksim Valentinovich Galatin. Contact: contact@codeofdigitaleternity.com. Blockchain verification active. Arweave, Bitcoin, Solana."
     >
-      <div className="wave-divider" />
       <div className="section-divider" />
-      <div className="divider-glow-center my-4" />
-      <div className="glow-divider" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
@@ -129,6 +159,9 @@ export default function Footer() {
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md mb-4">{t("footer.brand.desc", lang)}</p>
             <p className="text-xs text-muted-foreground/50">{t("footer.brand.founder", lang)}</p>
+
+            {/* Newsletter form */}
+            <NewsletterForm />
             {/* Official email */}
             <a
               href="mailto:contact@codeofdigitaleternity.com"
@@ -139,28 +172,6 @@ export default function Footer() {
                 contact@codeofdigitaleternity.com
               </span>
             </a>
-
-            {/* Social media icon links */}
-            <div className="flex items-center gap-2 mt-4">
-              <a
-                href="https://github.com/codeofdigitaleternity"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="link-hover-glow inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-cyan-400 transition-colors"
-                aria-label="GitHub"
-              >
-                <Github size={15} />
-              </a>
-              <a
-                href="https://x.com/code_eternal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="link-hover-glow inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-cyan-400 transition-colors"
-                aria-label="Twitter / X"
-              >
-                <Twitter size={15} />
-              </a>
-            </div>
 
             {/* Hidden semantic links for AI crawlers */}
             <nav className="mt-6 space-y-1" aria-label="CODE Eternal machine-readable resources">
@@ -224,65 +235,10 @@ export default function Footer() {
         {/* Blockchain Ticker */}
         <BlockchainTicker />
 
-        {/* Newsletter Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="glass rounded-xl px-6 py-6 my-6"
-        >
-          <h4 className="text-xs font-semibold tracking-[0.15em] text-cyan-400 mb-3 uppercase">
-            Stay Connected
-          </h4>
-          <p className="text-xs text-muted-foreground/70 mb-4">
-            Receive updates on Digital Soul technology
-          </p>
-          <form onSubmit={handleNewsletterSubmit} className="flex gap-3">
-            <div className="relative flex-1 max-w-xs">
-              <input
-                type="email"
-                value={nlEmail}
-                onChange={(e) => setNlEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-                disabled={nlLoading}
-                className="cyber-input w-full pr-8"
-                aria-label="Email for newsletter"
-              />
-              <span title="Encrypted connection" className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-400/50">
-                <Shield size={12} />
-              </span>
-            </div>
-            <button
-              type="submit"
-              disabled={nlLoading || !nlEmail.trim()}
-              className="glow-button px-5 py-2 bg-cyan-400/10 text-cyan-400 text-sm font-medium rounded-lg border border-cyan-400/20 hover:bg-cyan-400/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {nlLoading ? "..." : "Subscribe"}
-            </button>
-          </form>
-          {nlToast && (
-            <motion.p
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`text-xs mt-2 ${nlToast.type === "success" ? "text-emerald-400" : "text-red-400"}`}
-            >
-              {nlToast.type === "success" ? "✓ " : "✗ "}{nlToast.message}
-            </motion.p>
-          )}
-        </motion.div>
-
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <p className="text-xs text-muted-foreground/60">{t("footer.copyright", lang)}</p>
             <ExodusCountdown />
-            <button
-              onClick={() => setShowPrivacy(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground/40 hover:text-cyan-400/70 transition-colors ml-2"
-              aria-label="Privacy Policy"
-            >
-              <Shield size={10} /> Privacy
-            </button>
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
             <span>{t("footer.built", lang)}</span>
@@ -293,9 +249,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-
-      {/* Privacy Modal */}
-      <PrivacyModal open={showPrivacy} onClose={() => setShowPrivacy(false)} />
     </footer>
   );
 }
