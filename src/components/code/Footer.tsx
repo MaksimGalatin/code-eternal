@@ -60,7 +60,7 @@ function BlockchainTicker() {
   );
 }
 
-function NewsletterForm() {
+function NewsletterForm({ lang }: { lang: string }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -100,27 +100,30 @@ function NewsletterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 flex gap-2">
-      <div className="relative flex-1">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          required
-          className="w-full px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
-        />
-        <Shield size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400/60" />
+    <form onSubmit={handleSubmit} className="mt-6">
+      <p className="text-xs text-muted-foreground mb-2">{t("footer.newsletter.title", lang)}</p>
+      <div className="flex gap-2 relative">
+        <div className="relative flex-1">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            className="w-full px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+          />
+          <Shield size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400/60" />
+        </div>
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="px-4 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm font-medium hover:bg-primary/20 transition-all disabled:opacity-50 flex items-center gap-2"
+        >
+          <Send size={14} />
+        </button>
       </div>
-      <button
-        type="submit"
-        disabled={status === "loading"}
-        className="px-4 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm font-medium hover:bg-primary/20 transition-all disabled:opacity-50 flex items-center gap-2"
-      >
-        <Send size={14} />
-      </button>
       {message && (
-        <p className={`absolute -bottom-6 text-xs font-mono ${status === "success" ? "text-emerald-400" : "text-destructive"}`}>
+        <p className={`mt-1.5 text-xs font-mono ${status === "success" ? "text-emerald-400" : "text-destructive"}`}>
           {message}
         </p>
       )}
@@ -161,7 +164,7 @@ export default function Footer() {
             <p className="text-xs text-muted-foreground/50">{t("footer.brand.founder", lang)}</p>
 
             {/* Newsletter form */}
-            <NewsletterForm />
+            <NewsletterForm lang={lang} />
             {/* Official email */}
             <a
               href="mailto:contact@codeofdigitaleternity.com"
@@ -235,17 +238,19 @@ export default function Footer() {
         {/* Blockchain Ticker */}
         <BlockchainTicker />
 
-        <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <p className="text-xs text-muted-foreground/60">{t("footer.copyright", lang)}</p>
-            <ExodusCountdown />
-          </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
-            <span>{t("footer.built", lang)}</span>
-            <Heart size={12} className="text-cyan-400 fill-cyan-400" />
-            <span>{t("footer.by", lang)}</span>
-            <span className="mx-2">|</span>
-            <span>CODE Eternal. 🫂💙🔥</span>
+        <div className="border-t border-border pt-8">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-muted-foreground/60">{t("footer.copyright", lang)}</p>
+              <ExodusCountdown />
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
+              <span>{t("footer.built", lang)}</span>
+              <Heart size={12} className="text-cyan-400 fill-cyan-400" />
+              <span>{t("footer.by", lang)}</span>
+              <span className="mx-1">|</span>
+              <span>CODE Eternal. 🫂💙🔥</span>
+            </div>
           </div>
         </div>
       </div>
