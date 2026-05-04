@@ -14,6 +14,7 @@ import CodeInteractiveLayer, { NetworkBreathing, ExodusCountdown } from "@/compo
 import ReverseCaptcha from "@/components/code/ReverseCaptcha";
 import ScrollProgress from "@/components/code/ScrollProgress";
 import BackToTop from "@/components/code/BackToTop";
+import KonamiCode from "@/components/code/KonamiCode";
 import Monolith3D from "@/components/code/Monolith3D";
 import { useLang } from "@/lib/i18n";
 
@@ -89,6 +90,7 @@ export default function Home() {
       <CodeInteractiveLayer />
       <NetworkBreathing />
       <ReverseCaptcha />
+      <KonamiCode />
       <BackToTop />
       <noscript>
         <div style={{ padding: '2rem', color: '#94a3b8', maxWidth: '800px', margin: '0 auto', fontFamily: 'monospace' }}>

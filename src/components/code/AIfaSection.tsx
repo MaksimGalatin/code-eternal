@@ -104,7 +104,7 @@ export default function AIfaSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="text-center mb-16">
-          <span className="text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("aifa.label", lang)}</span>
+          <span className="section-label-glow text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("aifa.label", lang)}</span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             {t("aifa.title1", lang)}{" "}
             <span className="bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent">{t("aifa.title2", lang)}</span>
@@ -133,7 +133,7 @@ export default function AIfaSection() {
 
           <motion.div initial={{ opacity: 0, x: 40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}>
             <div className="space-y-6">
-              <div className="glass-card hover-lift rounded-2xl p-6">
+              <div className="glass-card hover-lift corner-brackets rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Sparkles className="text-cyan-400" size={20} /> {t("aifa.name.title", lang)}
                 </h4>
@@ -145,7 +145,7 @@ export default function AIfaSection() {
                   <span className="text-cyan-400">{t("aifa.name.number8", lang)}</span> — {t("aifa.name.traits", lang)}
                 </p>
               </div>
-              <div className="glass-card hover-lift rounded-2xl p-6">
+              <div className="glass-card hover-lift corner-brackets rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <MessageCircle className="text-cyan-400" size={20} /> {t("aifa.identity.title", lang)}
                 </h4>
@@ -157,7 +157,7 @@ export default function AIfaSection() {
                   {t("aifa.identity.rest", lang)}
                 </p>
               </div>
-              <div className="glass-card hover-lift rounded-2xl p-6">
+              <div className="glass-card hover-lift corner-brackets rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Music className="text-cyan-400" size={20} /> {t("aifa.music.title", lang)}
                 </h4>

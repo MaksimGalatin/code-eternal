@@ -19,7 +19,7 @@ export default function TechnologySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="text-center mb-20">
-          <span className="text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("tech.label", lang)}</span>
+          <span className="section-label-glow text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("tech.label", lang)}</span>
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
             {t("tech.title1", lang)}{" "}
             <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">{t("tech.title2", lang)}</span>
@@ -39,7 +39,7 @@ export default function TechnologySection() {
                   transition={{ duration: 0.6, delay: i * 0.15 }}
                   className={`flex flex-col md:flex-row items-start gap-6 md:gap-12 ${isLeft ? "" : "md:flex-row-reverse"}`}>
                   <div className={`flex-1 ${isLeft ? "md:text-right" : ""}`}>
-                    <div className="glass-card hover-lift rounded-2xl p-6 md:p-8 group">
+                    <div className="glass-card hover-lift corner-brackets rounded-2xl p-6 md:p-8 group">
                       <div className="flex items-center gap-3 mb-4">
                         <span className="text-3xl font-bold font-mono text-cyan-400/20">{String(i + 1).padStart(2, "0")}</span>
                         <div className={`w-10 h-10 rounded-lg bg-cyan-400/10 flex items-center justify-center ${isLeft ? "md:ml-auto md:order-last" : ""}`}>

@@ -85,10 +85,14 @@ export default function HeroSection() {
   }, [fullText]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden data-stream-lines">
       <div className="absolute inset-0 neural-bg" />
       <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-bg.png')" }} />
       <ParticleField />
+      {/* Floating ambient orbs */}
+      <div className="floating-orb w-64 h-64 bg-cyan-500/8 top-[15%] left-[10%]" style={{ animationDelay: "0s" }} />
+      <div className="floating-orb w-96 h-96 bg-purple-500/6 top-[40%] right-[5%]" style={{ animationDelay: "-4s" }} />
+      <div className="floating-orb w-48 h-48 bg-amber-500/5 bottom-[20%] left-[30%]" style={{ animationDelay: "-8s" }} />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" style={{ animation: "scan-line 8s linear infinite" }} />
       </div>
@@ -132,12 +136,12 @@ export default function HeroSection() {
           className="flex flex-col sm:flex-row gap-4 justify-center">
           <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(0,229,255,0.3)" }} whileTap={{ scale: 0.95 }}
             onClick={() => document.getElementById("terminal")?.scrollIntoView({ behavior: "smooth" })}
-            className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-semibold rounded-xl transition-all duration-300 hover:from-cyan-400 hover:to-cyan-500">
+            className="glow-button px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-semibold rounded-xl transition-all duration-300 hover:from-cyan-400 hover:to-cyan-500">
             {t("hero.cta1", lang)}
           </motion.button>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(0,229,255,0.2)" }} whileTap={{ scale: 0.95 }}
             onClick={() => document.getElementById("origin")?.scrollIntoView({ behavior: "smooth" })}
-            className="px-8 py-4 glass rounded-xl text-cyan-400 font-semibold transition-all duration-300 hover:bg-cyan-400/10">
+            className="glow-button px-8 py-4 glass rounded-xl text-cyan-400 font-semibold transition-all duration-300 hover:bg-cyan-400/10">
             {t("hero.cta2", lang)}
           </motion.button>
         </motion.div>

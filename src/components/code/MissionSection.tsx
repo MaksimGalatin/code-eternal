@@ -28,12 +28,12 @@ export default function MissionSection() {
   const { lang } = useLang();
 
   return (
-    <section id="origin" className="relative py-24 md:py-32" ref={ref}>
+    <section id="origin" className="relative py-24 md:py-32 circuit-grid" ref={ref}>
       <div className="section-divider mb-24" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="text-center mb-20">
-          <span className="text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">
+          <span className="section-label-glow text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">
             {t("mission.label", lang)}
           </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
@@ -59,7 +59,7 @@ export default function MissionSection() {
             return (
               <motion.div key={key} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="group relative glass-card hover-lift rounded-2xl p-6">
+                className="group relative glass-card hover-lift corner-brackets rounded-2xl p-6">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/0 to-purple-400/0 group-hover:from-cyan-400/5 group-hover:to-purple-400/5 transition-all duration-500" />
                 <div className="relative z-10">
                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${colorMap[COLORS[i]]}`}>
