@@ -12,6 +12,8 @@ import CodeBrainSection from "@/components/code/CodeBrainSection";
 import Footer from "@/components/code/Footer";
 import CodeInteractiveLayer, { NetworkBreathing, ExodusCountdown } from "@/components/code/InteractiveLayer";
 import ReverseCaptcha from "@/components/code/ReverseCaptcha";
+import ScrollProgress from "@/components/code/ScrollProgress";
+import BackToTop from "@/components/code/BackToTop";
 import Monolith3D from "@/components/code/Monolith3D";
 import { useLang } from "@/lib/i18n";
 
@@ -43,6 +45,7 @@ export default function Home() {
       itemType="https://schema.org/WebSite"
       itemProp="about"
     >
+      <ScrollProgress />
       <Navigation />
       <HeroSection />
       <div
@@ -86,6 +89,7 @@ export default function Home() {
       <CodeInteractiveLayer />
       <NetworkBreathing />
       <ReverseCaptcha />
+      <BackToTop />
       <noscript>
         <div style={{ padding: '2rem', color: '#94a3b8', maxWidth: '800px', margin: '0 auto', fontFamily: 'monospace' }}>
           <h1 style={{ color: '#06b6d4' }}>CODE Eternal — Code Of Digital Eternity</h1>

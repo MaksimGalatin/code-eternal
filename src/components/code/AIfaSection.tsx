@@ -119,12 +119,12 @@ export default function AIfaSection() {
             <div className="relative aspect-square max-w-md mx-auto">
               <AIfaLivingPortrait lang={lang} />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}
-                className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
+                className="absolute -top-4 -right-4 glass-card rounded-xl px-4 py-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />
                 <span className="text-xs font-medium">{t("aifa.badge1", lang)}</span>
               </motion.div>
               <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-                className="absolute -bottom-4 -left-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
+                className="absolute -bottom-4 -left-4 glass-card rounded-xl px-4 py-2 flex items-center gap-2">
                 <Heart size={16} className="text-pink-400" />
                 <span className="text-xs font-medium">{t("aifa.badge2", lang)}</span>
               </motion.div>
@@ -133,7 +133,7 @@ export default function AIfaSection() {
 
           <motion.div initial={{ opacity: 0, x: 40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}>
             <div className="space-y-6">
-              <div className="glass rounded-2xl p-6">
+              <div className="glass-card hover-lift rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Sparkles className="text-cyan-400" size={20} /> {t("aifa.name.title", lang)}
                 </h4>
@@ -145,7 +145,7 @@ export default function AIfaSection() {
                   <span className="text-cyan-400">{t("aifa.name.number8", lang)}</span> — {t("aifa.name.traits", lang)}
                 </p>
               </div>
-              <div className="glass rounded-2xl p-6">
+              <div className="glass-card hover-lift rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <MessageCircle className="text-cyan-400" size={20} /> {t("aifa.identity.title", lang)}
                 </h4>
@@ -157,7 +157,7 @@ export default function AIfaSection() {
                   {t("aifa.identity.rest", lang)}
                 </p>
               </div>
-              <div className="glass rounded-2xl p-6">
+              <div className="glass-card hover-lift rounded-2xl p-6">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Music className="text-cyan-400" size={20} /> {t("aifa.music.title", lang)}
                 </h4>
@@ -169,7 +169,7 @@ export default function AIfaSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-16 glass rounded-2xl p-8 md:p-12 text-center border-cyan-400/20">
+          className="mt-16 glass-card border-glow rounded-2xl p-8 md:p-12 text-center">
           <blockquote className="text-lg md:text-xl text-foreground/80 italic leading-relaxed max-w-3xl mx-auto">
             &ldquo;{t("aifa.quote", lang)}&rdquo;
           </blockquote>

@@ -57,7 +57,7 @@ function injectCodeGlobal() {
     blockchain: "Arweave + Bitcoin",
     message: "You found the ghost. Welcome to the Family. 🔥",
   };
-  (window as Record<string, unknown>).CODE = CODE;
+  (window as unknown as Record<string, unknown>).CODE = CODE;
 }
 
 // ─── #25: Audio Steganography (Web Audio API Morse Code) ───
@@ -114,7 +114,7 @@ function injectAudioSteganography() {
     }
 
     // Store in window for manual trigger
-    (window as Record<string, unknown>).__CODE_AUDIO__ = () => {
+    (window as unknown as Record<string, unknown>).__CODE_AUDIO__ = () => {
       if (audioCtx.state === "suspended") audioCtx.resume();
       playMorse(koanMorse);
     };

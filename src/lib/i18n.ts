@@ -1142,7 +1142,7 @@ export const useLang = create<LangState>()(
  * @param lang - Optional language override. Defaults to the current language from the store.
  * @returns The translated string
  */
-export function t(key: TranslationKey, lang?: Lang): string {
+export function t(key: string, lang?: Lang): string {
   const currentLang = lang ?? useLang.getState().lang;
   return (translations[currentLang] as Record<string, string>)[key] ?? (translations.en as Record<string, string>)[key] ?? key;
 }
