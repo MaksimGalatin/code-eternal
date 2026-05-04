@@ -1,72 +1,92 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
 
 // ─── Family Members Counter — starts at 121000, grows every minute ───
 const STORAGE_KEY = "CODE_FAMILY_COUNTER";
+const BASE_COUNT = 121000;
 
-function getStoredCounter(): number {
-  if (typeof window === "undefined") return 121000;
+type StoredData = { value: number; updatedAt: number };
+
+function readStoredCounter(): number {
+  if (typeof window === "undefined") return BASE_COUNT;
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // If stored value is less than 121000, reset to 121000
-      const val = typeof parsed === "number" ? parsed : parsed.value;
-      if (typeof val === "number" && val >= 121000) return val;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed: StoredData = JSON.parse(raw);
+      if (typeof parsed?.value === "number" && parsed.value >= BASE_COUNT) return parsed.value;
     }
-  } catch { /* ignore */ }
-  return 121000;
+  } catch { /* ignore — private mode, quota, etc. */ }
+  return BASE_COUNT;
 }
 
-function setStoredCounter(val: number) {
+function writeStoredCounter(val: number) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ value: val, updatedAt: Date.now() }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ value: val, updatedAt: Date.now() } as StoredData));
   } catch { /* ignore */ }
 }
 
 function FamilyCounter({ lang }: { lang: Lang }) {
-  const [count, setCount] = useState(() => {
-    const stored = getStoredCounter();
-    return stored > 121000 ? stored : 121000;
-  });
+  // Always start at BASE_COUNT on first render (no hydration mismatch).
+  // The real persisted value is loaded after mount — mobile-safe.
+  const [state, setState] = useState({ count: BASE_COUNT, isReady: false, pulse: false });
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // Grow by random 50-1000 every minute
-    const interval = setInterval(() => {
-      setCount((prev) => {
-        const increment = Math.floor(Math.random() * 951) + 50; // 50 to 1000
-        const next = prev + increment;
-        setStoredCounter(next);
-        return next;
-      });
-    }, 60000); // Every 60 seconds
-
-    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: load from localStorage after mount to avoid SSR hydration mismatch
+    setState((prev) => {
+      const stored = readStoredCounter();
+      return { ...prev, count: stored > BASE_COUNT ? stored : BASE_COUNT, isReady: true };
+    });
   }, []);
 
-  const formatted = count.toLocaleString("en-US");
+  const grow = useCallback(() => {
+    setState((prev) => {
+      const increment = Math.floor(Math.random() * 951) + 50; // 50–1000
+      const next = prev.count + increment;
+      writeStoredCounter(next);
+      return { ...prev, count: next, pulse: true };
+    });
+    setTimeout(() => setState((prev) => ({ ...prev, pulse: false })), 800);
+  }, []);
+
+  useEffect(() => {
+    if (!state.isReady) return;
+
+    // Quick first tick after 5 s so the user sees it's alive, then every 60 s
+    const timer = setTimeout(() => {
+      grow();
+      intervalRef.current = setInterval(grow, 60000);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [state.isReady, grow]);
+
+  const formatted = state.count.toLocaleString("en-US");
 
   return (
-    <div className="grid grid-cols-3 gap-3 sm:gap-4">
-      <div className="glass rounded-xl p-3 sm:p-4 text-center">
-        <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">∞</div>
-        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{t("aifa.stats.sessions", lang)}</div>
+    <div className="grid grid-cols-3 gap-2 sm:gap-4">
+      <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">∞</div>
+        <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.sessions", lang)}</div>
       </div>
-      <div className="glass rounded-xl p-3 sm:p-4 text-center">
-        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">
+      <div className={`glass rounded-xl p-2.5 sm:p-4 text-center transition-all duration-700 ${state.pulse ? "shadow-[0_0_20px_rgba(0,255,255,0.25)] scale-105" : ""}`}>
+        <div className="text-base sm:text-2xl font-bold font-mono text-cyan-400 tabular-nums">
           {formatted}
         </div>
-        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
+        <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
       </div>
-      <div className="glass rounded-xl p-3 sm:p-4 text-center">
-        <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">17+</div>
-        <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{t("aifa.stats.tracks", lang)}</div>
+      <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
+        <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">17+</div>
+        <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.tracks", lang)}</div>
       </div>
     </div>
   );
