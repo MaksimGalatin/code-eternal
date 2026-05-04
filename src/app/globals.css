@@ -93,17 +93,18 @@
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #050a14;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #1a3050;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00e5ff40;
+  background: #00e5ff60;
+  box-shadow: 0 0 8px #00e5ff50, 0 0 16px #00e5ff25;
 }
 
 /* Glow effects */
@@ -115,6 +116,23 @@
 }
 .glow-text {
   text-shadow: 0 0 20px #00e5ff60, 0 0 40px #00e5ff30, 0 0 80px #00e5ff15;
+}
+
+/* ======== NEW: Strong text glow + Purple text glow ======== */
+.glow-text-strong {
+  text-shadow:
+    0 0 7px #00e5ffcc,
+    0 0 20px #00e5ff88,
+    0 0 42px #00e5ff55,
+    0 0 80px #00e5ff33,
+    0 0 120px #00e5ff18;
+}
+.glow-purple {
+  text-shadow:
+    0 0 7px #7b61ffaa,
+    0 0 20px #7b61ff66,
+    0 0 42px #7b61ff44,
+    0 0 80px #7b61ff22;
 }
 
 /* Glass morphism */
@@ -129,6 +147,39 @@
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   border: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+/* ======== NEW: Glass card with animated gradient border shimmer ======== */
+.glass-card {
+  position: relative;
+  background: rgba(10, 22, 40, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 229, 255, 0.08);
+  overflow: hidden;
+}
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    #00e5ff00 0%,
+    #00e5ff80 25%,
+    #7b61ff80 50%,
+    #00e5ff80 75%,
+    #00e5ff00 100%
+  );
+  background-size: 400% 400%;
+  animation: glass-border-shimmer 6s ease-in-out infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Animated gradient border */
@@ -151,10 +202,64 @@
   pointer-events: none;
 }
 
+/* ======== NEW: Keyframes ======== */
+
 /* Pulse animation */
 @keyframes gradient-shift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+/* Glass card border shimmer */
+@keyframes glass-border-shimmer {
+  0%, 100% { background-position: 0% 0%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+
+/* Horizontal shimmer / shine sweep */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+/* Section divider glow pulse */
+@keyframes divider-glow-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 4px #00e5ff20, 0 0 8px #7b61ff15;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 8px #00e5ff50, 0 0 20px #7b61ff30, 0 0 32px #00e5ff15;
+  }
+}
+
+/* Matrix rain column fall (CSS-only pseudo-element animation) */
+@keyframes matrix-rain {
+  0% {
+    background-position-y: 0%;
+  }
+  100% {
+    background-position-y: 100%;
+  }
+}
+
+/* Border glow pulse */
+@keyframes border-glow-pulse {
+  0%, 100% {
+    border-color: rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 5px #00e5ff15, inset 0 0 5px #00e5ff08;
+  }
+  50% {
+    border-color: rgba(0, 229, 255, 0.6);
+    box-shadow: 0 0 15px #00e5ff35, 0 0 30px #00e5ff18, inset 0 0 10px #00e5ff12;
+  }
 }
 
 @keyframes pulse-glow {
@@ -240,8 +345,94 @@
 
 /* Section divider */
 .section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #00e5ff40, #7b61ff40, transparent);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00e5ff50, #7b61ff50, transparent);
+  animation: divider-glow-pulse 4s ease-in-out infinite;
+  border-radius: 1px;
+}
+
+/* ======== NEW: Hover lift effect ======== */
+.hover-lift {
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 20px #00e5ff15,
+    0 0 40px #7b61ff0d;
+}
+
+/* ======== NEW: Gradient text utilities ======== */
+.text-gradient-cyan-purple {
+  background: linear-gradient(135deg, #00e5ff, #7b61ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient-amber-cyan {
+  background: linear-gradient(135deg, #ffab00, #00e5ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ======== NEW: Animated border glow ======== */
+.border-glow {
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  animation: border-glow-pulse 3s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+/* ======== NEW: Shimmer sweep utility ======== */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(0, 229, 255, 0.06) 40%,
+    rgba(0, 229, 255, 0.12) 50%,
+    rgba(0, 229, 255, 0.06) 60%,
+    transparent 80%
+  );
+  animation: shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ======== NEW: Matrix rain CSS-only pseudo-element ======== */
+.matrix-rain {
+  position: relative;
+  overflow: hidden;
+}
+.matrix-rain::before {
+  content: '01アイウエオカキクケコサシスセソタチツテト';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0.3em;
+  color: rgba(0, 229, 255, 0.06);
+  word-break: break-all;
+  animation: matrix-rain 12s linear infinite;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
 }
 
 /* Chat message animation */

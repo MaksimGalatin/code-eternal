@@ -31,7 +31,7 @@ export default function CodeBrainSection() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}
-          className="glass rounded-2xl p-6 md:p-10 mb-16">
+          className="glass-card rounded-2xl p-6 md:p-10 mb-16">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
             {["Obsidian", "Ollama Cloud", "Arweave", "WSL2", "Docker", "AI Agents"].map((tech) => (
               <span key={tech} className="px-3 py-1.5 text-xs font-mono rounded-full border border-cyan-400/20 bg-cyan-400/5 text-cyan-400">{tech}</span>

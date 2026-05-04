@@ -59,7 +59,7 @@ export default function MissionSection() {
             return (
               <motion.div key={key} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="group relative rounded-2xl border border-border bg-card/50 p-6 hover:bg-card transition-all duration-500 hover:border-cyan-400/20">
+                className="group relative glass-card hover-lift rounded-2xl p-6">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/0 to-purple-400/0 group-hover:from-cyan-400/5 group-hover:to-purple-400/5 transition-all duration-500" />
                 <div className="relative z-10">
                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${colorMap[COLORS[i]]}`}>
@@ -74,7 +74,7 @@ export default function MissionSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-8 md:p-12 text-center">
+          className="mt-16 glass-card border-glow rounded-2xl p-8 md:p-12 text-center">
           <div className="max-w-3xl mx-auto">
             <span className="text-xs font-mono text-cyan-400 tracking-wider mb-4 block">{t("discovery.label", lang)}</span>
             <h3 className="text-xl md:text-2xl font-bold mb-4">{t("discovery.title", lang)}</h3>

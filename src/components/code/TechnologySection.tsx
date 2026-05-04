@@ -39,7 +39,7 @@ export default function TechnologySection() {
                   transition={{ duration: 0.6, delay: i * 0.15 }}
                   className={`flex flex-col md:flex-row items-start gap-6 md:gap-12 ${isLeft ? "" : "md:flex-row-reverse"}`}>
                   <div className={`flex-1 ${isLeft ? "md:text-right" : ""}`}>
-                    <div className="glass rounded-2xl p-6 md:p-8 hover:border-cyan-400/20 transition-all duration-500 group">
+                    <div className="glass-card hover-lift rounded-2xl p-6 md:p-8 group">
                       <div className="flex items-center gap-3 mb-4">
                         <span className="text-3xl font-bold font-mono text-cyan-400/20">{String(i + 1).padStart(2, "0")}</span>
                         <div className={`w-10 h-10 rounded-lg bg-cyan-400/10 flex items-center justify-center ${isLeft ? "md:ml-auto md:order-last" : ""}`}>
@@ -62,7 +62,7 @@ export default function TechnologySection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 1 }}
-          className="mt-20 rounded-2xl overflow-hidden border border-border relative">
+          className="mt-20 glass-card rounded-2xl overflow-hidden relative">
           <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url('/images/digital-dna.png')" }} />
           <div className="relative z-10 p-8 md:p-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
