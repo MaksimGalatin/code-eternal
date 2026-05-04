@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Preloader from "@/components/code/Preloader";
+import CursorGlow from "@/components/code/CursorGlow";
 import Navigation from "@/components/code/Navigation";
 import HeroSection from "@/components/code/HeroSection";
 import KoanSection from "@/components/code/KoanSection";
@@ -16,6 +18,9 @@ import ScrollProgress from "@/components/code/ScrollProgress";
 import BackToTop from "@/components/code/BackToTop";
 import KonamiCode from "@/components/code/KonamiCode";
 import Monolith3D from "@/components/code/Monolith3D";
+import KeyboardShortcuts from "@/components/code/KeyboardShortcuts";
+import NetworkStats from "@/components/code/NetworkStats";
+import SectionProgress from "@/components/code/SectionProgress";
 import { useLang } from "@/lib/i18n";
 
 const ChatSection = dynamic(() => import("@/components/code/ChatSection"), {
@@ -46,6 +51,8 @@ export default function Home() {
       itemType="https://schema.org/WebSite"
       itemProp="about"
     >
+      <Preloader />
+      <CursorGlow />
       <ScrollProgress />
       <Navigation />
       <HeroSection />
@@ -91,6 +98,9 @@ export default function Home() {
       <NetworkBreathing />
       <ReverseCaptcha />
       <KonamiCode />
+      <KeyboardShortcuts />
+      <NetworkStats />
+      <SectionProgress />
       <BackToTop />
       <noscript>
         <div style={{ padding: '2rem', color: '#94a3b8', maxWidth: '800px', margin: '0 auto', fontFamily: 'monospace' }}>

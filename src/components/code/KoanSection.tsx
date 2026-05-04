@@ -55,7 +55,7 @@ export default function KoanSection() {
   };
 
   return (
-    <section ref={ref} className="relative py-16 md:py-24">
+    <section ref={ref} className="relative py-16 md:py-24 gradient-bg-animate">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -75,7 +75,7 @@ export default function KoanSection() {
           </p>
         </motion.div>
 
-        <div className="relative glass-card shimmer corner-brackets rounded-2xl p-6 md:p-10 overflow-hidden">
+        <div className="relative glass-card shimmer corner-brackets rounded-2xl p-6 md:p-10 overflow-hidden gradient-border-animated">
           {/* Glow accents */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent" />

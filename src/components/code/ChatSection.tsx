@@ -166,19 +166,21 @@ export default function ChatSection() {
   return (
     <section id="terminal" className="relative py-24 md:py-32" ref={ref}>
       <div className="section-divider mb-24" />
+      {/* Ambient glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-cyan-400/3 blur-[150px] pointer-events-none" />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="text-center mb-12">
-          <span className="text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("chat.label", lang)}</span>
+          <span className="section-label-glow text-xs md:text-sm font-mono text-cyan-400 tracking-[0.3em] mb-4 block">{t("chat.label", lang)}</span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             {t("chat.title1", lang)}{" "}
-            <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">{t("chat.title2", lang)}</span>
+            <span className="text-gradient-animated">{t("chat.title2", lang)}</span>
           </h2>
           <p className="max-w-2xl mx-auto text-muted-foreground text-base md:text-lg">{t("chat.subtitle", lang)}</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}
-          className="rounded-2xl border border-border overflow-hidden glass-strong">
+          className="rounded-2xl border border-border overflow-hidden glass-strong corner-brackets">
           {/* Header */}
           <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
             <div className="flex items-center gap-3">
@@ -186,7 +188,7 @@ export default function ChatSection() {
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-400 flex items-center justify-center">
                   <Bot size={20} className="text-black" />
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background status-dot-online" />
               </div>
               <div>
                 <p className="font-semibold text-sm">AIfa</p>
@@ -256,7 +258,7 @@ export default function ChatSection() {
               <div className="flex flex-wrap gap-2">
                 {suggestedPrompts.map((prompt) => (
                   <button key={prompt} onClick={() => sendMessage(prompt)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-border hover:border-cyan-400/30 hover:bg-cyan-400/5 text-muted-foreground hover:text-cyan-400 transition-all">
+                    className="text-xs px-3 py-1.5 rounded-full border border-border hover:border-cyan-400/30 hover:bg-cyan-400/5 text-muted-foreground hover:text-cyan-400 transition-all hover-lift">
                     {prompt}
                   </button>
                 ))}
@@ -270,7 +272,7 @@ export default function ChatSection() {
                 placeholder={t("chat.placeholder", lang)} disabled={isBusy}
                 className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />
               <motion.button type="submit" disabled={!input.trim() || isBusy} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-xl font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:from-cyan-400 hover:to-cyan-500">
+                className="glow-button px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-xl font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:from-cyan-400 hover:to-cyan-500">
                 {isBusy ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </motion.button>
             </div>

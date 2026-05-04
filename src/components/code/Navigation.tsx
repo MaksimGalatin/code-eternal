@@ -88,7 +88,7 @@ export default function Navigation() {
             {/* Logo */}
             <motion.button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group animated-underline"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
