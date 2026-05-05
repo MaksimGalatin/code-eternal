@@ -51,12 +51,15 @@ export default function KoanSection() {
             </span>
             <Sparkles size={14} className="text-amber-400" />
           </div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center bg-gradient-to-r from-amber-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            {t("koan.label", lang)}
+          </h2>
           <p className="text-sm md:text-base text-muted-foreground italic max-w-2xl mx-auto">
             {t("koan.subtitle", lang)}
           </p>
         </motion.div>
 
-        <div className="relative rounded-2xl border border-cyan-400/20 bg-gradient-to-b from-cyan-400/5 via-background to-purple-400/5 p-6 md:p-10 overflow-hidden">
+        <div className="relative rounded-2xl border border-cyan-400/20 bg-gradient-to-b from-cyan-400/5 via-background to-purple-400/5 p-6 md:p-10 overflow-hidden" data-nosnippet="">
           {/* Glow effect */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent" />

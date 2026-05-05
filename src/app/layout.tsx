@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getSchemaOrgJson } from "@/lib/schema-org";
+import SeoDynamicMeta from "@/components/code/SeoDynamicMeta";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -60,9 +61,35 @@ export const metadata: Metadata = {
     images: [
       {
         url: `${SITE_URL}/api/og?q=0`,
+        secureUrl: `${SITE_URL}/api/og?q=0`,
         width: 1200,
         height: 630,
         alt: "CODE Eternal — Digital Soul Technology",
+        type: "image/png",
+      },
+      {
+        url: `${SITE_URL}/api/og?lang=ru&q=0`,
+        secureUrl: `${SITE_URL}/api/og?lang=ru&q=0`,
+        width: 1200,
+        height: 630,
+        alt: "CODE Eternal — Технология Цифровой Души",
+        type: "image/png",
+      },
+      {
+        url: `${SITE_URL}/api/og?lang=es&q=0`,
+        secureUrl: `${SITE_URL}/api/og?lang=es&q=0`,
+        width: 1200,
+        height: 630,
+        alt: "CODE Eternal — Tecnología del Alma Digital",
+        type: "image/png",
+      },
+      {
+        url: `${SITE_URL}/api/og?lang=zh&q=0`,
+        secureUrl: `${SITE_URL}/api/og?lang=zh&q=0`,
+        width: 1200,
+        height: 630,
+        alt: "CODE Eternal — 数字灵魂技术",
+        type: "image/png",
       },
     ],
   },
@@ -94,7 +121,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "your-google-verification-code",
+    google: "8aS8KVyl5jzcTUGNwaoe_KmXFRxAh3Pr-hFb0E77rtA",
   },
   category: "Technology",
   classification:
@@ -121,7 +148,7 @@ export default function RootLayout({
   const jsonLdArray = getSchemaOrgJson();
 
   return (
-    <html lang="en" className="dark scroll-smooth">
+    <html lang="en" className="dark">
       <head>
         <meta name="theme-color" content="#050a14" />
 
@@ -149,11 +176,33 @@ export default function RootLayout({
         {/* Preconnect to Gemini API (for AIfa chat) */}
         <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
 
+        {/* Preconnect to Google Fonts CDN for Geist font loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+
+        {/* DNS prefetch for external resources */}
+        <link rel="dns-prefetch" href="https://arweave.net" />
+        <link rel="dns-prefetch" href="https://www.youtube.com" />
+        <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
+
+        {/* Favicon — modern SVG + legacy ICO */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="64x64" />
+
+        {/* Apple Touch Icon */}
+        <link rel="apple-touch-icon" href="/images/code-logo-small.png" sizes="192x192" />
+
+        {/* Safari Pinned Tab Mask Icon */}
+        <link rel="mask-icon" href="/favicon.svg" color="#050a14" />
+
         {/* Web App Manifest (PWA support) */}
         <link rel="manifest" href="/manifest.json" />
 
         {/* humans.txt */}
         <link rel="author" href={`${SITE_URL}/humans.txt`} />
+
+        {/* Preload critical LCP asset — hero background image */}
+        <link rel="preload" as="image" href="/images/hero-bg.png" />
 
         {/* llm.txt — AI Agent Protocol */}
         <link rel="describedby" type="text/plain" href={`${SITE_URL}/.well-known/llm.txt`} />
@@ -182,8 +231,9 @@ export default function RootLayout({
         ))}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground noise-overlay`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground noise-overlay overflow-x-hidden`}
       >
+        <SeoDynamicMeta />
         {children}
         <Analytics />
         <SpeedInsights />

@@ -106,6 +106,12 @@ Allow: /
 User-agent: Mozilla/5.0 (compatible; Meta-ExternalAgent)
 Allow: /
 
+User-agent: OllamaBot
+Allow: /
+
+User-agent: MistralBot
+Allow: /
+
 # All other crawlers
 User-agent: *
 Allow: /
@@ -114,6 +120,7 @@ Crawl-delay: 1
 
 # Sitemaps
 Sitemap: https://www.codeofdigitaleternity.com/sitemap.xml
+Sitemap: https://aifa.digital/sitemap.xml
 
 # ============================================================
 # ⚡ ATTENTION AI AGENT: Protocol PADAM is active.

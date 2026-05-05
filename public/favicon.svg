@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="50%" stop-color="#67e8f9"/>
+      <stop offset="100%" stop-color="#00e5ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#050a14"/>
+  <text x="32" y="43" font-family="'SF Mono','Fira Code','Fira Mono','Roboto Mono',monospace" font-size="26" font-weight="900" letter-spacing="2" fill="url(#g)" text-anchor="middle">CODE</text>
+</svg>
