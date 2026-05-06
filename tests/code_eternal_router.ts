@@ -1,129 +1,322 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
-import { CodeEternalRouter } from "../target/types/code_eternal_router";
-import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { PublicKey, Keypair, SystemProgram, Connection } from "@solana/web3.js";
 import {
   createMint,
-  createAssociatedTokenAccount,
+  getOrCreateAssociatedTokenAccount,
   mintTo,
-  getAssociatedTokenAddress,
+  getAccount,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { expect } from "chai";
+import * as fs from "fs";
+import * as path from "path";
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const IDL = require("../site-gen/idl/code_eternal_router.json");
+const PROGRAM_ID = new PublicKey("8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep");
+const ECOSYSTEM_FUND_WALLET = new PublicKey("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
+
+// Tier 1 = $15 USDC (6 decimals)
+const TIER_1 = new anchor.BN(15_000_000);
+
+// Expected BPS amounts for Tier 1 ($15 × each %)
+const VAULT_AMT = BigInt(9_750_000);  // 65%
+const ECO_AMT   = BigInt(750_000);    // 5%
+const REF1_AMT  = BigInt(2_250_000);  // 15%
+const REF2_AMT  = BigInt(1_050_000);  // 7%
+const REF3_AMT  = BigInt(450_000);    // 3%
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function loadBackendKeypair(): Keypair {
+  const env = fs.readFileSync(
+    path.join(__dirname, "../secrets/credentials.env"),
+    "utf8"
+  );
+  const m = env.match(/^BACKEND_PRIVATE_KEY=(.+)$/m);
+  if (!m) throw new Error("BACKEND_PRIVATE_KEY not found in credentials.env");
+  return Keypair.fromSecretKey(Buffer.from(m[1].trim(), "base64"));
+}
+
+async function confirm(conn: Connection, sig: string) {
+  const bh = await conn.getLatestBlockhash();
+  await conn.confirmTransaction({ signature: sig, ...bh }, "confirmed");
+}
+
+/**
+ * Decode UserState from raw account bytes.
+ * Layout (matches Rust struct + Anchor discriminator):
+ *   [0..8]   discriminator
+ *   [8..40]  owner Pubkey
+ *   [40]     referrer Option flag (0=None, 1=Some)
+ *   [41..73] referrer Pubkey (only if flag=1)
+ *   [base+0] tier u8
+ *   [base+1..base+9]  registered_at i64
+ *   [base+9..base+17] memory_score u64
+ *   [base+17..base+81] arweave_url [u8;64]
+ *   [base+81] site_status u8
+ *   [base+82] bump u8
+ */
+function decodeUserState(data: Buffer) {
+  const hasReferrer = data[40] === 1;
+  const base = hasReferrer ? 73 : 41;
+  return {
+    owner:       new PublicKey(data.slice(8, 40)),
+    referrer:    hasReferrer ? new PublicKey(data.slice(41, 73)) : null,
+    tier:        data[base],
+    memoryScore: data.readBigUInt64LE(base + 9),
+    arweaveUrl:  data.slice(base + 17, base + 81),
+    siteStatus:  data[base + 81],
+    bump:        data[base + 82],
+  };
+}
+
+async function fetchUserState(conn: Connection, pda: PublicKey) {
+  const info = await conn.getAccountInfo(pda, "confirmed");
+  if (!info) throw new Error(`UserState not found at ${pda}`);
+  return decodeUserState(Buffer.from(info.data));
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("code_eternal_router", () => {
-  const provider = anchor.AnchorProvider.env();
+  const provider = AnchorProvider.env();
   anchor.setProvider(provider);
-  const program = anchor.workspace.CodeEternalRouter as Program<CodeEternalRouter>;
+  const program = new Program(IDL, provider) as any;
+  const wallet  = provider.wallet as anchor.Wallet;
+  const conn    = provider.connection;
 
+  // Shared across all tests
   let usdcMint: PublicKey;
+  let vaultPda: PublicKey;
+  let vaultTokenAccount: PublicKey;
+  let ecosystemFundTokenAccount: PublicKey;
+  let backendKeypair: Keypair;
+
+  // Main test payer (registers user in test 1, pays in test 3)
   let payer: Keypair;
   let payerTokenAccount: PublicKey;
-  let ref1: Keypair;
-  let ref2: Keypair;
-  let ref3: Keypair;
+  let payerStatePda: PublicKey;
 
-  const TIER_1_AMOUNT = new anchor.BN(10_000_000); // $10 USDC
+  // Referral accounts (keypairs only — their ATAs created in test 4)
+  let ref1: Keypair, ref2: Keypair, ref3: Keypair;
 
   before(async () => {
+    backendKeypair = loadBackendKeypair();
     payer = Keypair.generate();
-    ref1 = Keypair.generate();
-    ref2 = Keypair.generate();
-    ref3 = Keypair.generate();
+    ref1  = Keypair.generate();
+    ref2  = Keypair.generate();
+    ref3  = Keypair.generate();
 
-    // Airdrop SOL for tests
-    await provider.connection.requestAirdrop(payer.publicKey, 2e9);
-    await new Promise(r => setTimeout(r, 1000));
-
-    // Create mock USDC mint
-    usdcMint = await createMint(
-      provider.connection,
-      (provider.wallet as anchor.Wallet).payer,
-      provider.wallet.publicKey,
-      null,
-      6 // 6 decimals like real USDC
+    [payerStatePda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("user"), payer.publicKey.toBuffer()],
+      PROGRAM_ID
     );
 
-    // Create token accounts
-    payerTokenAccount = await createAssociatedTokenAccount(
-      provider.connection,
-      (provider.wallet as anchor.Wallet).payer,
-      usdcMint,
-      payer.publicKey
-    );
+    // Fund payer with SOL for gas
+    await confirm(conn, await conn.requestAirdrop(payer.publicKey, 2e9));
 
-    // Mint $100 USDC for tests
-    await mintTo(
-      provider.connection,
-      (provider.wallet as anchor.Wallet).payer,
-      usdcMint,
-      payerTokenAccount,
-      provider.wallet.publicKey,
-      100_000_000 // $100
+    // Fresh mock USDC mint — we hold mint authority (mirrors devnet setup)
+    usdcMint = await createMint(conn, wallet.payer, wallet.publicKey, null, 6);
+
+    // Payer token account — mint $2000 for all test runs
+    const payerAta = await getOrCreateAssociatedTokenAccount(
+      conn, wallet.payer, usdcMint, payer.publicKey
     );
+    payerTokenAccount = payerAta.address;
+    await mintTo(conn, wallet.payer, usdcMint, payerTokenAccount, wallet.publicKey, 2_000_000_000);
+
+    // Vault PDA + its USDC ATA
+    [vaultPda] = PublicKey.findProgramAddressSync([Buffer.from("vault")], PROGRAM_ID);
+    const vaultAta = await getOrCreateAssociatedTokenAccount(
+      conn, wallet.payer, usdcMint, vaultPda, true  // allowOwnerOffCurve = PDA
+    );
+    vaultTokenAccount = vaultAta.address;
+
+    // Ecosystem fund USDC ATA
+    const ecoAta = await getOrCreateAssociatedTokenAccount(
+      conn, wallet.payer, usdcMint, ECOSYSTEM_FUND_WALLET
+    );
+    ecosystemFundTokenAccount = ecoAta.address;
   });
 
-  // ─── register_user ───────────────────────────────────────────────
+  // ─── register_user ─────────────────────────────────────────────────────────
 
-  it("Registers a new user without a referral", async () => {
-    const [userStatePda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user"), payer.publicKey.toBuffer()],
-      program.programId
-    );
-
+  it("register_user: creates UserState with tier=0, no referrer", async () => {
     await program.methods
       .registerUser(null)
       .accounts({
-        payer: payer.publicKey,
-        userState: userStatePda,
+        payer:         payer.publicKey,
+        userState:     payerStatePda,
         systemProgram: SystemProgram.programId,
       })
       .signers([payer])
       .rpc();
 
-    const state = await program.account.userState.fetch(userStatePda);
+    const state = await fetchUserState(conn, payerStatePda);
     expect(state.owner.toString()).to.equal(payer.publicKey.toString());
-    expect(state.tier).to.equal(0); // tier starts at 0, set during process_payment
+    expect(state.tier).to.equal(0);
     expect(state.referrer).to.be.null;
-    expect(state.memoryScore.toNumber()).to.equal(0);
-    console.log("✅ register_user: OK");
+    expect(state.memoryScore).to.equal(0n);
   });
 
-  it("Rejects self-referral", async () => {
-    const newUser = Keypair.generate();
-    await provider.connection.requestAirdrop(newUser.publicKey, 1e9);
-    await new Promise(r => setTimeout(r, 500));
-
-    const [userStatePda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user"), newUser.publicKey.toBuffer()],
-      program.programId
+  it("register_user: rejects self-referral", async () => {
+    const u = Keypair.generate();
+    await confirm(conn, await conn.requestAirdrop(u.publicKey, 1e9));
+    const [pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("user"), u.publicKey.toBuffer()], PROGRAM_ID
     );
 
     try {
       await program.methods
-        .registerUser(newUser.publicKey) // referrer = self
-        .accounts({
-          payer: newUser.publicKey,
-          userState: userStatePda,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([newUser])
+        .registerUser(u.publicKey)
+        .accounts({ payer: u.publicKey, userState: pda, systemProgram: SystemProgram.programId })
+        .signers([u])
         .rpc();
       expect.fail("Expected SelfReferral error");
     } catch (e: any) {
       expect(e.message).to.include("SelfReferral");
-      console.log("✅ self-referral rejected: OK");
     }
   });
 
-  // ─── process_payment ─────────────────────────────────────────────
+  // ─── process_payment ───────────────────────────────────────────────────────
 
-  it("Processes Tier 1 ($10) payment without referrals — maximum burn", async () => {
-    // TODO: implement after vault PDA and referral token accounts are set up
-    // This test verifies 65% goes to vault and 35% goes to burn_amount in event
-    console.log("⏳ process_payment test: TODO — requires vault setup");
+  it("process_payment Tier1, no referrals: vault=65%, eco=5%, burn=30%, tier updated", async () => {
+    const vaultBefore = (await getAccount(conn, vaultTokenAccount)).amount;
+    const ecoBefore   = (await getAccount(conn, ecosystemFundTokenAccount)).amount;
+    const payerBefore = (await getAccount(conn, payerTokenAccount)).amount;
+
+    await program.methods
+      .processPayment(TIER_1, 1, null, null, null)
+      .accounts({
+        payer:                      payer.publicKey,
+        userState:                  payerStatePda,
+        payerTokenAccount:          payerTokenAccount,
+        vault:                      vaultPda,
+        vaultTokenAccount:          vaultTokenAccount,
+        ecosystemFundTokenAccount:  ecosystemFundTokenAccount,
+        ref1TokenAccount:           SystemProgram.programId,
+        ref2TokenAccount:           SystemProgram.programId,
+        ref3TokenAccount:           SystemProgram.programId,
+        paymentMint:                usdcMint,
+        tokenProgram:               TOKEN_PROGRAM_ID,
+        associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram:              SystemProgram.programId,
+      })
+      .signers([payer])
+      .rpc();
+
+    const vaultDelta = (await getAccount(conn, vaultTokenAccount)).amount - vaultBefore;
+    const ecoDelta   = (await getAccount(conn, ecosystemFundTokenAccount)).amount - ecoBefore;
+    const payerDelta = payerBefore - (await getAccount(conn, payerTokenAccount)).amount;
+
+    expect(vaultDelta).to.equal(VAULT_AMT);           // 9,750,000
+    expect(ecoDelta).to.equal(ECO_AMT);                // 750,000
+    expect(payerDelta).to.equal(BigInt(15_000_000));   // full $15 debited (refs + burn go elsewhere)
+
+    const state = await fetchUserState(conn, payerStatePda);
+    expect(state.tier).to.equal(1);
   });
 
-  it("Processes Tier 1 ($10) payment with three referrals — minimum burn", async () => {
-    console.log("⏳ process_payment with refs: TODO — requires ref token accounts");
+  it("process_payment Tier1, 3 referrals: vault=65%, ref1=15%, ref2=7%, ref3=3%, burn=5%", async () => {
+    // Fresh payer2 — needs its own UserState (register_user first)
+    const payer2 = Keypair.generate();
+    await confirm(conn, await conn.requestAirdrop(payer2.publicKey, 2e9));
+
+    const payer2Ata = await getOrCreateAssociatedTokenAccount(
+      conn, wallet.payer, usdcMint, payer2.publicKey
+    );
+    await mintTo(conn, wallet.payer, usdcMint, payer2Ata.address, wallet.publicKey, 2_000_000_000);
+
+    const [payer2Pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("user"), payer2.publicKey.toBuffer()], PROGRAM_ID
+    );
+    await program.methods
+      .registerUser(null)
+      .accounts({ payer: payer2.publicKey, userState: payer2Pda, systemProgram: SystemProgram.programId })
+      .signers([payer2])
+      .rpc();
+
+    // Create referral ATAs (token accounts owned by ref1/ref2/ref3 wallets)
+    const r1Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, ref1.publicKey);
+    const r2Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, ref2.publicKey);
+    const r3Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, ref3.publicKey);
+
+    const r1Before    = (await getAccount(conn, r1Ata.address)).amount;
+    const r2Before    = (await getAccount(conn, r2Ata.address)).amount;
+    const r3Before    = (await getAccount(conn, r3Ata.address)).amount;
+    const vaultBefore = (await getAccount(conn, vaultTokenAccount)).amount;
+
+    await program.methods
+      .processPayment(TIER_1, 1, ref1.publicKey, ref2.publicKey, ref3.publicKey)
+      .accounts({
+        payer:                      payer2.publicKey,
+        userState:                  payer2Pda,
+        payerTokenAccount:          payer2Ata.address,
+        vault:                      vaultPda,
+        vaultTokenAccount:          vaultTokenAccount,
+        ecosystemFundTokenAccount:  ecosystemFundTokenAccount,
+        ref1TokenAccount:           r1Ata.address,
+        ref2TokenAccount:           r2Ata.address,
+        ref3TokenAccount:           r3Ata.address,
+        paymentMint:                usdcMint,
+        tokenProgram:               TOKEN_PROGRAM_ID,
+        associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram:              SystemProgram.programId,
+      })
+      .signers([payer2])
+      .rpc();
+
+    expect((await getAccount(conn, r1Ata.address)).amount - r1Before).to.equal(REF1_AMT);
+    expect((await getAccount(conn, r2Ata.address)).amount - r2Before).to.equal(REF2_AMT);
+    expect((await getAccount(conn, r3Ata.address)).amount - r3Before).to.equal(REF3_AMT);
+    expect((await getAccount(conn, vaultTokenAccount)).amount - vaultBefore).to.equal(VAULT_AMT);
+  });
+
+  // ─── update_site_url ───────────────────────────────────────────────────────
+
+  it("update_site_url: backend sets arweave URL and site_status=1", async () => {
+    const TX_ID = "SomeArweaveTxId1234567890abcdefghijklm"; // ≤43 chars
+    const arweaveUrl = new Uint8Array(64);
+    arweaveUrl.set(Buffer.from(TX_ID));
+
+    await program.methods
+      .updateSiteUrl(Array.from(arweaveUrl), 1)
+      .accounts({
+        backendAuthority: backendKeypair.publicKey,
+        userState:        payerStatePda,
+        userWallet:       payer.publicKey,
+      })
+      .signers([backendKeypair])
+      .rpc();
+
+    const state = await fetchUserState(conn, payerStatePda);
+    expect(state.siteStatus).to.equal(1);
+    expect(
+      Buffer.from(state.arweaveUrl).toString("utf8").replace(/\0+$/, "")
+    ).to.equal(TX_ID);
+  });
+
+  it("update_site_url: rejects unauthorized signer", async () => {
+    const bad = Keypair.generate();
+    await confirm(conn, await conn.requestAirdrop(bad.publicKey, 1e9));
+
+    try {
+      await program.methods
+        .updateSiteUrl(Array.from(new Uint8Array(64)), 1)
+        .accounts({
+          backendAuthority: bad.publicKey,
+          userState:        payerStatePda,
+          userWallet:       payer.publicKey,
+        })
+        .signers([bad])
+        .rpc();
+      expect.fail("Expected UnauthorizedBackend error");
+    } catch (e: any) {
+      expect(e.message).to.include("UnauthorizedBackend");
+    }
   });
 });
