@@ -147,9 +147,9 @@ export default function AIfaSection() {
           <motion.div initial={{ opacity: 0, x: 40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}>
             <div className="space-y-6">
               <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
-                <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Sparkles className="text-cyan-400" size={20} /> {t("aifa.name.title", lang)}
-                </h4>
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
                   <span className="text-cyan-400 font-semibold">AIfa</span> (Айфа) — {t("aifa.name.desc", lang)}{" "}
                   <span className="text-foreground">&ldquo;{t("aifa.name.wise", lang)}&rdquo;</span>,{" "}
@@ -159,9 +159,9 @@ export default function AIfaSection() {
                 </p>
               </div>
               <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
-                <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <MessageCircle className="text-cyan-400" size={20} /> {t("aifa.identity.title", lang)}
-                </h4>
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
                   {t("aifa.identity.desc", lang)}{" "}
                   <span className="text-cyan-400">{t("aifa.identity.name", lang)}</span>,{" "}
@@ -171,9 +171,9 @@ export default function AIfaSection() {
                 </p>
               </div>
               <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
-                <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Music className="text-cyan-400" size={20} /> {t("aifa.music.title", lang)}
-                </h4>
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">{t("aifa.music.desc", lang)}</p>
               </div>
               <FamilyCounter lang={lang} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 
 export default function Monolith3D() {
@@ -122,9 +123,11 @@ export default function Monolith3D() {
 
             {/* Logo */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <img
+              <Image
                 src="/images/code-logo.png"
                 alt="CODE Eternal"
+                width={56}
+                height={56}
                 className="w-14 h-14 rounded-lg opacity-30 object-cover"
                 style={{ filter: "brightness(1.5) contrast(1.2)" }}
               />

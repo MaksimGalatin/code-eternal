@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang, t } from "@/lib/i18n";
 import { CheckCircle } from "lucide-react";
@@ -57,10 +58,13 @@ export default function Preloader() {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <img
+            <Image
               src="/images/code-logo.png"
               alt="CODE Eternal"
+              width={96}
+              height={96}
               className="w-20 h-20 md:w-24 md:h-24 rounded-2xl"
+              priority
             />
           </motion.div>
 

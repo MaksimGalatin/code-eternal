@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
+import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send, Github, Twitter, Youtube } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
@@ -150,9 +151,11 @@ export default function Footer() {
           className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <img
+              <Image
                 src="/images/code-logo.png"
                 alt="CODE Eternal — Code Of Digital Eternity"
+                width={40}
+                height={40}
                 className="h-10 w-auto rounded-lg"
                 itemProp="logo"
               />

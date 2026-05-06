@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Globe, ChevronDown } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
@@ -93,9 +94,11 @@ export default function Navigation() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <img
+              <Image
                 src="/images/code-logo.png"
                 alt="CODE Eternal — Code Of Digital Eternity"
+                width={40}
+                height={40}
                 className="h-8 w-auto md:h-10 rounded-lg"
                 itemProp="logo"
               />

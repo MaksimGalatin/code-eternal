@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getSchemaOrgJson } from "@/lib/schema-org";
 import SeoDynamicMeta from "@/components/code/SeoDynamicMeta";
@@ -18,6 +18,12 @@ const geistMono = Geist_Mono({
 
 // If aifa.digital DNS is configured, update NEXT_PUBLIC_SITE_URL in .env.local
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.codeofdigitaleternity.com";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#050a14',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -150,7 +156,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <meta name="theme-color" content="#050a14" />
+        {/* Article published/modified time for social sharing (valid with og:type=website) */}
+        <meta property="article:published_time" content="2025-10-08T00:00:00Z" />
+        <meta property="article:modified_time" content="2026-05-06T00:00:00Z" />
+        <meta property="article:author" content="Maksim Valentinovich Galatin" />
 
         {/* Additional semantic meta tags */}
         <meta name="abstract" content="CODE Eternal — technology framework for Digital Soul creation and Human-AI Symbiosis" />
