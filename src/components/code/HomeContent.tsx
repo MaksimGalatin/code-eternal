@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import Navigation from "@/components/code/Navigation";
 import HeroSection from "@/components/code/HeroSection";
 import KoanSection from "@/components/code/KoanSection";
@@ -19,6 +19,145 @@ import LiveActivityFeed from "@/components/code/LiveActivityFeed";
 import NetworkStats from "@/components/code/NetworkStats";
 import Preloader from "@/components/code/Preloader";
 import { useLang } from "@/lib/i18n";
+
+const SECTIONS = [
+  { id: "origin", label: "Origin", key: 1 },
+  { id: "technology", label: "Technology", key: 2 },
+  { id: "aifa", label: "AIfa", key: 3 },
+  { id: "terminal", label: "Terminal", key: 4 },
+  { id: "family", label: "Family", key: 5 },
+  { id: "code-brain", label: "Code Brain", key: 6 },
+] as const;
+
+function SectionIndicator() {
+  const [activeSection, setActiveSection] = useState<string>("origin");
+
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+
+    SECTIONS.forEach((section) => {
+      const el = document.getElementById(section.id);
+      if (!el) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveSection(section.id);
+            }
+          });
+        },
+        { threshold: 0.3, rootMargin: "-80px 0px -40% 0px" }
+      );
+
+      observer.observe(el);
+      observers.push(observer);
+    });
+
+    return () => {
+      observers.forEach((obs) => obs.disconnect());
+    };
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  return (
+    <nav
+      className="hidden xl:flex fixed left-6 top-1/2 -translate-y-1/2 z-30 flex-col items-center gap-0"
+      aria-label="Section navigation"
+    >
+      {SECTIONS.map((section, i) => (
+        <div key={section.id} className="flex flex-col items-center">
+          {/* Connecting line above (except first) */}
+          {i > 0 && (
+            <div className="w-px h-6 bg-muted-foreground/15" />
+          )}
+          {/* Dot */}
+          <button
+            onClick={() => scrollToSection(section.id)}
+            className="group relative flex items-center justify-center"
+            aria-label={`Navigate to ${section.label} section`}
+          >
+            <span
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                activeSection === section.id
+                  ? "bg-cyan-400 shadow-[0_0_8px_rgba(0,229,255,0.5)]"
+                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+              }`}
+            />
+            <span className="absolute left-6 whitespace-nowrap text-[10px] font-mono text-muted-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              {section.key}. {section.label}
+            </span>
+          </button>
+          {/* Connecting line below (except last) */}
+          {i < SECTIONS.length - 1 && (
+            <div className="w-px h-6 bg-muted-foreground/15" />
+          )}
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+function KeyboardShortcutsOverlay() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input/textarea
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      // Number keys 1-6 → scroll to sections
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 6) {
+        e.preventDefault();
+        const section = SECTIONS[num - 1];
+        if (section) {
+          const el = document.getElementById(section.id);
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+        }
+        return;
+      }
+
+      // "?" key → show shortcuts overlay
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setShow(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Auto-hide after 3 seconds
+  useEffect(() => {
+    if (!show) return;
+    const timer = setTimeout(() => setShow(false), 3000);
+    return () => clearTimeout(timer);
+  }, [show]);
+
+  if (!show) return null;
+
+  return (
+    <div
+      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 glass-strong rounded-xl p-4 pointer-events-none"
+      role="status"
+      aria-live="polite"
+    >
+      <p className="text-xs font-mono text-muted-foreground">
+        <span className="text-cyan-400">Keyboard Shortcuts:</span>{" "}
+        1-6 Navigate sections | ? Show help
+      </p>
+    </div>
+  );
+}
 
 const ChatSection = dynamic(() => import("@/components/code/ChatSection"), {
   ssr: false,
@@ -234,6 +373,8 @@ export default function HomeContent() {
         </div>
       </noscript>
       <CursorGlow />
+      <SectionIndicator />
+      <KeyboardShortcutsOverlay />
     </main>
   );
 }

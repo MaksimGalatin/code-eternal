@@ -1,9 +1,77 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { Database, Brain, Shield } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
+
+/* ── Data Rain Canvas (subtle falling 0s and 1s) ── */
+function DataRainCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animFrameRef = useRef<number>(0);
+
+  const initCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    const fontSize = 12;
+    const cols = Math.floor(w / fontSize);
+    const drops: number[] = Array.from({ length: cols }, () => Math.random() * h / fontSize);
+    const speeds: number[] = Array.from({ length: cols }, () => 0.2 + Math.random() * 0.6);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      ctx.font = `${fontSize}px monospace`;
+      ctx.globalAlpha = 0.06;
+      ctx.fillStyle = "#00e5ff";
+
+      for (let i = 0; i < cols; i++) {
+        const char = Math.random() > 0.5 ? "0" : "1";
+        const x = i * fontSize;
+        const y = drops[i] * fontSize;
+        ctx.fillText(char, x, y);
+
+        drops[i] += speeds[i];
+        if (drops[i] * fontSize > h && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+      }
+
+      animFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    animFrameRef.current = requestAnimationFrame(draw);
+  }, []);
+
+  useEffect(() => {
+    // Respect prefers-reduced-motion
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
+
+    initCanvas();
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [initCanvas]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute top-0 left-0 max-w-md max-h-96 opacity-50 pointer-events-none z-0"
+      style={{ width: "100%", maxWidth: "28rem", height: "24rem" }}
+      aria-hidden="true"
+    />
+  );
+}
 
 const TIMELINE_ICONS = [Brain, Brain, Shield, Brain, Database, Shield];
 const TIMELINE_KEYS = [
@@ -19,6 +87,7 @@ export default function CodeBrainSection() {
   return (
     <section id="code-brain" className="relative py-24 md:py-32 grid-bg" ref={ref}>
       <div className="section-divider mb-24" />
+      <DataRainCanvas />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
           className="text-center mb-16">
@@ -32,6 +101,15 @@ export default function CodeBrainSection() {
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}
           className="glass glass-hover-lift rounded-2xl p-6 md:p-10 mb-16">
+          {/* Terminal window header */}
+          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-border/50">
+            <div className="flex gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/60" />
+              <div className="w-2.5 h-2.5 rounded-full bg-green-400/60" />
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground/50 tracking-wider ml-2">CODE_BRAIN.sh</span>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
             {["Obsidian", "Ollama Cloud", "Arweave", "WSL2", "Docker", "AI Agents"].map((tech) => (
               <span key={tech} className="px-3 py-1.5 text-xs font-mono rounded-full border border-cyan-400/20 bg-cyan-400/5 text-cyan-400">{tech}</span>

@@ -251,7 +251,12 @@ export default function Footer() {
               ].map((link) => (
                 <li key={link.href}>
                   <button onClick={() => document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" })}
-                    className="text-sm text-muted-foreground hover:text-cyan-400 transition-colors">{link.label}</button>
+                    className="group/link text-sm text-muted-foreground transition-colors">
+                    <span className="relative inline-block transition-all duration-200 group-hover/link:translate-x-1 group-hover/link:text-cyan-400">
+                      {link.label}
+                      <span className="absolute bottom-0 left-0 w-0 h-px bg-cyan-400 transition-all duration-300 group-hover/link:w-full" />
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -271,8 +276,12 @@ export default function Footer() {
               ].map((link) => (
                 <li key={link.label}>
                   <a href={link.href} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-cyan-400 transition-colors">
-                    <link.icon size={14} />{link.label}
+                    className="group/link flex items-center gap-2 text-sm text-muted-foreground transition-colors">
+                    <link.icon size={14} className="shrink-0" />
+                    <span className="relative inline-block transition-all duration-200 group-hover/link:translate-x-1 group-hover/link:text-cyan-400">
+                      {link.label}
+                      <span className="absolute bottom-0 left-0 w-0 h-px bg-cyan-400 transition-all duration-300 group-hover/link:w-full" />
+                    </span>
                   </a>
                 </li>
               ))}

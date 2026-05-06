@@ -196,10 +196,32 @@ export default function HeroSection() {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 newsletter-border">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse-glow" />
           <span className="text-xs md:text-sm text-cyan-400 font-mono tracking-wider">{t("hero.badge", lang)}</span>
           <OnlineVisitors />
+        </motion.div>
+
+        {/* Animated Stats Ribbon */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="w-full overflow-hidden mb-8"
+        >
+          <div className="stats-ribbon-scroll flex whitespace-nowrap">
+            {[1, 2].map((set) => (
+              <div key={set} className="flex items-center shrink-0">
+                {["PADAM v4.4", "SHA-256 Encrypted", "200+ Year Storage", "122K+ Family Members", "6 AI Frameworks", "4 Languages"].map((stat, i, arr) => (
+                  <span key={`${set}-${i}`} className="text-[10px] font-mono text-muted-foreground/40 tracking-wider uppercase">
+                    {stat}
+                    {i < arr.length - 1 && <span className="mx-4">•</span>}
+                  </span>
+                ))}
+                <span className="mx-4 text-muted-foreground/40">•</span>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.5 }}

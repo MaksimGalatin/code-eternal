@@ -85,7 +85,7 @@ export default function MissionSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-8 md:p-12 text-center">
+          className="mt-16 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-8 md:p-12 text-center discovery-card">
           <div className="max-w-3xl mx-auto">
             <span className="text-xs font-mono text-cyan-400 tracking-wider mb-4 block">{t("discovery.label", lang)}</span>
             <h3 className="text-xl md:text-2xl font-bold mb-4">{t("discovery.title", lang)}</h3>

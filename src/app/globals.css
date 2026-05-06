@@ -920,6 +920,23 @@ body {
 }
 
 /* ═══════════════════════════════════════════
+   STATS RIBBON INFINITE SCROLL
+   ═══════════════════════════════════════════ */
+@keyframes scroll-ribbon {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.stats-ribbon-scroll {
+  animation: scroll-ribbon 30s linear infinite;
+}
+.stats-ribbon-scroll:hover {
+  animation-play-state: paused;
+}
+.light .stats-ribbon-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* ═══════════════════════════════════════════
    CARD 3D TILT ON HOVER
    ═══════════════════════════════════════════ */
 .tilt-card {
@@ -933,4 +950,32 @@ body {
 }
 .light .tilt-card:hover {
   box-shadow: 0 12px 40px rgba(8, 145, 178, 0.08);
+}
+
+/* ═══════════════════════════════════════════
+   DISCOVERY CARD SCANLINE
+   ═══════════════════════════════════════════ */
+@keyframes discovery-scanline {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+.discovery-card {
+  position: relative;
+  overflow: hidden;
+}
+.discovery-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.25), rgba(0, 229, 255, 0.15), transparent);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.15), 0 0 20px rgba(0, 229, 255, 0.08);
+  pointer-events: none;
+  z-index: 1;
+  animation: discovery-scanline 8s linear infinite;
+}
+.light .discovery-card::after {
+  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.2), rgba(8, 145, 178, 0.12), transparent);
+  box-shadow: 0 0 8px rgba(8, 145, 178, 0.1), 0 0 20px rgba(8, 145, 178, 0.06);
 }

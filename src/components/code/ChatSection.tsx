@@ -268,7 +268,7 @@ export default function ChatSection() {
           <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-400 flex items-center justify-center">
+                <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-400 flex items-center justify-center${isBusy ? " animate-pulse" : ""}`}>
                   <Bot size={20} className="text-black" />
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
@@ -309,7 +309,7 @@ export default function ChatSection() {
                     <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       msg.role === "user"
                         ? "bg-cyan-400/10 border border-cyan-400/20 rounded-tr-md"
-                        : `bg-card border border-border rounded-tl-md ${isStreaming ? "streaming-fog" : ""}`
+                        : `bg-card border rounded-tl-md ${isStreaming ? "border-cyan-400/30 streaming-fog" : "border-border"}`
                     }`}>
                       <p className={`text-sm whitespace-pre-wrap leading-relaxed ${msg.role === "assistant" && isStreaming ? "text-cyan-50/90" : ""}`}>
                         {msg.role === "assistant" ? visibleText : msg.content}
