@@ -2,7 +2,12 @@
   "name": "code-eternal-tests",
   "version": "1.0.0",
   "scripts": {
-    "test": "ts-mocha -p tsconfig.json -t 1000000 'tests/**/*.ts'"
+    "test": "mocha --require ts-node/register --timeout 1000000 'tests/**/*.ts'"
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

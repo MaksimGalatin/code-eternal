@@ -12,10 +12,10 @@ import {
 import { expect } from "chai";
 import * as fs from "fs";
 import * as path from "path";
-
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const IDL = require("../site-gen/idl/code_eternal_router.json");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const IDL = JSON.parse(fs.readFileSync(path.join(__dirname, "../site-gen/idl/code_eternal_router.json"), "utf8"));
 const PROGRAM_ID = new PublicKey("8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep");
 const ECOSYSTEM_FUND_WALLET = new PublicKey("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
 
