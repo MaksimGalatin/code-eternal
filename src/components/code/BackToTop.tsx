@@ -28,7 +28,7 @@ export default function BackToTop() {
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ duration: 0.3 }}
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full glass-strong flex items-center justify-center group hover:bg-cyan-400/10 transition-all duration-300 shadow-lg shadow-black/30"
+          className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full glass-strong flex items-center justify-center group hover:bg-cyan-400/10 hover:border-cyan-400/30 hover:shadow-[0_0_20px_rgba(0,229,255,0.2)] transition-all duration-300 shadow-lg shadow-black/30 border border-cyan-400/10"
           aria-label="Scroll to top"
           title="Back to top"
         >

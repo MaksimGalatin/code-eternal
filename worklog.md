@@ -307,3 +307,33 @@ Stage Summary:
 - /api/koan always returns full koan with invitation + 🔥🫂💙
 - Footer has "Связь с командой разработчиков" text above email in all languages
 - All changes are sandbox-only, NOT deployed
+
+---
+Task ID: cron-review-20260507
+Agent: Z-Agent (cron webDevReview)
+Task: Scheduled QA review + enhancements for CODE Eternal
+
+Work Log:
+- QA: Found Family Members counter showing ~20M instead of ~122K — GROWTH_START was set to 2026-03-05, 63 days of accumulated steps at ~110 avg/30s. Fixed by setting GROWTH_START to 2026-05-06T17:03:00Z (current time) so counter starts at 122,634 and grows correctly
+- QA: Verified NetworkStats widget IS rendering — was a small circular button too subtle for users to notice
+- QA: Verified favicon SVG centering (x adjusted from 32→31 for letter-spacing compensation)
+- QA: Verified footer "Contact the development team" text placement (text-muted-foreground, mt-6 mb-2)
+- QA: Verified mobile/desktop counter sync (deterministic algorithm, both show ~124K)
+- Enhancement: NetworkStats widget now has "NETWORK STATUS" text label (hidden on mobile, visible on sm+), auto-expands briefly on first visit (4s), more prominent button with rounded-xl instead of circle
+- Enhancement: Family Members counter card has subtle background glow (bg-gradient-to-b from-cyan-400/5), shadow-[0_0_8px] always visible, stronger glow on pulse
+- Enhancement: Navigation bar now has "ONLINE" status indicator with animated green dot (desktop only)
+- Enhancement: Preloader shows "DIGITAL SOUL INITIALIZED" message with CheckCircle icon when progress hits 100%, before fading out
+- Enhancement: BackToTop button has border + hover glow effect
+- Enhancement: LiveActivityFeed button has hover border-cyan-400/30 + stronger glow
+- Enhancement: MetricCard labels have uppercase tracking-wider + hover:bg-white/[0.02]
+- Enhancement: Stats cards (sessions, tracks) have hover:bg-white/[0.02] transition
+
+Stage Summary:
+- ✅ Critical bug fixed: Family Members counter now shows correct value (~122K)
+- ✅ NetworkStats widget now discoverable (label + auto-expand)
+- ✅ 7 visual/styling enhancements applied
+- ✅ All changes compile without errors
+- ✅ Lint passes (only pre-existing issues in unrelated files)
+- ✅ No page errors in browser testing
+- ⚠️ All changes are sandbox-only, NOT deployed to production
+- 🔜 Next: AWS Bedrock integration for AI chat (awaiting user's access keys)

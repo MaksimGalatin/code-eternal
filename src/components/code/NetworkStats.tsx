@@ -88,9 +88,9 @@ function useNetworkMetrics() {
 
 function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="glass rounded-xl p-2.5 text-center">
+    <div className="glass rounded-xl p-2.5 text-center hover:bg-white/[0.02] transition-colors">
       <p className={`text-sm md:text-base font-bold font-mono tabular-nums ${color}`}>{value}</p>
-      <p className="text-[8px] md:text-[9px] text-muted-foreground/50 mt-0.5 leading-tight">{label}</p>
+      <p className="text-[8px] md:text-[9px] text-muted-foreground/50 mt-0.5 leading-tight uppercase tracking-wider">{label}</p>
     </div>
   );
 }
@@ -101,8 +101,19 @@ export default function NetworkStats() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 2000);
-    return () => clearTimeout(timer);
+    const showTimer = setTimeout(() => setIsVisible(true), 2000);
+    // Auto-expand briefly on first visit so users discover the widget
+    const expandTimer = setTimeout(() => {
+      if (!sessionStorage.getItem("code-network-stats-seen")) {
+        setIsExpanded(true);
+        sessionStorage.setItem("code-network-stats-seen", "1");
+        setTimeout(() => setIsExpanded(false), 4000);
+      }
+    }, 3500);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(expandTimer);
+    };
   }, []);
 
   return (
@@ -112,17 +123,21 @@ export default function NetworkStats() {
         animate={isVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Toggle button */}
+        {/* Toggle button with label */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-12 h-12 rounded-full glass-strong flex items-center justify-center shadow-lg shadow-black/30 border border-cyan-400/10 hover:border-cyan-400/30 transition-all group"
+          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl glass-strong shadow-lg shadow-black/30 border border-cyan-400/10 hover:border-cyan-400/30 transition-all group"
           title="Network Stats"
           aria-label="Toggle network statistics panel"
         >
-          <Activity size={18} className="text-cyan-400 group-hover:text-cyan-300 transition-colors" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background animate-pulse" />
+          <Activity size={16} className="text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+          <span className="text-[10px] font-mono font-semibold tracking-wider text-cyan-400/80 group-hover:text-cyan-300 transition-colors hidden sm:inline">NETWORK STATUS</span>
+          <div className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </div>
         </motion.button>
 
         {/* Expandable panel */}
@@ -133,7 +148,7 @@ export default function NetworkStats() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute bottom-16 right-0 w-72 md:w-80 glass-strong rounded-2xl border border-border overflow-hidden shadow-xl shadow-black/40"
+              className="absolute bottom-14 right-0 w-72 md:w-80 glass-strong rounded-2xl border border-border overflow-hidden shadow-xl shadow-black/40"
             >
               {/* Header */}
               <div className="px-4 py-3 border-b border-border flex items-center justify-between">

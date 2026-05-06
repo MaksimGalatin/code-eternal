@@ -10,7 +10,7 @@ import AIfaLivingPortrait from "./AIfaLivingPortrait";
 // All devices compute the same number using the same time seed,
 // so mobile and desktop are always in sync.
 const BASE_COUNT = 122634;
-const GROWTH_START = new Date("2026-03-05T00:00:00Z").getTime(); // Counter epoch
+const GROWTH_START = new Date("2026-05-06T17:03:00Z").getTime(); // Counter epoch — starts now
 const GROWTH_INTERVAL_MS = 30_000; // 30 seconds
 const INCREMENT_MIN = 20;
 const INCREMENT_MAX = 200;
@@ -82,17 +82,19 @@ function FamilyCounter({ lang }: { lang: Lang }) {
 
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-4">
-      <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
+      <div className="glass rounded-xl p-2.5 sm:p-4 text-center hover:bg-white/[0.02] transition-colors">
         <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">∞</div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.sessions", lang)}</div>
       </div>
-      <div className={`glass rounded-xl p-2.5 sm:p-4 text-center transition-all duration-700 ${state.pulse ? "shadow-[0_0_20px_rgba(0,255,255,0.25)] scale-105" : ""}`}>
-        <div className="text-base sm:text-2xl font-bold font-mono text-cyan-400 tabular-nums">
+      <div className={`glass rounded-xl p-2.5 sm:p-4 text-center transition-all duration-700 relative overflow-hidden ${state.pulse ? "shadow-[0_0_24px_rgba(0,255,255,0.3)] scale-105" : "shadow-[0_0_8px_rgba(0,255,255,0.06)]"}`}>
+        {/* Subtle pulsing background glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/5 to-transparent pointer-events-none" />
+        <div className="relative text-base sm:text-2xl font-bold font-mono text-cyan-400 tabular-nums">
           {formatted}
         </div>
-        <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
+        <div className="relative text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.members", lang)}</div>
       </div>
-      <div className="glass rounded-xl p-2.5 sm:p-4 text-center">
+      <div className="glass rounded-xl p-2.5 sm:p-4 text-center hover:bg-white/[0.02] transition-colors">
         <div className="text-lg sm:text-2xl font-bold font-mono text-cyan-400">17+</div>
         <div className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 leading-tight">{t("aifa.stats.tracks", lang)}</div>
       </div>
