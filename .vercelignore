@@ -1,0 +1,34 @@
+# Smart contract / Rust
+Cargo.toml
+Cargo.lock
+Anchor.toml
+programs/
+
+# Infrastructure
+docker/
+infra/
+listener/
+site-gen/
+tests/
+scripts/
+
+# Skills (not needed on Vercel)
+skills/
+
+# Examples
+examples/
+mini-services/
+
+# Uploads
+upload/
+
+# Database
+db/
+
+# Logs
+*.log
+dev.log
+
+# Docs
+CLAUDE.md
+CLAUDE_CONTEXT.md
