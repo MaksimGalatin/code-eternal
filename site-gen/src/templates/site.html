@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{name}} — CODE ETERNAL</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0A0F;
+      color: #E8E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .header {
+      width: 100%;
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1a1a2e;
+    }
+
+    .logo {
+      color: #7C3AED;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .tier-badge {
+      background: {{tierColor}}22;
+      color: {{tierColor}};
+      border: 1px solid {{tierColor}}66;
+      padding: 4px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px 60px;
+      text-align: center;
+      max-width: 720px;
+      width: 100%;
+    }
+
+    .sigil {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, {{tierColor}}33, {{tierColor}}11);
+      border: 2px solid {{tierColor}}44;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .sigil::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1px solid {{tierColor}}22;
+    }
+
+    .name {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 700;
+      color: #E8E8F0;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      color: #8B8B9E;
+      font-size: 16px;
+      margin-bottom: 48px;
+    }
+
+    .scroll {
+      width: 100%;
+      background: #13131C;
+      border: 1px solid #1e1e30;
+      border-radius: 16px;
+      padding: 36px;
+      text-align: left;
+    }
+
+    .scroll-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: {{tierColor}};
+      margin-bottom: 20px;
+    }
+
+    .scroll-body {
+      color: #8B8B9E;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .proof {
+      width: 100%;
+      max-width: 720px;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .proof-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid #1a1a2e;
+      gap: 16px;
+    }
+
+    .proof-label {
+      color: #4a4a5e;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .proof-value {
+      color: #8B8B9E;
+      font-size: 12px;
+      font-family: "Menlo", "Monaco", "Courier New", monospace;
+      text-align: right;
+      word-break: break-all;
+    }
+
+    .footer {
+      width: 100%;
+      padding: 24px 40px;
+      border-top: 1px solid #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .arweave-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #4a4a5e;
+      font-size: 12px;
+    }
+
+    .arweave-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10B981;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <span class="logo">CODE ETERNAL</span>
+    <span class="tier-badge">{{tier}}</span>
+  </header>
+
+  <main class="hero">
+    <div class="sigil">&#9670;</div>
+
+    <h1 class="name">{{name}}</h1>
+    <p class="tagline">Eternal digital identity · Solana + Arweave</p>
+
+    <div class="scroll">
+      <div class="scroll-title">Memory Scroll</div>
+      <div class="scroll-body">
+        This record was created on {{registeredAt}} and stored permanently
+        on the Arweave blockchain. It cannot be deleted, modified, or censored.
+        As long as Arweave exists, this page exists.<br/><br/>
+        The owner of this record has chosen to preserve their digital identity
+        for eternity — a message to the future, a proof of presence in this moment.
+      </div>
+    </div>
+  </main>
+
+  <section class="proof">
+    <div class="proof-row">
+      <span class="proof-label">Wallet</span>
+      <span class="proof-value">{{wallet}}</span>
+    </div>
+    <div class="proof-row">
+      <span class="proof-label">Access Tier</span>
+      <span class="proof-value" style="color:{{tierColor}}">{{tier}}</span>
+    </div>
+    <div class="proof-row">
+      <span class="proof-label">Registered</span>
+      <span class="proof-value">{{registeredAt}}</span>
+    </div>
+    <div class="proof-row">
+      <span class="proof-label">Transaction</span>
+      <span class="proof-value">{{txSignature}}</span>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span class="arweave-badge">
+      <span class="arweave-dot"></span>
+      Stored permanently on Arweave · {{year}}
+    </span>
+  </footer>
+
+</body>
+</html>

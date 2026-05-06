@@ -47,8 +47,9 @@ export const IDL: Idl = {
     {
       name: "update_site_url",
       accounts: [
-        { name: "backend", signer: true },
+        { name: "backend_authority", signer: true },
         { name: "user_state", writable: true },
+        { name: "user_wallet" },
       ],
       args: [
         { name: "arweave_url", type: { array: ["u8", 64] } },

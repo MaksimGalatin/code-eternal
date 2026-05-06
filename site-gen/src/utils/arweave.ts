@@ -6,28 +6,37 @@ import { logger } from "./logger";
 
 const TEMPLATE_PATH = path.join(__dirname, "../templates/site.html");
 
+const TIER_META: Record<number, { name: string; color: string }> = {
+  1: { name: "Spark", color: "#7C3AED" },
+  2: { name: "Family Archives", color: "#D4A24C" },
+  3: { name: "Digital DNA", color: "#10B981" },
+};
+
 export async function generateAndDeploy(job: {
   wallet: string;
   tier: number;
   txSignature: string;
   timestamp: number;
+  displayName?: string;
 }): Promise<string> {
-  // 1. Compile HTML from template
   const templateSource = fs.readFileSync(TEMPLATE_PATH, "utf-8");
   const template = Handlebars.compile(templateSource);
 
-  const tierNames: Record<number, string> = {
-    1: "Starter",
-    2: "Pro",
-    3: "Elite",
-  };
+  const tierMeta = TIER_META[job.tier] ?? { name: "Spark", color: "#7C3AED" };
+  const walletShort = `${job.wallet.slice(0, 4)}...${job.wallet.slice(-4)}`;
 
   const html = template({
+    name: job.displayName || walletShort,
     wallet: job.wallet,
-    walletShort: `${job.wallet.slice(0, 4)}...${job.wallet.slice(-4)}`,
-    tier: tierNames[job.tier] || "Starter",
+    walletShort,
+    tier: tierMeta.name,
+    tierColor: tierMeta.color,
     txSignature: job.txSignature,
-    registeredAt: new Date(job.timestamp * 1000).toISOString(),
+    registeredAt: new Date(job.timestamp * 1000).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
     year: new Date().getFullYear(),
   });
 

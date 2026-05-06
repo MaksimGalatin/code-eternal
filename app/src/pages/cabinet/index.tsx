@@ -46,12 +46,19 @@ const TIERS = [
   },
 ];
 
+type SiteStatus = {
+  status: "none" | "pending" | "done" | "error";
+  arweaveUrl?: string | null;
+  tier: number;
+};
+
 export default function CabinetPage() {
   const router = useRouter();
   const { user, logout, authenticated, ready } = usePrivy();
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
   const [myRefCode, setMyRefCode] = useState<string>("");
+  const [siteStatus, setSiteStatus] = useState<SiteStatus | null>(null);
 
   // Redirect unauthenticated users to login
   useEffect(() => {
@@ -60,7 +67,7 @@ export default function CabinetPage() {
     }
   }, [ready, authenticated, router]);
 
-  // Register user on first load and get ref code
+  // Register user on first load and get ref code + site status
   useEffect(() => {
     if (!wallet || !user) return;
     const refCode =
@@ -80,6 +87,11 @@ export default function CabinetPage() {
       .then(({ refCode: myCode }) => {
         if (myCode) setMyRefCode(myCode);
       })
+      .catch(() => {});
+
+    fetch(`/api/users/site-status?wallet=${wallet.address}`)
+      .then((r) => r.json())
+      .then((data) => setSiteStatus(data))
       .catch(() => {});
   }, [wallet, user]);
 
@@ -173,6 +185,77 @@ export default function CabinetPage() {
             </button>
           </div>
         </div>
+
+        {/* Site status panel — shown when user has paid */}
+        {siteStatus && siteStatus.status !== "none" && (
+          <div
+            style={{
+              maxWidth: "720px",
+              margin: "0 auto 32px",
+              background: "#13131C",
+              border: `1px solid ${
+                siteStatus.status === "done"
+                  ? "#10B981"
+                  : siteStatus.status === "error"
+                  ? "#EF4444"
+                  : "#2a2a3a"
+              }`,
+              borderRadius: "12px",
+              padding: "20px 24px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "12px", color: "#8B8B9E", marginBottom: "4px" }}>
+                Eternal Site
+              </div>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  color:
+                    siteStatus.status === "done"
+                      ? "#10B981"
+                      : siteStatus.status === "error"
+                      ? "#EF4444"
+                      : "#8B8B9E",
+                }}
+              >
+                {siteStatus.status === "done"
+                  ? "Ready"
+                  : siteStatus.status === "error"
+                  ? "Generation failed"
+                  : "Generating..."}
+              </div>
+            </div>
+            {siteStatus.status === "done" && siteStatus.arweaveUrl && (
+              <a
+                href={siteStatus.arweaveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: "#10B981",
+                  color: "white",
+                  padding: "8px 18px",
+                  borderRadius: "6px",
+                  textDecoration: "none",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                }}
+              >
+                View Eternal Site →
+              </a>
+            )}
+            {siteStatus.status === "pending" && (
+              <span style={{ color: "#8B8B9E", fontSize: "13px" }}>
+                Usually takes 1–2 minutes
+              </span>
+            )}
+          </div>
+        )}
 
         <h2
           style={{

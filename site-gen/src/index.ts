@@ -36,7 +36,14 @@ async function processJob(job: any) {
   logger.info(`Processing job: ${job.jobId} for wallet: ${job.wallet}`);
 
   try {
-    const arweaveUrl = await generateAndDeploy(job);
+    // Fetch display_name so the template can show it
+    const userRow = await db.query(
+      "SELECT display_name FROM users WHERE wallet = $1",
+      [job.wallet]
+    );
+    const displayName = userRow.rows[0]?.display_name ?? undefined;
+
+    const arweaveUrl = await generateAndDeploy({ ...job, displayName });
 
     await updateSiteUrlOnChain(job.wallet, arweaveUrl);
 

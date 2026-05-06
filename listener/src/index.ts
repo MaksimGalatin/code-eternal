@@ -48,10 +48,17 @@ app.post("/webhook/helius", async (req, res) => {
 });
 
 async function processEvent(event: any) {
-  const { type, signature } = event;
+  const { signature } = event;
 
-  if (type === "PAYMENT_PROCESSED" || event.programId === PROGRAM_ID.toString()) {
-    logger.info(`PaymentProcessed event: ${signature}`);
+  // Helius enhanced transactions: check if any instruction targets our program.
+  // For WebSocket events, the programId is at the top level.
+  const programIdStr = PROGRAM_ID.toString();
+  const hasOurProgram =
+    event.instructions?.some((ix: any) => ix.programId === programIdStr) ||
+    event.programId === programIdStr;
+
+  if (hasOurProgram) {
+    logger.info(`Our program instruction detected: ${signature}`);
     await handlePaymentProcessed(event);
   }
 }

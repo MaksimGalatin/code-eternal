@@ -149,7 +149,7 @@ users (id, wallet, email, display_name, referrer_id, ref_code, tier, tier_expire
        tg_chat_id, tg_link_token, created_at)
 referral_payments (id, payer_wallet, referrer_wallet, level, amount_usdc, tx_hash, tier, created_at)
 burn_events (id, amount, tx_hash, created_at)
-site_generation_jobs (id, wallet, tier, tx_signature, status, created_at)  -- listener writes; site-gen reads
+site_generation_jobs (id, wallet, tier, tx_signature, status, arweave_url, completed_at, error_message, created_at)  -- listener writes; site-gen reads. Run scripts/migrate-db.sql to add arweave_url/completed_at/error_message
 applications_1000 (id, fio, contact, language, avatar_desc, reason, status, created_at)
 ```
 
@@ -329,10 +329,10 @@ Frontend (Pipeline 2.x — Days 2-3)
 Backend + Payment (Pipeline 3.x — Days 4-7)
   ✅ Pipeline 3.1: /cabinet/buy — devnet USDC airdrop + smart contract call (register_user + process_payment)
   ✅ Pipeline 3.2: /api/users/register + /api/referrals/chain (Neon pg)
-  □  Pipeline 3.3: listener → Resend email with PDF on PaymentProcessed
+  ✅ Pipeline 3.3: listener → Resend email on PaymentProcessed (HTML email; PDF is post-hackathon)
 
 Site + NFT (Pipeline 4.x — Days 8-11)
-  □  Pipeline 4.1: /cabinet/create-site form → Arweave → Cloudflare subdomain
+  ✅ Pipeline 4.1: auto site-gen on payment (Arweave + on-chain URL + cabinet status panel; Cloudflare subdomain post-hackathon)
   □  Pipeline 4.2: cNFT Guardian Passport mint (Metaplex Bubblegum)
 
 Widgets + Bots (Pipeline 5.x — Days 12-13)

@@ -5,6 +5,7 @@ COPY package*.json ./
 RUN npm install
 COPY tsconfig.json ./
 COPY src ./src
+COPY idl ./idl
 RUN npm run build
 
 FROM node:24-alpine AS production
@@ -15,6 +16,9 @@ COPY package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
+# Templates and IDL are read at runtime
+COPY src/templates ./dist/templates
+COPY idl ./idl
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3002/health || exit 1
