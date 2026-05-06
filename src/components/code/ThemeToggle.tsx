@@ -71,13 +71,15 @@ export default function ThemeToggle() {
     }
   }, []);
 
-  // Prevent hydration mismatch: render a neutral placeholder until mounted
+  // Prevent hydration mismatch: render a clickable placeholder until mounted
+  // This ensures the first click always registers, even before hydration completes
   if (!mounted) {
     return (
-      <div
+      <button
         className="w-14 h-8 rounded-full"
-        style={{ background: "rgba(10, 22, 40, 0.85)" }}
-        aria-hidden="true"
+        style={{ background: "rgba(10, 22, 40, 0.85)", border: "1px solid rgba(0, 229, 255, 0.15)" }}
+        onClick={toggle}
+        aria-label="Switch to light mode"
       />
     );
   }

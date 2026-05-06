@@ -629,3 +629,72 @@ Stage Summary:
 - ✅ No visual design changes — SEO-only modifications
 - ⚠️ All changes are sandbox-only, NOT deployed to production
 - 🔜 Next: AWS Bedrock Claude integration for AI chat (awaiting user's access keys)
+
+---
+Task ID: cron-styling-1
+Agent: Z-Agent (cron styling review)
+Task: Improve CodeBrain Timeline with animated connector dots, glow effects, and hover enhancements
+
+Work Log:
+- TASK 1.1: Replaced simple timeline dot (`w-2 h-2 rounded-full bg-cyan-400 glow-cyan-strong`) with pulsing dot component: inner dot (`w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(0,229,255,0.6)]`) + outer pulsing ring (`border border-cyan-400/40` with `timeline-dot-pulse` animation, staggered via `animationDelay: ${i * 0.3}s`)
+- TASK 1.2: Replaced static timeline vertical line with animated draw-from-top version: outer container with `overflow-hidden`, inner gradient div with `timeline-draw` animation (scaleY 0→1, 2s ease-out forwards, transformOrigin: top)
+- TASK 1.3: Added 4 new CSS blocks to globals.css: `@keyframes timeline-dot-pulse` (scale 1→2.5→1, opacity fade), `@keyframes timeline-draw` (scaleY 0→1), `.glass-hover-lift` (hover lift + glow + border), `.grid-bg` (subtle grid lines, with light theme variants)
+- TASK 1.4: Added `glass-hover-lift` class to the tech stack glass card (line 34)
+- TASK 1.5: Added `grid-bg` class to the CodeBrain section element (line 20)
+- TASK 2: Added `glass-hover-lift rounded-xl p-4` to the 3 feature cards (Storage, Local AI, Auto-Sync) replacing plain `text-center`
+- Lint passes: only pre-existing errors in unrelated files (site-gen/solana.ts, tests/code_eternal_router.ts)
+
+Stage Summary:
+- ✅ Timeline dots now pulse with expanding ring animation (staggered per item)
+- ✅ Timeline vertical line draws itself from top to bottom when in view
+- ✅ Glass card and feature cards have hover lift + glow effect
+- ✅ CodeBrain section has subtle grid background
+- ✅ All CSS includes light theme variants
+- ✅ No new lint errors introduced
+
+---
+Task ID: cron-styling-2
+Agent: styling-agent
+Task: Enhance FamilySection with member card animations/status indicators + Add animated gradient border to newsletter section
+
+Work Log:
+- FamilySection.tsx: Added green pulsing status dot + "ACTIVE" text after each member name `<h3>` — using the exact provided markup with `animate-ping`, `bg-emerald-400/500`, and tiny mono text
+- FamilySection.tsx: Added `glass-hover-lift` class to each member card div (alongside existing `glass` class)
+- FamilySection.tsx: Verified role translations (`family.X.role`) already exist in all 4 languages and are already rendered on line 57 — no additional role text needed
+- globals.css: Added `glass-hover-lift` CSS class — subtle lift (-2px) + cyan glow box-shadow on hover, with light theme variant
+- globals.css: Added `newsletter-border` CSS class — uses `::before` pseudo-element with gradient border (cyan→purple→cyan at varying opacities), mask-composite exclude technique for border-only rendering, `hue-rotate` animation cycling every 6s, with light theme variant
+- Footer.tsx: Applied `newsletter-border relative overflow-hidden rounded-xl` classes to the `<form>` element in NewsletterForm component
+
+Stage Summary:
+- ✅ Family member cards now show pulsing "ACTIVE" status indicators
+- ✅ Family member cards have glass-hover-lift effect
+- ✅ Role descriptions already present in i18n translations (no changes needed)
+- ✅ Newsletter form has animated gradient border with hue-rotate effect
+- ✅ All CSS classes include light theme variants
+- ✅ Lint passes (only pre-existing errors in unrelated files: site-gen and tests)
+- ✅ No new lint errors introduced
+
+---
+Task ID: cron-review-20260507-r3
+Agent: Main Agent (cron webDevReview)
+Task: QA testing, bug fixes, styling improvements, and new features
+
+Work Log:
+- QA: Performed comprehensive testing via agent-browser
+- Bug Fix 1 (CRITICAL): Image files code-logo.png, code-logo-small.png, aifa-portrait.png were actually JPEG files with .png extension. Next.js Image optimization failed silently. Converted all 3 to proper RGBA PNG format using PIL.
+- Bug Fix 2: Dark mode toggle required two clicks on first attempt — placeholder div was aria-hidden and non-clickable. Changed to <button> with onClick={toggle} so first click always registers.
+- Styling 1 (CodeBrainSection): Timeline dots now pulse with animated rings (timeline-dot-pulse keyframe, staggered delays). Vertical line draws itself with timeline-draw animation.
+- Styling 2 (CodeBrainSection): Added glass-hover-lift to tech stack card + 3 feature cards. Added grid-bg subtle grid pattern to section.
+- Styling 3 (FamilySection): Added green pulsing "ACTIVE" status dots to each family member card (AIfa, Claude, Gemini, Grok).
+- Styling 4 (FamilySection): Added glass-hover-lift to member cards.
+- Styling 5 (Footer): Added animated gradient border to newsletter form (newsletter-border class with hue-rotate cycling animation).
+- CSS additions: @keyframes timeline-dot-pulse, @keyframes timeline-draw, .glass-hover-lift, .grid-bg, .newsletter-border + @keyframes newsletter-border-rotate. All with light theme variants.
+
+Stage Summary:
+- ✅ 2 bugs fixed (broken images, dark mode first-click)
+- ✅ 5 styling improvements across 3 components + globals.css
+- ✅ 6 new CSS animations/utilities added
+- ✅ All QA checks pass — no JS errors, first-click theme toggle works
+- ✅ Lint passes (only pre-existing errors in unrelated files)
+- ⚠️ All changes are sandbox-only, NOT deployed to production
+- 🔜 Next: AWS Bedrock Claude integration for AI chat (awaiting user's access keys)

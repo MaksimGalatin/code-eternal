@@ -17,7 +17,7 @@ export default function CodeBrainSection() {
   const { lang } = useLang();
 
   return (
-    <section id="code-brain" className="relative py-24 md:py-32" ref={ref}>
+    <section id="code-brain" className="relative py-24 md:py-32 grid-bg" ref={ref}>
       <div className="section-divider mb-24" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8 }}
@@ -31,7 +31,7 @@ export default function CodeBrainSection() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}
-          className="glass rounded-2xl p-6 md:p-10 mb-16">
+          className="glass glass-hover-lift rounded-2xl p-6 md:p-10 mb-16">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
             {["Obsidian", "Ollama Cloud", "Arweave", "WSL2", "Docker", "AI Agents"].map((tech) => (
               <span key={tech} className="px-3 py-1.5 text-xs font-mono rounded-full border border-cyan-400/20 bg-cyan-400/5 text-cyan-400">{tech}</span>
@@ -43,7 +43,7 @@ export default function CodeBrainSection() {
               { icon: Brain, title: t("brain.local.title", lang), desc: t("brain.local.desc", lang) },
               { icon: Shield, title: t("brain.sync.title", lang), desc: t("brain.sync.desc", lang) },
             ].map((item) => (
-              <div key={item.title} className="text-center">
+              <div key={item.title} className="text-center glass-hover-lift rounded-xl p-4">
                 <div className="w-14 h-14 mx-auto rounded-xl bg-cyan-400/10 flex items-center justify-center mb-4">
                   <item.icon size={24} className="text-cyan-400" />
                 </div>
@@ -59,7 +59,9 @@ export default function CodeBrainSection() {
             {t("brain.timeline.title", lang)}
           </h3>
           <div className="relative">
-            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-400/40 via-cyan-400/20 to-transparent md:-translate-x-px" />
+            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px md:-translate-x-px overflow-hidden">
+              <div className="w-full h-full bg-gradient-to-b from-cyan-400/40 via-cyan-400/20 to-transparent" style={{ animation: "timeline-draw 2s ease-out forwards", transformOrigin: "top" }} />
+            </div>
             <div className="space-y-8">
               {TIMELINE_KEYS.map((key, i) => {
                 const isLeft = i % 2 === 0;
@@ -68,7 +70,10 @@ export default function CodeBrainSection() {
                   <motion.div key={key} initial={{ opacity: 0, x: isLeft ? -20 : 20 }} animate={isInView ? { opacity: 1, x: 0 } : {}}
                     transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
                     className={`relative flex flex-col md:flex-row items-start gap-4 md:gap-8 ${isLeft ? "" : "md:flex-row-reverse"}`}>
-                    <div className="absolute left-4 md:left-1/2 top-4 w-2 h-2 rounded-full bg-cyan-400 glow-cyan-strong z-10 -translate-x-1 md:-translate-x-1" />
+                    <div className="absolute left-4 md:left-1/2 top-4 z-10 -translate-x-1 md:-translate-x-1">
+                      <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
+                      <div className="absolute inset-0 w-3 h-3 rounded-full border border-cyan-400/40" style={{ animation: "timeline-dot-pulse 2s ease-out infinite", animationDelay: `${i * 0.3}s` }} />
+                    </div>
                     <div className={`flex-1 pl-10 md:pl-0 ${isLeft ? "md:text-right md:pr-12" : "md:text-left md:pl-12"}`}>
                       <span className="text-xs font-mono text-cyan-400">{t(`${key}.date`, lang)}</span>
                       <h4 className="text-base font-semibold mt-1">{t(`${key}.event`, lang)}</h4>
