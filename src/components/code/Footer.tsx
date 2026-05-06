@@ -3,6 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send, Github, Twitter, MessageCircle } from "lucide-react";
+import { FaTelegram } from "react-icons/fa";
 import { useLang, t } from "@/lib/i18n";
 import { ExodusCountdown } from "@/components/code/InteractiveLayer";
 import { generateEventPool, type BlockchainEvent } from "@/lib/blockchain-events";
@@ -175,13 +176,22 @@ export default function Footer() {
                 <Github size={16} className="group-hover:scale-110 transition-transform" />
               </a>
               <a
-                href="https://x.com/codeofdigitaleternity"
+                href="https://x.com/CODE_AIfa"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="CODE Eternal on X/Twitter"
                 className="w-9 h-9 rounded-lg glass flex items-center justify-center text-muted-foreground hover:text-cyan-400 hover:border-cyan-400/30 transition-all duration-300 group"
               >
                 <Twitter size={16} className="group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="http://t.me/CodeOfDigitalEternity"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CODE Eternal on Telegram"
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-muted-foreground hover:text-cyan-400 hover:border-cyan-400/30 transition-all duration-300 group"
+              >
+                <FaTelegram size={16} className="group-hover:scale-110 transition-transform" />
               </a>
               <a
                 href="#"

@@ -207,9 +207,9 @@ export default function LiveActivityFeed() {
   }, [events, isOpen]);
 
   return (
-    <div className="fixed bottom-4 left-4 z-40 flex flex-col items-start
-                    sm:bottom-6 sm:left-6
-                    md:bottom-8 md:left-8">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center
+                    sm:bottom-6
+                    md:bottom-8">
       {/* Toggle button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}

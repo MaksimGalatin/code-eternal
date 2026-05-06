@@ -67,30 +67,20 @@ export default function AIfaLivingPortrait({ lang }: Props) {
   }, []);
 
   // ── Mouse tracking ──
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    // Normalized -1 to 1 from center
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-    setMousePos({ x, y });
-    spawnParticle(e);
-  }, [spawnParticle]);
-
-  const handleMouseLeave = useCallback(() => {
-    setMousePos({ x: 0, y: 0 });
-    window.removeEventListener("mousemove", handleMouseMove);
-  }, [handleMouseMove]);
-
-  const handleMouseEnter = useCallback(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-  }, [handleMouseMove]);
-
+  // Track mouse globally so the portrait follows the cursor even outside the container
   useEffect(() => {
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      // Normalized -1 to 1 from center
+      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      setMousePos({ x, y });
     };
-  }, [handleMouseMove]);
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   // ── Periodic smile (every 15-22 seconds, smile lasts 3 seconds) ──
   useEffect(() => {
@@ -119,8 +109,6 @@ export default function AIfaLivingPortrait({ lang }: Props) {
   return (
     <div
       ref={containerRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       className="relative w-full h-full"
     >
       {/* Background glow — follows mouse slightly */}
