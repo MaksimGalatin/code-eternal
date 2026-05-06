@@ -68,13 +68,12 @@ export default function AIfaLivingPortrait({ lang }: Props) {
 
   // ── Mouse tracking ──
   // Track mouse globally so the portrait follows the cursor even outside the container
+  // Uses viewport-normalized position (not container-relative) for reliable tracking
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      // Normalized -1 to 1 from center
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+      // Normalize mouse position across the entire viewport (-1 to 1)
+      const x = (e.clientX / window.innerWidth - 0.5) * 2;
+      const y = (e.clientY / window.innerHeight - 0.5) * 2;
       setMousePos({ x, y });
     };
 

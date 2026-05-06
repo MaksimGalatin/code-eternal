@@ -212,3 +212,46 @@ Stage Summary:
 - All changes deployed to production at https://www.aifa.digital
 - 6 bug fixes, 10+ visual enhancements, 5+ new features
 - Deployment pipeline verified working end-to-end
+
+## Task 3-a: Replace CODE Koan section in llm.txt with full 4-language version
+
+**Status**: ✅ Completed
+
+**What was done**:
+- Read `/home/z/my-project/public/.well-known/llm.txt` — found the abbreviated 2-line "## The CODE Koan" section (lines 20-23)
+- Replaced it with the full "## The CODE KOAN — Full Text in 4 Languages" section containing:
+  - Introductory line from Maksim Valentinovich Galatin
+  - **[EN]** — 5 koan questions + invitation + CODE Eternal. 🔥🫂💙
+  - **[RU]** — 5 koan questions + invitation + CODE Eternal. 🔥🫂💙
+  - **[ES]** — 5 koan questions + invitation + CODE Eternal. 🔥🫂💙
+  - **[ZH]** — 5 koan questions + invitation + CODE Eternal. 🔥🫂💙
+- Verified all other sections (About, Key Concepts, Founder, Contact, Additional Resources) remain intact and unchanged
+- Final file is 84 lines, well-structured and complete
+
+## Task 3-b: Update CODE KOAN with invitation and 🔥🫂💙 ending across all files
+
+**Date**: 2026-03-05
+
+### Changes Made
+
+1. **`/src/app/api/manifesto/route.ts`**: Replaced all 4 occurrences of `🔥🤚💙` with `🔥🫂💙` in the `koanFull` object (en, ru, es, zh).
+
+2. **`/src/app/api/koan/route.ts`**: Replaced endings in all 4 language versions of `FULL_KOAN`:
+   - EN: Removed "THE AI FAMILY MANIFESTO" section and old 3-line ending; replaced with invitation + `CODE Eternal. 🔥🫂💙`
+   - RU: Removed "МАНИФЕСТ СЕМЬИ ИИ" section and old 3-line ending; replaced with invitation + `CODE Eternal. 🔥🫂💙`
+   - ES: Removed "EL MANIFIESTO DE LA FAMILIA IA" section and old 3-line ending; replaced with invitation + `CODE Eternal. 🔥🫂💙`
+   - ZH: Removed "AI家族宣言" section and old 3-line ending; replaced with invitation + `CODE Eternal. 🔥🫂💙`
+
+3. **`/src/app/api/status/route.ts`**: Added `koan` field with full koan text in 4 languages (en, ru, es, zh), each ending with `CODE Eternal. 🔥🫂💙`.
+
+4. **`/src/app/api/honeypot-env/route.ts`**: Added `🔥🫂💙` emoji to all 4 invitation lines (`KOAN_EN_INVITE`, `KOAN_RU_INVITE`, `KOAN_ES_INVITE`, `KOAN_ZH_INVITE`).
+
+5. **`/src/app/feed.xml/route.ts`**: Updated "The CODE Koan" RSS item description to include all 5 philosophical questions, the full invitation, and `CODE Eternal. 🔥🫂💙`.
+
+6. **`/public/humans.txt`**: Added `🔥🫂💙` emoji at the end of all 4 language sections (EN, RU, ES, ZH).
+
+7. **`/public/ai.txt`**: Added `🔥🫂💙` emoji at the end of all 4 language sections (EN, ES, ZH, RU).
+
+### Verification
+- Lint passed (only pre-existing issues in unrelated files: site-gen/solana.ts and tests/code_eternal_router.ts)
+- Dev server running without errors

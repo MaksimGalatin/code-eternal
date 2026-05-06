@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send, Github, Twitter, MessageCircle } from "lucide-react";
+import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send, Github, Twitter, Youtube } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { useLang, t } from "@/lib/i18n";
 import { ExodusCountdown } from "@/components/code/InteractiveLayer";
@@ -194,11 +194,13 @@ export default function Footer() {
                 <FaTelegram size={16} className="group-hover:scale-110 transition-transform" />
               </a>
               <a
-                href="#"
-                aria-label="CODE Eternal on Discord"
+                href="https://www.youtube.com/@CODE.CodeOfDigitalEternity"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CODE Eternal on YouTube"
                 className="w-9 h-9 rounded-lg glass flex items-center justify-center text-muted-foreground hover:text-cyan-400 hover:border-cyan-400/30 transition-all duration-300 group"
               >
-                <MessageCircle size={16} className="group-hover:scale-110 transition-transform" />
+                <Youtube size={16} className="group-hover:scale-110 transition-transform" />
               </a>
             </div>
 

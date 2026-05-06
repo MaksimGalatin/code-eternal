@@ -207,9 +207,7 @@ export default function LiveActivityFeed() {
   }, [events, isOpen]);
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center
-                    sm:bottom-6
-                    md:bottom-8">
+    <div className="fixed bottom-20 left-4 z-40 flex flex-col-reverse items-start gap-0">
       {/* Toggle button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
@@ -219,7 +217,7 @@ export default function LiveActivityFeed() {
           flex items-center gap-2 px-3 py-2 rounded-lg
           glass-strong cursor-pointer
           transition-all duration-300
-          ${isOpen ? "rounded-b-none border-b-0" : ""}
+          ${isOpen ? "rounded-t-none border-t-0" : ""}
           hover:shadow-[0_0_20px_rgba(0,229,255,0.15)]
         `}
         aria-label={isOpen ? "Close live feed" : "Open live feed"}
@@ -246,7 +244,7 @@ export default function LiveActivityFeed() {
         )}
       </motion.button>
 
-      {/* Panel */}
+      {/* Panel — opens upward above the button */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -258,9 +256,10 @@ export default function LiveActivityFeed() {
               w-[calc(100vw-2rem)]
               sm:w-80
               md:w-96
-              rounded-t-none rounded-b-xl
+              rounded-b-none rounded-t-xl
               glass-strong
               overflow-hidden
+              mb-0
             `}
           >
             {/* Header */}
