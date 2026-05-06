@@ -18,7 +18,10 @@ const TIERS: Record<number, { name: string; price: number; amount: number; color
   3: { name: "Digital DNA", price: 1000, amount: 1_000_000_000, color: "#10B981" },
 };
 
-const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID!);
+// Use a valid dummy key during build time if env var is missing, to prevent build crashes
+const PROGRAM_ID = new PublicKey(
+  process.env.NEXT_PUBLIC_PROGRAM_ID || "11111111111111111111111111111111"
+);
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
 const USDC_MINT_STR = process.env.NEXT_PUBLIC_USDC_MINT;
 const ECOSYSTEM_FUND_WALLET = new PublicKey("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
@@ -42,17 +45,22 @@ export default function BuyPage() {
   const { wallets } = useSolanaWallets();
   const wallet = wallets[0];
 
-  const tierId = Number(router.query.tier);
-  const tier = TIERS[tierId];
-
   const [step, setStep] = useState<Step>("loading");
   const [balance, setBalance] = useState<number>(0);
+  const [tier, setTier] = useState<(typeof TIERS)[number] | null>(null);
   const [txSig, setTxSig] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
   useEffect(() => {
     if (ready && !authenticated) router.push("/");
   }, [ready, authenticated, router]);
+
+  useEffect(() => {
+    if (router.isReady) {
+      const tierId = Number(router.query.tier);
+      setTier(TIERS[tierId] ?? null);
+    }
+  }, [router.isReady, router.query.tier]);
 
   useEffect(() => {
     if (wallet && USDC_MINT_STR) loadBalance();
@@ -78,27 +86,8 @@ export default function BuyPage() {
     setStep("ready");
   }
 
-  async function handleAirdrop() {
-    if (!wallet) return;
-    setErrorMsg("");
-    setStep("airdropping");
-    try {
-      const res = await fetch("/api/devnet/airdrop-usdc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: wallet.address }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Airdrop failed");
-      await loadBalance();
-    } catch (e: any) {
-      setErrorMsg(e.message ?? "Airdrop failed");
-      setStep("error");
-    }
-  }
-
   async function handlePay() {
-    if (!wallet || !USDC_MINT_STR || !tier) return;
+    if (!wallet || !USDC_MINT_STR || !tier || !router.query.tier) return;
     setErrorMsg("");
 
     try {
@@ -106,13 +95,31 @@ export default function BuyPage() {
       const payer = new PublicKey(wallet.address);
       const usdcMint = new PublicKey(USDC_MINT_STR);
 
+      // Auto-airdrop if balance is insufficient (devnet PoC)
+      if (balance < tier.price) {
+        setStep("airdropping");
+        const res = await fetch("/api/devnet/airdrop-usdc", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: wallet.address }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Airdrop failed");
+        await loadBalance();
+      }
+
       // Wrap Privy wallet into Anchor-compatible wallet interface
       const anchorWallet = {
         publicKey: payer,
         signTransaction: <T extends Transaction | VersionedTransaction>(tx: T) =>
           wallet.signTransaction(tx as Transaction) as Promise<T>,
-        signAllTransactions: <T extends Transaction | VersionedTransaction>(txs: T[]) =>
-          wallet.signAllTransactions(txs as Transaction[]) as Promise<T[]>,
+        signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]) => {
+          const anyWallet = wallet as any;
+          if (anyWallet.signAllTransactions) {
+            return anyWallet.signAllTransactions(txs);
+          }
+          return Promise.all(txs.map((tx) => wallet.signTransaction(tx as Transaction))) as Promise<any>;
+        },
       };
       const provider = new AnchorProvider(connection, anchorWallet as any, {
         commitment: "confirmed",
@@ -155,7 +162,7 @@ export default function BuyPage() {
       setStep("registering");
       let needsRegister = false;
       try {
-        await program.account.userState.fetch(userStatePDA);
+        await (program.account as any).userState.fetch(userStatePDA);
       } catch {
         needsRegister = true;
       }
@@ -175,7 +182,7 @@ export default function BuyPage() {
       const sig = await program.methods
         .processPayment(
           new BN(tier.amount),
-          tierId,
+          Number(router.query.tier),
           ref1 ? new PublicKey(ref1) : null,
           ref2 ? new PublicKey(ref2) : null,
           ref3 ? new PublicKey(ref3) : null
@@ -210,11 +217,17 @@ export default function BuyPage() {
   const canPay =
     !isProcessing &&
     step !== "success" &&
-    !!USDC_MINT_STR &&
-    balance >= (tier?.price ?? Infinity);
+    !!tier && !!USDC_MINT_STR;
 
-  if (!ready || !authenticated) return null;
+  if (!ready || !authenticated) {
+    return null; // Or a loading spinner
+  }
 
+  // Wait until router is ready to prevent flash of invalid tier message
+  if (!router.isReady) {
+    return <div style={centeredPage}><p>Loading...</p></div>;
+  }
+  
   if (!tier) {
     return (
       <div style={centeredPage}>
@@ -365,25 +378,6 @@ export default function BuyPage() {
                 </div>
               )}
 
-              {/* Airdrop button — shown when balance is insufficient */}
-              {USDC_MINT_STR && balance < tier.price && step !== "loading" && (
-                <button
-                  onClick={handleAirdrop}
-                  disabled={step === "airdropping"}
-                  style={{
-                    ...secondaryBtn,
-                    width: "100%",
-                    marginBottom: "12px",
-                    opacity: step === "airdropping" ? 0.5 : 1,
-                    cursor: step === "airdropping" ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {step === "airdropping"
-                    ? "Getting test USDC..."
-                    : `Get test USDC (devnet)`}
-                </button>
-              )}
-
               {/* Pay button */}
               <button
                 onClick={handlePay}
@@ -396,11 +390,13 @@ export default function BuyPage() {
                   cursor: canPay ? "pointer" : "not-allowed",
                 }}
               >
-                {step === "registering"
+                {step === "airdropping"
+                  ? "Getting test USDC..."
+                  : step === "registering"
                   ? "Registering on-chain..."
                   : step === "paying"
                   ? "Processing payment..."
-                  : `Pay $${tier.price}`}
+                  : `Buy ${tier.name} — $${tier.price}`}
               </button>
 
               {/* Error */}
@@ -463,14 +459,6 @@ const primaryBtn: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const secondaryBtn: React.CSSProperties = {
-  background: "transparent",
-  color: "#7C3AED",
-  border: "1px solid #7C3AED",
-  borderRadius: "8px",
-  padding: "12px 0",
-  fontSize: "14px",
-};
 
 const linkBtn: React.CSSProperties = {
   background: "transparent",

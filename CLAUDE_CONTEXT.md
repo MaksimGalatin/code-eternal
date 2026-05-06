@@ -94,9 +94,11 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 ### Payment → Site Generation
 ```
 Google login → Privy (hidden Solana wallet created automatically, requires HTTPS)
-User clicks "Купить" → /cabinet/buy?tier=N
-  Option A: MoonPay widget (Privy useFundWallet) → card → USDC on embedded wallet
-  Option B: user already has USDC in Phantom
+User clicks "Buy" on tier card → /cabinet/buy?tier=N
+  Devnet PoC: single "Buy {Tier} — $N" button
+    → auto-airdrops 1100 mock USDC if balance < tier price (/api/devnet/airdrop-usdc)
+    → then proceeds to payment
+  Production (future): MoonPay widget (Privy useFundWallet) → card → USDC on embedded wallet
 
 Frontend calls /api/referrals/chain?wallet=... → gets ref1/ref2/ref3 from Neon DB
 Frontend builds Anchor tx → process_payment (smart contract):
@@ -120,7 +122,7 @@ Listener:
 
 site-gen (Docker, /jobs endpoint):
   → compile HTML from template using user data (Handlebars, site-gen/src/templates/site.html)
-  → upload to Arweave via Irys SDK (free <100KB, base58 IRYS_PRIVATE_KEY)
+  → upload to Arweave via Irys SDK (free <100KB, base58 IRYS_PRIVATE_KEY, node: devnet.irys.xyz)
   → call update_site_url() on-chain with backend keypair (sets arweave_url + site_status=1 in UserState)
   → update site_generation_jobs.status="done" + arweave_url in Neon DB
   → (post-hackathon: create Cloudflare CNAME subdomain for username.codeofdigitaleternity.com)
@@ -323,13 +325,13 @@ Smart Contract Tests
 
 Frontend (Pipeline 2.x — Days 2-3)
   ✅ Next.js 14 app/ created (Pages Router, Tailwind, Privy, purple theme)
-  ✅ Pipeline 2.1: Login page — "Войти в Семью" → Google → /cabinet
+  ✅ Pipeline 2.1: Login page — "Enter the Family" → Google → /cabinet
   ✅ Pipeline 2.2: /cabinet — three tier cards ($15/$100/$1000) with auth guard
   ✅ Create Neon DB tables (users, referral_payments, burn_events, site_generation_jobs, applications_1000)
   ✅ Confirm login flow works end-to-end in browser (Google login → /cabinet, HTTPS)
 
 Backend + Payment (Pipeline 3.x — Days 4-7)
-  ✅ Pipeline 3.1: /cabinet/buy — devnet USDC airdrop + smart contract call (register_user + process_payment)
+  ✅ Pipeline 3.1: /cabinet/buy — single-click flow: auto-airdrop USDC if needed → register_user → process_payment (all tiers)
   ✅ Pipeline 3.2: /api/users/register + /api/referrals/chain (Neon pg)
   ✅ Pipeline 3.3: listener → Resend email on PaymentProcessed (HTML email; PDF is post-hackathon)
 
@@ -407,7 +409,7 @@ docker buildx build --platform linux/arm64 --no-cache \
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=cmoofvdt4008o0cjps5l8nvnu \
   --build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5 \
   --build-arg NEXT_PUBLIC_PROGRAM_ID=8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
-  --build-arg NEXT_PUBLIC_RPC_URL=https://devnet.helius-rpc.com/?api-key=bb310470-cf7c-42a5-80af-60fe93a6784b \
+  --build-arg NEXT_PUBLIC_RPC_URL=https://devnet.helius-rpc.com/?api-key=<HELIUS_API_KEY> \
   -t maxshchuplov/code-eternal-app:latest --push ./app
 
 # Pull and restart on VM
@@ -448,7 +450,7 @@ This creates:
 ✅ **Already run (2026-05-06).** Generated values (saved in credentials.env):
 - `NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5`
 - `MOCK_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5`
-- `MOCK_USDC_MINT_AUTHORITY=6EwZJ0TRE1w/V9E0/...` (base64, in credentials.env)
+- `MOCK_USDC_MINT_AUTHORITY` — base64 keypair, stored in credentials.env
 - Mint authority pubkey: `9NJhwafwj7HSHAj4fvgkmsPqFRT4PFtyqtnvS9ERf2Sv`
 
 Docker images rebuilt with `--build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5` and deployed.
@@ -478,6 +480,7 @@ All images are ARM64 (linux/arm64), built with `docker buildx` + QEMU in WSL2.
 - `NEXT_PUBLIC_*` vars baked in at build time via `--build-arg` (Next.js requirement)
 - SQS replaced with direct HTTP POST: listener calls `POST site-gen:3002/jobs`
 - **Always use `--no-cache`** when rebuilding app image after source changes — Next.js webpack cache (`/app/.next/cache/webpack/`) gets baked into the image and stale content is served even after code changes
+- `app/.dockerignore` excludes `.next`, `node_modules`, `out`, `build`, `.git` — prevents stale webpack cache from entering the Docker build context via `COPY . .`
 - `npm install` for WSL scripts must run on Linux filesystem (`~/`), NOT `/mnt/c/` — NTFS permission issues cause failures
 
 ---
@@ -499,14 +502,11 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
 | listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — verifies POST /webhook/helius |
 | listener, site-gen | `PROGRAM_ID` | `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` |
-| listener, site-gen | `DATABASE_URL` | Neon PostgreSQL — `postgresql://neondb_owner:npg_ETuoDYl0fG9L@ep-odd-rain-alm1m69x.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require` |
+| listener, site-gen | `DATABASE_URL` | Neon PostgreSQL connection string — see `secrets/credentials.env` |
 | listener | `SITE_GEN_URL` | `http://site-gen:3002` (Docker internal, set in docker-compose.yml) |
 | listener | `RESEND_API_KEY` | From resend.com — email delivery |
-| listener | `TELEGRAM_BOT_TOKEN` | From @BotFather — Grammy bot token |
-| site-gen | `IRYS_PRIVATE_KEY` | ✅ Set — base58 keypair (pubkey: `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X`) |
+| site-gen | `IRYS_PRIVATE_KEY` | ✅ Set — base58 keypair (pubkey: `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X`, funded with 0.5 devnet SOL on 2026-05-06, TX: `2RDPciAgam3EvdHPpVmazYEye6Gc4wSSrT6eyzQ84PaGXrytgeL3KFyiCCmQREbEwReiAxQga9FDLHcfEDPcb7R4`) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
-| site-gen | `CF_API_TOKEN` | Cloudflare API token (Edit zone DNS permission) |
-| site-gen | `CF_ZONE_ID` | Cloudflare Zone ID for codeofdigitaleternity.com |
 | Next.js (app) | `NEXT_PUBLIC_PRIVY_APP_ID` | `cmoofvdt4008o0cjps5l8nvnu` — baked in at Docker build time |
 | Next.js (app) | `NEXT_PUBLIC_RPC_URL` | Helius RPC (public key OK in browser) |
 | Next.js (app) | `NEXT_PUBLIC_PROGRAM_ID` | Deployed contract address |
@@ -547,7 +547,7 @@ app/src/
 │   ├── index.tsx             # Login page → redirects to /cabinet ✅
 │   ├── cabinet/
 │   │   ├── index.tsx         # Tier cards + site status panel (pending/ready/link) ✅
-│   │   ├── buy.tsx           # USDC balance + airdrop + register_user + process_payment ✅
+│   │   ├── buy.tsx           # Single-click: auto-airdrop if needed → register_user → process_payment ✅
 │   │   └── apply-1000.tsx    # $1000 application form (Pipeline 5.3) □
 │   └── api/
 │       ├── users/register.ts          # POST — upsert user, generate ref_code ✅
@@ -635,7 +635,7 @@ listener/src/
 5. Upsert `users.tier` for payer wallet
 6. Send HTML email via Resend (dynamic import)
 7. Check `site_generation_jobs` for existing row (deduplication)
-8. If tier ≥ 2 (Family Archives), insert job row + HTTP POST to `site-gen:3002/jobs`
+8. Insert job row + HTTP POST to `site-gen:3002/jobs` (all tiers get a site)
 
 ---
 
@@ -643,6 +643,10 @@ listener/src/
 
 **Service:** `site-gen/` → Docker image `maxshchuplov/code-eternal-site-gen` → port 3002
 **Entry:** `site-gen/src/index.ts` — Express app, single POST `/jobs`
+
+**Irys node:** `https://devnet.irys.xyz` (matches Solana devnet) — mainnet will use `https://node2.irys.xyz`
+**Irys wallet:** `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X` — must have devnet SOL to connect
+**Re-fund if needed:** `solana transfer 8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X 0.5 --url devnet --allow-unfunded-recipient`
 
 ### Site-Gen File Structure
 
@@ -694,7 +698,8 @@ Tier colors:
 - `handler` name collision in `mod.rs` glob re-exports — rename each to `register_user_handler`, etc.
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
 - Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — CF_API_TOKEN + CF_ZONE_ID env vars are defined but site-gen doesn't call Cloudflare yet
-- Grammy Telegram bot notifications not yet implemented (TELEGRAM_BOT_TOKEN env var defined but handler is stub)
+- Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
+- Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
 
 ## Security Fixes Applied (2026-04-19)

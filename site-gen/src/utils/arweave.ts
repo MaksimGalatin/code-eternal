@@ -42,7 +42,7 @@ export async function generateAndDeploy(job: {
 
   // 2. Upload to Arweave via Irys
   const irys = new Irys({
-    url: "https://node2.irys.xyz",
+    url: "https://devnet.irys.xyz",
     token: "solana",
     key: process.env.IRYS_PRIVATE_KEY!,
     config: {
