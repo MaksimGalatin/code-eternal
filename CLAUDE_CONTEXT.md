@@ -59,10 +59,11 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 ### Auth & Payments
 - Privy (privy.io) — Google login + hidden Solana wallet (embedded, user never sees seed phrase)
   - App ID: `cmoofvdt4008o0cjps5l8nvnu`
-  - Embedded wallets disabled until HTTPS is set up (Privy requires HTTPS for embedded wallets)
-  - Allowed origin: `http://app.codeofdigitaleternity.com` (will change to https after SSL)
-- MoonPay via Privy `useFundWallet` — card → USDC on-ramp directly to embedded wallet
-- Flow: `MoonPay → USDC on wallet → frontend calls process_payment → Helius webhook → listener → HTTP → site-gen → Arweave`
+  - ✅ Embedded wallets enabled (`createOnLogin: "users-without-wallets"`) — HTTPS is live
+  - Allowed origin: `https://app.codeofdigitaleternity.com`
+- MoonPay via Privy `useFundWallet` — card → USDC on-ramp directly to embedded wallet (production)
+- Devnet: mock USDC airdrop via `/api/devnet/airdrop-usdc` (1100 USDC, no card needed)
+- Flow: `Google login → Privy wallet → process_payment tx → Helius webhook → listener → site-gen → Arweave`
 
 ### Blockchain
 - Solana (Devnet now → Mainnet for launch)
@@ -113,16 +114,17 @@ Listener:
   → writes referral_payments rows to Neon PostgreSQL
   → writes burn_events row to Neon PostgreSQL
   → updates users.tier in Neon PostgreSQL
-  → sends email with PDF via Resend
-  → sends Telegram notification via Grammy bot
-  → HTTP POST to site-gen:3002/jobs (direct, no SQS)
+  → sends HTML email via Resend (PDF guide is post-hackathon)
+  → sends Telegram notification via Grammy bot (post-hackathon)
+  → HTTP POST to site-gen:3002/jobs (direct, no SQS; deduplication: skips if job row already exists)
 
 site-gen (Docker, /jobs endpoint):
-  → compile HTML from template using user data
-  → upload to Arweave via Irys SDK
-  → call update_site_url() on-chain (backend keypair)
-  → create Cloudflare CNAME subdomain
-User sees: username.codeofdigitaleternity.com
+  → compile HTML from template using user data (Handlebars, site-gen/src/templates/site.html)
+  → upload to Arweave via Irys SDK (free <100KB, base58 IRYS_PRIVATE_KEY)
+  → call update_site_url() on-chain with backend keypair (sets arweave_url + site_status=1 in UserState)
+  → update site_generation_jobs.status="done" + arweave_url in Neon DB
+  → (post-hackathon: create Cloudflare CNAME subdomain for username.codeofdigitaleternity.com)
+User sees: Arweave URL shown in cabinet site status panel
 ```
 
 ### Think-to-Earn
@@ -399,13 +401,31 @@ certbot certonly --standalone -d app.codeofdigitaleternity.com -d listener.codeo
 
 ```bash
 # From WSL — build ARM64 image and push
+# IMPORTANT: use --no-cache when Next.js source content changes (webpack cache baked in at build time)
 cd /mnt/c/Users/Maksim/projects/code-eternal
-docker buildx build --platform linux/arm64 \
+docker buildx build --platform linux/arm64 --no-cache \
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=cmoofvdt4008o0cjps5l8nvnu \
+  --build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5 \
+  --build-arg NEXT_PUBLIC_PROGRAM_ID=8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
+  --build-arg NEXT_PUBLIC_RPC_URL=https://devnet.helius-rpc.com/?api-key=bb310470-cf7c-42a5-80af-60fe93a6784b \
   -t maxshchuplov/code-eternal-app:latest --push ./app
 
 # Pull and restart on VM
-ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull app && docker compose -f docker/docker-compose.yml up -d app'
+ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull app && docker compose -f docker/docker-compose.yml up -d app && docker exec docker-nginx-1 nginx -s reload'
+```
+
+### Redeploy Listener or Site-Gen After Code Change
+
+```bash
+# Listener
+docker buildx build --platform linux/arm64 --no-cache \
+  -t maxshchuplov/code-eternal-listener:latest --push ./listener
+ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull listener && docker compose -f docker/docker-compose.yml up -d listener'
+
+# Site-gen
+docker buildx build --platform linux/arm64 --no-cache \
+  -t maxshchuplov/code-eternal-site-gen:latest --push ./site-gen
+ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull site-gen && docker compose -f docker/docker-compose.yml up -d site-gen'
 ```
 
 ---
@@ -457,6 +477,8 @@ All images are ARM64 (linux/arm64), built with `docker buildx` + QEMU in WSL2.
 - `apk add python3 make g++` in Dockerfile — needed for node-gyp (bufferutil etc.) on ARM64
 - `NEXT_PUBLIC_*` vars baked in at build time via `--build-arg` (Next.js requirement)
 - SQS replaced with direct HTTP POST: listener calls `POST site-gen:3002/jobs`
+- **Always use `--no-cache`** when rebuilding app image after source changes — Next.js webpack cache (`/app/.next/cache/webpack/`) gets baked into the image and stale content is served even after code changes
+- `npm install` for WSL scripts must run on Linux filesystem (`~/`), NOT `/mnt/c/` — NTFS permission issues cause failures
 
 ---
 
@@ -500,7 +522,7 @@ No AWS Secrets Manager (AWS infrastructure removed).
 
 **Stack:** Next.js 14 (Pages Router), React, Tailwind, Solana Web3.js, Anchor, Privy.io
 **Source:** `app/` directory → Docker image → Hetzner VM
-**URL:** `http://app.codeofdigitaleternity.com` (HTTP until DNS + certbot)
+**URL:** `https://app.codeofdigitaleternity.com` ✅ HTTPS live (SSL cert expires 2026-07-31)
 **Theme:** Dark purple (#7C3AED accent, #0A0A0F background)
 
 ### Key Architecture Decisions
@@ -559,6 +581,106 @@ app/src/
 
 ---
 
+## Listener — Architecture & File Structure
+
+**Service:** `listener/` → Docker image `maxshchuplov/code-eternal-listener` → port 3001
+**Entry:** `listener/src/index.ts` — Express app, single POST `/webhook/helius`
+
+### Helius Webhook Format (Enhanced Transactions)
+
+Helius sends an array of enhanced transaction objects. Our listener processes `UNKNOWN` type events and checks for our program ID inside `event.instructions[].programId` (NOT top-level `event.programId`):
+
+```typescript
+const hasOurProgram =
+  event.instructions?.some((ix: any) => ix.programId === programIdStr) ||
+  event.programId === programIdStr;
+```
+
+Payer wallet: `rawEvent.feePayer` (top-level field in Helius enhanced tx)
+
+### UserState Tier Decoding
+
+On-chain `UserState` binary layout for tier extraction from raw account data:
+```
+[0..7]   discriminator (8 bytes)
+[8..39]  owner Pubkey (32 bytes)
+[40]     referrer Option flag: 0=None, 1=Some
+[41..72] referrer Pubkey (32 bytes, only if flag=1)
+[41 or 73] tier (u8) — at 41 if no referrer, at 73 if referrer present
+```
+
+```typescript
+function decodeTier(data: Buffer): number {
+  const hasReferrer = data[40] === 1;
+  return data[hasReferrer ? 73 : 41];
+}
+```
+
+### Listener File Structure
+
+```
+listener/src/
+├── index.ts              # Express app, /webhook/helius route, auth check
+├── handlers/
+│   └── onPaymentProcessed.ts  # Main handler: DB writes, email, site-gen dispatch
+└── package.json          # deps: express, pg, @solana/web3.js, bs58, resend
+```
+
+### onPaymentProcessed Flow
+
+1. Parse `feePayer` from `rawEvent.feePayer` → payer wallet
+2. Decode tier from on-chain UserState binary (see above)
+3. Write `burn_events` row (5% of payment)
+4. Write `referral_payments` rows for each referral level present
+5. Upsert `users.tier` for payer wallet
+6. Send HTML email via Resend (dynamic import)
+7. Check `site_generation_jobs` for existing row (deduplication)
+8. If tier ≥ 2 (Family Archives), insert job row + HTTP POST to `site-gen:3002/jobs`
+
+---
+
+## Site-Gen — Architecture & File Structure
+
+**Service:** `site-gen/` → Docker image `maxshchuplov/code-eternal-site-gen` → port 3002
+**Entry:** `site-gen/src/index.ts` — Express app, single POST `/jobs`
+
+### Site-Gen File Structure
+
+```
+site-gen/
+├── src/
+│   ├── index.ts              # Express /jobs endpoint — reads job from DB, calls generateAndDeploy
+│   ├── templates/
+│   │   └── site.html         # Handlebars template — standalone dark HTML, no external deps
+│   └── utils/
+│       ├── arweave.ts        # generateAndDeploy(): compile template, upload Irys, return TX ID
+│       └── solana.ts         # updateSiteUrl(): calls update_site_url on-chain via Anchor
+├── idl/
+│   └── code_eternal_router.json  # JSON IDL required by solana.ts (anchor.Program constructor)
+└── package.json              # deps: express, @irys/sdk, @coral-xyz/anchor, handlebars, pg
+```
+
+### Handlebars Template Variables
+
+`site.html` uses: `{{name}}`, `{{wallet}}`, `{{tier}}`, `{{tierColor}}`, `{{txSignature}}`, `{{registeredAt}}`, `{{year}}`
+
+Tier colors:
+- Tier 1 (Spark): `#7C3AED`
+- Tier 2 (Family Archives): `#D4A24C`
+- Tier 3 (Digital DNA): `#10B981`
+
+### update_site_url Account Names (must match Rust contract)
+
+```typescript
+.accounts({
+  backendAuthority: backendKeypair.publicKey,  // matches backend_authority in Rust
+  userState: userStatePda,
+  userWallet: userWallet,                       // matches user_wallet in Rust
+})
+```
+
+---
+
 ## Language Rule
 
 **All user-facing text in the app must be in English.** No Russian words anywhere in the UI — buttons, labels, tier names, descriptions, titles, loading states, tooltips. This applies to all pages: index, cabinet, buy, create-site, apply-1000, and any future pages.
@@ -571,7 +693,9 @@ app/src/
 - `SITE_STATUS_PENDING` constant declared but not used in constraints
 - `handler` name collision in `mod.rs` glob re-exports — rename each to `register_user_handler`, etc.
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
-- Embedded wallets disabled until HTTPS — re-enable after DNS + certbot
+- Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — CF_API_TOKEN + CF_ZONE_ID env vars are defined but site-gen doesn't call Cloudflare yet
+- Grammy Telegram bot notifications not yet implemented (TELEGRAM_BOT_TOKEN env var defined but handler is stub)
+- PDF email attachment (post-hackathon) — current Resend email is HTML only
 
 ## Security Fixes Applied (2026-04-19)
 
