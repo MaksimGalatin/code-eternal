@@ -311,7 +311,7 @@ Infrastructure + Smart Contract
   ✅ Point Cloudflare DNS A records to 128.140.0.118
   ✅ Run certbot for SSL (cert at /etc/letsencrypt/live/app.codeofdigitaleternity.com/, expires 2026-07-31)
   ✅ Update nginx.conf for HTTPS, embedded wallets re-enabled (createOnLogin: "users-without-wallets")
-  □  Helius webhook configured (HELIUS_WEBHOOK_SECRET in dashboard + credentials.env)
+  ✅ Helius webhook configured (HELIUS_WEBHOOK_SECRET set in dashboard + credentials.env, 2026-05-06)
 
 Smart Contract Tests
   □  process_payment test with mock USDC (verify 5/5/15/7/3/65 split)
@@ -425,12 +425,20 @@ This creates:
 - Vault ATA (PDA authority, `allowOwnerOffCurve = true`)
 - Ecosystem fund ATA
 
-Output: 3 env vars to add to `secrets/credentials.env`:
-- `NEXT_PUBLIC_USDC_MINT=<mint>`
-- `MOCK_USDC_MINT=<mint>` (server-side)
-- `MOCK_USDC_MINT_AUTHORITY=<base64 keypair>`
+✅ **Already run (2026-05-06).** Generated values (saved in credentials.env):
+- `NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5`
+- `MOCK_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5`
+- `MOCK_USDC_MINT_AUTHORITY=6EwZJ0TRE1w/V9E0/...` (base64, in credentials.env)
+- Mint authority pubkey: `9NJhwafwj7HSHAj4fvgkmsPqFRT4PFtyqtnvS9ERf2Sv`
 
-Then rebuild Docker image with `--build-arg NEXT_PUBLIC_USDC_MINT=<mint>`.
+Docker images rebuilt with `--build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5` and deployed.
+
+To re-run (only needed if Devnet resets or mint is lost):
+```bash
+# Run from WSL Linux filesystem (not /mnt/c — npm permissions issue)
+mkdir -p ~/devnet-setup && cp /mnt/c/Users/Maksim/projects/code-eternal/scripts/setup-devnet.js ~/devnet-setup/
+cd ~/devnet-setup && npm install @solana/web3.js @solana/spl-token && node setup-devnet.js
+```
 
 ---
 
@@ -469,11 +477,11 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | listener, site-gen | `HELIUS_RPC_URL` | Helius RPC endpoint with API key |
 | listener | `HELIUS_WEBHOOK_SECRET` | Helius webhook auth token — verifies POST /webhook/helius |
 | listener, site-gen | `PROGRAM_ID` | `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` |
-| listener, site-gen | `DATABASE_URL` | Neon PostgreSQL connection string |
+| listener, site-gen | `DATABASE_URL` | Neon PostgreSQL — `postgresql://neondb_owner:npg_ETuoDYl0fG9L@ep-odd-rain-alm1m69x.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require` |
 | listener | `SITE_GEN_URL` | `http://site-gen:3002` (Docker internal, set in docker-compose.yml) |
 | listener | `RESEND_API_KEY` | From resend.com — email delivery |
 | listener | `TELEGRAM_BOT_TOKEN` | From @BotFather — Grammy bot token |
-| site-gen | `IRYS_PRIVATE_KEY` | Solana keypair for Irys uploads (base58) |
+| site-gen | `IRYS_PRIVATE_KEY` | ✅ Set — base58 keypair (pubkey: `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X`) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
 | site-gen | `CF_API_TOKEN` | Cloudflare API token (Edit zone DNS permission) |
 | site-gen | `CF_ZONE_ID` | Cloudflare Zone ID for codeofdigitaleternity.com |
@@ -513,24 +521,23 @@ No AWS Secrets Manager (AWS infrastructure removed).
 ```
 app/src/
 ├── pages/
-│   ├── _app.tsx              # PrivyProvider (Google only, embedded wallets off until HTTPS) ✅
-│   ├── index.tsx             # Login page — "Войти в Семью" → redirects to /cabinet ✅
+│   ├── _app.tsx              # PrivyProvider (Google only, embedded wallets, HTTPS) ✅
+│   ├── index.tsx             # Login page → redirects to /cabinet ✅
 │   ├── cabinet/
-│   │   ├── index.tsx         # Three tier cards $15/$100/$1000, auth guard, ref code ✅
-│   │   ├── buy.tsx           # USDC balance + airdrop + register_user + process_payment (Pipeline 3.1) ✅
-│   │   ├── create-site.tsx   # Site creation form (Pipeline 4.1) □
+│   │   ├── index.tsx         # Tier cards + site status panel (pending/ready/link) ✅
+│   │   ├── buy.tsx           # USDC balance + airdrop + register_user + process_payment ✅
 │   │   └── apply-1000.tsx    # $1000 application form (Pipeline 5.3) □
 │   └── api/
-│       ├── users/register.ts          # POST — upsert user, generate ref_code (Pipeline 3.2) □
-│       ├── referrals/chain.ts         # GET — return ref1/ref2/ref3 wallets (Pipeline 3.2) □
+│       ├── users/register.ts          # POST — upsert user, generate ref_code ✅
+│       ├── users/site-status.ts       # GET — site job status + arweave URL from DB ✅
+│       ├── referrals/chain.ts         # GET — return ref1/ref2/ref3 wallets ✅
+│       ├── devnet/airdrop-usdc.ts     # POST — mint 1100 test USDC to wallet ✅
 │       ├── referrals/income.ts        # GET — earnings + payment history (Pipeline 5.1) □
 │       ├── stats/burned.ts            # GET — total burn_events sum (Pipeline 5.2) □
-│       ├── sites/generate.ts          # POST — Arweave + Cloudflare subdomain (Pipeline 4.1) □
 │       ├── applications/1000.ts       # POST — save + email architect (Pipeline 5.3) □
 │       └── telegram/link-token.ts     # POST — generate tg_link_token (Pipeline 5.4) □
 ├── lib/
-│   ├── db.ts                 # Neon pg Pool with hot-reload guard ✅
-│   └── idl/                  # (future) JSON IDL for Anchor program
+│   └── db.ts                 # Neon pg Pool with hot-reload guard ✅
 ├── idl/
 │   └── code_eternal_router.ts  # Typed IDL for @coral-xyz/anchor ✅
 └── styles/

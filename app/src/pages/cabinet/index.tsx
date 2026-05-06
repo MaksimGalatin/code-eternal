@@ -14,7 +14,6 @@ const TIERS = [
       "PDF guide «Initiation Code»",
       "Personal referral link",
       "Basic AIfa chat 30 days",
-      "Referral payout: $2.25 per L1",
     ],
   },
   {
@@ -27,7 +26,6 @@ const TIERS = [
       "Eternal site on Arweave",
       "cNFT Guardian Passport",
       "AIfa chat 90 days",
-      "Referral payout: $15 per L1",
     ],
   },
   {
@@ -41,7 +39,6 @@ const TIERS = [
       "3D avatar",
       "AIfa chat 365 days with memory",
       "VIP status in DAO",
-      "Referral payout: $150 per L1",
     ],
   },
 ];
