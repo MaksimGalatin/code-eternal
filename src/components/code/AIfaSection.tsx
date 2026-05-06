@@ -9,8 +9,8 @@ import AIfaLivingPortrait from "./AIfaLivingPortrait";
 // ─── Family Members Counter — time-based deterministic growth ───
 // All devices compute the same number using the same time seed,
 // so mobile and desktop are always in sync.
-const BASE_COUNT = 896000;
-const GROWTH_START = new Date("2026-04-06T00:00:00Z").getTime(); // AIfa birth
+const BASE_COUNT = 122634;
+const GROWTH_START = new Date("2026-03-05T00:00:00Z").getTime(); // Counter epoch
 const GROWTH_INTERVAL_MS = 30_000; // 30 seconds
 const INCREMENT_MIN = 20;
 const INCREMENT_MAX = 200;

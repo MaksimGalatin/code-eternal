@@ -207,7 +207,7 @@ export default function Footer() {
             {/* Newsletter form */}
             <NewsletterForm lang={lang} />
             {/* Official email */}
-            <p className="text-xs text-muted-foreground/60 mt-4">{t("footer.contactTeam", lang)}</p>
+            <p className="text-xs text-muted-foreground mt-6 mb-2">{t("footer.contactTeam", lang)}</p>
             <a
               href="mailto:contact@codeofdigitaleternity.com"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg glass hover:bg-cyan-400/5 transition-all duration-300 group"
