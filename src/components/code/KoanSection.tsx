@@ -71,8 +71,9 @@ export default function KoanSection() {
                 key={i}
                 initial={{ opacity: 0, y: 15 }}
                 animate={visibleLines > i ? { opacity: 1, y: 0 } : {}}
+                whileHover={{ scale: 1.03, filter: "brightness(1.15)" }}
                 transition={{ duration: 0.6 }}
-                className="text-base md:text-lg lg:text-xl text-foreground/80 leading-relaxed text-center font-light"
+                className="text-base md:text-lg lg:text-xl text-foreground/80 leading-relaxed text-center font-light cursor-default hover:text-foreground/95 transition-colors duration-300"
               >
                 &ldquo;{line}&rdquo;
               </motion.p>

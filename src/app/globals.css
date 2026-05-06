@@ -245,6 +245,7 @@
 .section-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, #00e5ff40, #7b61ff40, transparent);
+  animation: divider-pulse 4s ease-in-out infinite;
 }
 
 /* Chat message animation */
@@ -576,4 +577,99 @@ body {
 @keyframes stagger-fade-up {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   CTA SHIMMER EFFECT
+   ═══════════════════════════════════════════ */
+@keyframes shimmer-sweep {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  animation: shimmer-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.light .btn-shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SECTION DIVIDER PULSE
+   ═══════════════════════════════════════════ */
+@keyframes divider-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+.section-divider-pulse {
+  animation: divider-pulse 4s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
+   AIFA QUOTE BORDER GLOW
+   ═══════════════════════════════════════════ */
+@keyframes quote-border-glow {
+  0%, 100% { border-color: rgba(0, 229, 255, 0.15); }
+  50% { border-color: rgba(0, 229, 255, 0.30); }
+}
+.aifa-quote-glow {
+  animation: quote-border-glow 4s ease-in-out infinite;
+}
+.light .aifa-quote-glow {
+  animation-name: quote-border-glow-light;
+}
+@keyframes quote-border-glow-light {
+  0%, 100% { border-color: rgba(8, 145, 178, 0.15); }
+  50% { border-color: rgba(8, 145, 178, 0.30); }
+}
+
+/* ═══════════════════════════════════════════
+   DIGITAL SOUL PULSE RINGS
+   ═══════════════════════════════════════════ */
+@keyframes soul-pulse-ring {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.soul-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: soul-pulse-ring 3s ease-out infinite;
+}
+.soul-pulse-ring-delayed {
+  animation-delay: 1.5s;
+}
+.light .soul-pulse-ring {
+  border-color: rgba(8, 145, 178, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   KEYBOARD HINT FADE
+   ═══════════════════════════════════════════ */
+@keyframes hint-fade-out {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
 }

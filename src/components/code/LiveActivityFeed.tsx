@@ -211,15 +211,15 @@ export default function LiveActivityFeed() {
       {/* Toggle button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg
-          glass-strong cursor-pointer
+          flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl
+          glass-strong shadow-lg shadow-black/30 cursor-pointer
+          border border-cyan-400/10
           transition-all duration-300
           ${isOpen ? "rounded-t-none border-t-0" : ""}
-          hover:shadow-[0_0_24px_rgba(0,229,255,0.2)]
-          hover:border-cyan-400/30
+          hover:border-cyan-400/30 hover:shadow-[0_0_24px_rgba(0,229,255,0.2)]
         `}
         aria-label={isOpen ? "Close live feed" : "Open live feed"}
         aria-expanded={isOpen}
@@ -232,9 +232,14 @@ export default function LiveActivityFeed() {
           <span />
           <span />
         </div>
-        <span className="text-xs font-mono text-muted-foreground tracking-wider">
-          LIVE
+        <span className="text-[10px] font-mono font-semibold tracking-wider text-cyan-400/80 hidden sm:inline">
+          LIVE FEED
         </span>
+        {/* Green pulsing dot */}
+        <div className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+        </div>
         {events.length > 0 && (
           <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">
             {events.length}
@@ -313,11 +318,11 @@ export default function LiveActivityFeed() {
                           >
                             {evt.label}
                           </span>
-                          <span className="text-[9px] font-mono text-muted-foreground/40">
+                          <span className="text-[9px] font-mono text-muted-foreground/50">
                             {formatTime(evt.timestamp)}
                           </span>
                         </div>
-                        <p className="text-[11px] font-mono text-muted-foreground/70 leading-relaxed truncate">
+                        <p className="text-[11px] font-mono text-muted-foreground/80 leading-relaxed truncate">
                           {evt.description}
                         </p>
                       </div>
@@ -339,10 +344,10 @@ export default function LiveActivityFeed() {
 
             {/* Footer */}
             <div className="px-4 py-2 border-t border-border flex items-center justify-between">
-              <span className="text-[9px] font-mono text-muted-foreground/40">
+              <span className="text-[9px] font-mono text-muted-foreground/50">
                 CODE Eternal Network
               </span>
-              <span className="text-[9px] font-mono text-muted-foreground/40">
+              <span className="text-[9px] font-mono text-muted-foreground/50">
                 {totalEventCount > 0 ? `${totalEventCount}+ total` : "connecting..."}
               </span>
             </div>

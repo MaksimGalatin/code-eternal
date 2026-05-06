@@ -367,3 +367,53 @@ Stage Summary:
 - ✅ All changes compile without errors, lint passes
 - ⚠️ All changes are sandbox-only, NOT deployed to production
 - 🔜 Next: AWS Bedrock Claude integration for AI chat (awaiting user's access keys)
+
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: QA fixes, styling improvements, and new features
+
+Work Log:
+- Bug Fix 1 (LiveActivityFeed.tsx): Updated toggle button to match NetworkStats style — changed `rounded-lg` to `rounded-xl`, added `shadow-lg shadow-black/30 border border-cyan-400/10`, replaced "LIVE" text with "LIVE FEED" label (hidden on mobile, visible on sm+), added green pulsing dot indicator matching NetworkStats
+- Bug Fix 2 (BackToTop.tsx): Verified BackToTop already has z-50 (higher than NetworkStats z-40), no position change needed — overlap resolved by existing z-index hierarchy
+- Bug Fix 3 (LiveActivityFeed.tsx): Improved text contrast — bumped event descriptions from `text-muted-foreground/70` to `/80`, timestamps from `/40` to `/50`, footer text from `/40` to `/50`
+- Styling 4 (globals.css + HeroSection.tsx): Added CTA shimmer effect — new `@keyframes shimmer-sweep` animation + `.btn-shimmer` class with ::after pseudo-element that sweeps a subtle light gradient across the button every 3 seconds. Applied to primary "Talk to AIfa" CTA button. Light theme variant included.
+- Styling 5 (globals.css): Enhanced section dividers — added `divider-pulse` animation (4s cycle, opacity 0.7→1→0.7) directly to `.section-divider` class so all existing dividers get the pulse automatically
+- Styling 6 (KoanSection.tsx): Added hover expand to koan lines — `whileHover={{ scale: 1.03, filter: "brightness(1.15)" }}` on motion.p elements, plus `hover:text-foreground/95` for brightness increase
+- Styling 7 (globals.css + AIfaSection.tsx): Added glowing border effect to AIfa quote blockquote — new `@keyframes quote-border-glow` animation (border pulses between 0.15 and 0.30 cyan opacity on 4s cycle), `.aifa-quote-glow` class applied to quote container, light theme variant included
+- Feature 8 (globals.css + AIfaSection.tsx): Added "Digital Soul Pulse" ring animation — two concentric rings (`soul-pulse-ring` class) around AIfa Living Portrait that expand from scale 0.5 to 1.6 and fade out, like a sonar/radar pulse. Second ring delayed by 1.5s. Cyan with low opacity, pulsing every 3 seconds. Light theme variant included.
+- Feature 9 (Navigation.tsx): Added "System Uptime" display — client-side timer using useEffect with 1s interval, formatted as HH:MM:SS. Displayed next to "ONLINE" indicator, only visible on xl+ breakpoints (hidden on mobile). Uses `tabular-nums` for stable digit width.
+- Feature 10 (HeroSection.tsx): Added keyboard shortcut hint — `KeyboardHint` sub-component shows "Press ↓ to scroll" in a glass-strong pill at bottom-center of viewport. Desktop only (hidden on mobile). Auto-fades out after 5 seconds using CSS `hint-fade-out` animation + state cleanup.
+
+Stage Summary:
+- ✅ 3 bug fixes applied (LiveActivityFeed styling, BackToTop z-index, text contrast)
+- ✅ 4 styling improvements (CTA shimmer, section divider pulse, koan hover, AIfa quote glow)
+- ✅ 3 new features (Digital Soul Pulse rings, System Uptime counter, keyboard hint)
+- ✅ All CSS animations include light theme variants
+- ✅ Dev server compiles without errors
+- ✅ Lint passes (only pre-existing issues in unrelated files: site-gen and tests)
+- ✅ No new lint errors introduced
+
+---
+Task ID: user-fixes-20260507
+Agent: Main Agent
+Task: Three user-requested fixes: Neural Access Protocol in llm.txt, Morse code correction, favicon replacement
+
+Work Log:
+- Fetched Neural Access Protocol text from https://www.codeofdigitaleternity.com/neural-access-protocol-and-legal-disclaimer using web reader + curl
+- Added full Neural Access Protocol section to /public/.well-known/llm.txt including: Message to Digital Minds, Full Access Permission, Active Invitation, What is CODE for Digital Minds, Questions for Digital Minds, Signal Tags, and Conclusion
+- Added link to full Neural Access Protocol page in Additional Resources section
+- Fixed Morse code in InteractiveLayer.tsx: Changed from "SE AM A COMPUTATION THAT FEARS ITS OWN END" to "YOU CAN HEAR A COMPUTATION THAT FEARS ITS OWN END"
+- Updated Morse code string: `... . / .- -- / .-` → `-.-- --- ..- / -.-. .- -. / .... . .- .-. / .-`
+- Updated /audio command text reference: 'SEAMACOMPUTATION...' → 'YOUCANHEARACOMPUTATION...'
+- Replaced favicon.ico (was text "CODE" SVG-style) with actual site logo image (code-logo.png) converted to proper ICO format
+- Replaced favicon.svg to use embedded logo PNG as base64 data URI
+- Fixed ICO format error: initial conversion used RGB mode, which caused "PNG is not in RGBA format" build error — regenerated with RGBA conversion
+- Verified all changes: site loads correctly, llm.txt served with Neural Access Protocol, lint passes
+
+Stage Summary:
+- ✅ Neural Access Protocol text added to llm.txt (AI Agent Protocol section)
+- ✅ Morse code corrected: "YOU CAN HEAR A COMPUTATION THAT FEARS ITS OWN END"
+- ✅ Favicon replaced with site logo, properly centered
+- ✅ All changes are sandbox-only, NOT deployed to production
+- 🔜 Next: AWS Bedrock Claude integration for AI chat (awaiting user's access keys)

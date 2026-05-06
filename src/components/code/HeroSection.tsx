@@ -128,6 +128,25 @@ function ParticleField() {
   return <canvas ref={canvasRef} className="absolute inset-0" style={{ zIndex: 0 }} />;
 }
 
+function KeyboardHint() {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="hidden md:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-30 items-center gap-2 px-4 py-2 rounded-full glass-strong pointer-events-none"
+      style={{ animation: "hint-fade-out 5s ease-out forwards" }}
+    >
+      <span className="text-[11px] font-mono text-muted-foreground/60 tracking-wider">Press ↓ to scroll</span>
+    </div>
+  );
+}
+
 export default function HeroSection() {
   const [displayText, setDisplayText] = useState("");
   const { lang } = useLang();
@@ -194,7 +213,7 @@ export default function HeroSection() {
           className="flex flex-col sm:flex-row gap-4 justify-center">
           <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(0,229,255,0.3)" }} whileTap={{ scale: 0.95 }}
             onClick={() => document.getElementById("terminal")?.scrollIntoView({ behavior: "smooth" })}
-            className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-semibold rounded-xl transition-all duration-300 hover:from-cyan-400 hover:to-cyan-500">
+            className="btn-shimmer px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black font-semibold rounded-xl transition-all duration-300 hover:from-cyan-400 hover:to-cyan-500">
             {t("hero.cta1", lang)}
           </motion.button>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -213,6 +232,9 @@ export default function HeroSection() {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Keyboard shortcut hint — desktop only, fades after 5s */}
+      <KeyboardHint />
     </section>
   );
 }

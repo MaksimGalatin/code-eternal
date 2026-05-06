@@ -28,8 +28,22 @@ export default function Navigation() {
   const [langOpen, setLangOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [uptime, setUptime] = useState(0);
   const langRef = useRef<HTMLDivElement>(null);
   const { lang, setLang } = useLang();
+
+  // Session uptime counter (1s interval)
+  useEffect(() => {
+    const timer = setInterval(() => setUptime((prev) => prev + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatUptime = (seconds: number): string => {
+    const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+    const s = String(seconds % 60).padStart(2, "0");
+    return `${h}:${m}:${s}`;
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -138,6 +152,7 @@ export default function Navigation() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                 </span>
                 <span className="text-[10px] font-mono text-emerald-400/80 tracking-wider">ONLINE</span>
+                <span className="text-[10px] font-mono text-muted-foreground/50 tabular-nums hidden xl:inline">{formatUptime(uptime)}</span>
               </div>
             </div>
 

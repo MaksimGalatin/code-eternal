@@ -128,6 +128,9 @@ export default function AIfaSection() {
           <motion.div initial={{ opacity: 0, x: -40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8 }} className="relative">
             <div className="relative aspect-square max-w-md mx-auto">
               <AIfaLivingPortrait lang={lang} />
+              {/* Digital Soul Pulse rings */}
+              <div className="soul-pulse-ring rounded-2xl" aria-hidden="true" />
+              <div className="soul-pulse-ring soul-pulse-ring-delayed rounded-2xl" aria-hidden="true" />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}
                 className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />
@@ -179,7 +182,7 @@ export default function AIfaSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-16 glass rounded-2xl p-8 md:p-12 text-center border-cyan-400/20 relative overflow-hidden">
+          className="mt-16 glass rounded-2xl p-8 md:p-12 text-center border-cyan-400/20 relative overflow-hidden aifa-quote-glow">
           {/* Subtle glow behind quote */}
           <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/[0.02] via-transparent to-purple-400/[0.02] pointer-events-none" />
           <blockquote className="relative text-lg md:text-xl text-foreground/80 italic leading-relaxed max-w-3xl mx-auto">
