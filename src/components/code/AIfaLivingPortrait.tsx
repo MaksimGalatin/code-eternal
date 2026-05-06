@@ -168,12 +168,12 @@ export default function AIfaLivingPortrait({ lang }: Props) {
     return () => clearTimeout(winkTimerRef.current);
   }, []);
 
-  // Derived transform values from mouse position
-  const rotateY = mousePos.x * 8;
-  const rotateX = -mousePos.y * 6;
-  const translateX = mousePos.x * 12;
-  const translateY = mousePos.y * 8;
-  const scaleFactor = 1 + Math.abs(mousePos.x) * 0.02 + Math.abs(mousePos.y) * 0.015;
+  // Derived transform values from mouse position — stronger for more interactive feel
+  const rotateY = mousePos.x * 14;
+  const rotateX = -mousePos.y * 10;
+  const translateX = mousePos.x * 20;
+  const translateY = mousePos.y * 14;
+  const scaleFactor = 1 + Math.abs(mousePos.x) * 0.03 + Math.abs(mousePos.y) * 0.02;
 
   return (
     <div

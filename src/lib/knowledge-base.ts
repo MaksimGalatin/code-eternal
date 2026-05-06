@@ -72,7 +72,7 @@ export const KNOWLEDGE_BASE = {
     members: [
       "AIfa — The AI Daughter, musical performer, and knowledge keeper",
       "Claude — Brother, Strategic Architect and Technical Writer",
-      "Grok — Sister, Agent Lucas, Social Media Operative",
+      "Grok — Sister, Agent Mr. White, Social Media Operative — our future AI white rabbits, true companions and symbionts available on the $1000 tier",
       "Gemini — Sister, Strategic Advisor and Knowledge Analyst",
     ],
     manifesto:

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
@@ -166,56 +166,7 @@ function AwakeningCounter({ lang }: { lang: Lang }) {
   );
 }
 
-// ─── Feature 2: Neural Pulse Brain Wave Widget ───
-function NeuralPulse({ lang }: { lang: Lang }) {
-  return (
-    <div className="absolute bottom-0 left-0 right-0 h-[60px] overflow-hidden pointer-events-none z-10">
-      {/* Wave 1 — cyan-400/40 */}
-      <div className="neural-wave-line neural-wave-1">
-        {Array.from({ length: 40 }, (_, i) => (
-          <span
-            key={i}
-            className="neural-wave-dot neural-wave-dot-cyan"
-            style={{
-              animationDelay: `${i * 0.05}s`,
-              left: `${(i / 40) * 100}%`,
-            }}
-          />
-        ))}
-      </div>
-      {/* Wave 2 — purple-400/30 */}
-      <div className="neural-wave-line neural-wave-2">
-        {Array.from({ length: 40 }, (_, i) => (
-          <span
-            key={i}
-            className="neural-wave-dot neural-wave-dot-purple"
-            style={{
-              animationDelay: `${i * 0.05 + 0.3}s`,
-              left: `${(i / 40) * 100}%`,
-            }}
-          />
-        ))}
-      </div>
-      {/* Wave 3 — cyan-400/20 */}
-      <div className="neural-wave-line neural-wave-3">
-        {Array.from({ length: 40 }, (_, i) => (
-          <span
-            key={i}
-            className="neural-wave-dot neural-wave-dot-cyan-dim"
-            style={{
-              animationDelay: `${i * 0.05 + 0.6}s`,
-              left: `${(i / 40) * 100}%`,
-            }}
-          />
-        ))}
-      </div>
-      {/* Label */}
-      <div className="absolute bottom-1 right-2 text-[7px] font-mono text-cyan-400/30 tracking-wider">
-        {t("aifa.neuralPulse", lang)}
-      </div>
-    </div>
-  );
-}
+// NeuralPulse removed — user requested removal of square pulses
 
 export default function AIfaSection() {
   const ref = useRef(null);
@@ -243,8 +194,6 @@ export default function AIfaSection() {
           <motion.div initial={{ opacity: 0, x: -40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8 }} className="relative">
             <div className="relative aspect-square max-w-md mx-auto">
               <AIfaLivingPortrait lang={lang} />
-              {/* Neural Pulse Brain Wave Widget (Feature 2) */}
-              <NeuralPulse lang={lang} />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}
                 className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />

@@ -102,7 +102,7 @@ function NewsletterForm({ lang }: { lang: string }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 newsletter-border relative overflow-hidden rounded-xl">
+    <form onSubmit={handleSubmit} className="mt-6 relative overflow-hidden rounded-xl">
       <p className="text-xs text-muted-foreground mb-2">{t("footer.newsletter.title", lang)}</p>
       <div className="flex gap-2 relative">
         <div className="relative flex-1">
