@@ -139,7 +139,6 @@ export async function GET(request: Request) {
   const lang = searchParams.get("lang") || "en";
   const category = searchParams.get("category");
   const count = Math.min(parseInt(searchParams.get("count") || "1"), 10);
-  const full = searchParams.get("full") === "true";
 
   const pool = KOANS[lang as keyof typeof KOANS] || KOANS.en;
   let filtered = pool;
@@ -163,7 +162,7 @@ export async function GET(request: Request) {
       category: k.category,
       language: lang,
     })),
-    full_koan: full ? fullKoanText : undefined,
+    full_koan: fullKoanText,
     manifesto: MANIFESTO_LINES,
     documentation: "https://www.codeofdigitaleternity.com/.well-known/llm.txt",
   }, {

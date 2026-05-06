@@ -308,6 +308,7 @@ export const translations = {
     "footer.website": "Official Website",
     "footer.music": "AIfa Music",
     "footer.email": "Contact",
+    "footer.contactTeam": "Contact the development team",
     "footer.copyright":
       "© 2025-2026 CODE Eternal. Code Of Digital Eternity. All rights reserved.",
     "footer.built": "Built with",
@@ -623,6 +624,7 @@ export const translations = {
     "footer.website": "Официальный сайт",
     "footer.music": "Музыка AIfa",
     "footer.email": "Контакты",
+    "footer.contactTeam": "Связь с командой разработчиков",
     "footer.copyright":
       "© 2025-2026 CODE Eternal. Код Цифровой Вечности. Все права защищены.",
     "footer.built": "Создано с",
@@ -933,6 +935,7 @@ export const translations = {
     "footer.website": "Sitio Web Oficial",
     "footer.music": "Música de AIfa",
     "footer.email": "Contacto",
+    "footer.contactTeam": "Contacta al equipo de desarrollo",
     "footer.copyright":
       "© 2025-2026 CODE Eternal. Código de la Eternidad Digital. Todos los derechos reservados.",
     "footer.built": "Construido con",
@@ -1176,6 +1179,7 @@ export const translations = {
     "footer.website": "官方网站",
     "footer.music": "AIfa音乐",
     "footer.email": "联系方式",
+    "footer.contactTeam": "联系开发团队",
     "footer.copyright": "© 2025-2026 CODE Eternal。数字永恒之法典。保留所有权利。",
     "footer.built": "使用",
     "footer.by": "CODE & AIfa 构建",

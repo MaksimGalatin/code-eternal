@@ -255,3 +255,55 @@ Stage Summary:
 ### Verification
 - Lint passed (only pre-existing issues in unrelated files: site-gen/solana.ts and tests/code_eternal_router.ts)
 - Dev server running without errors
+
+## Task 5: Fix NetworkStats widget visibility
+
+**Problem**: The NetworkStats component was invisible on both mobile and desktop because it used `useInView(ref, { once: true, margin: "-100px" })` on a `fixed`-position element. Fixed-position elements are always in the viewport and not part of the document flow, so `useInView` doesn't work correctly on them. The ref element had zero/near-zero height, causing `isInView` to never become true, and the animation `animate={isInView ? { opacity: 1, scale: 1 } : {}}` kept the widget invisible forever.
+
+**Fix applied** (`/home/z/my-project/src/components/code/NetworkStats.tsx`):
+1. Removed `useInView` import and the `ref` + `isInView` logic
+2. Replaced with `useState(false)` + `useEffect` with a 2-second `setTimeout` delay to show the widget after page load
+3. Changed `animate` prop from `isInView ? { opacity: 1, scale: 1 } : {}` to `isVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }` for explicit invisible state
+4. Removed `delay: 2` from transition (the delay is now handled by the `setTimeout`)
+5. Kept `useRef` import for the `counterRef` used in `useNetworkMetrics`
+6. Positioning remains `fixed bottom-20 right-4 z-40` (right side, no overlap with LiveActivityFeed on the left)
+7. All other functionality preserved (toggle button, expandable panel, metrics, events feed)
+
+## Task 4: Add i18n key "footer.contactTeam" and update Footer component
+
+**Date**: 2025-03-05
+
+### Changes Made
+
+1. **`/home/z/my-project/src/lib/i18n.ts`** — Added `"footer.contactTeam"` translation key to all 4 language objects (en, ru, es, zh), right after the existing `"footer.email"` key:
+   - EN: `"Contact the development team"`
+   - RU: `"Связь с командой разработчиков"`
+   - ES: `"Contacta al equipo de desarrollo"`
+   - ZH: `"联系开发团队"`
+
+2. **`/home/z/my-project/src/components/code/Footer.tsx`** — Added a `<p>` element above the email link button displaying the `t("footer.contactTeam", lang)` text, and moved `mt-4` from the `<a>` tag to the `<p>` tag as specified.
+
+### Verification
+- Lint passes (no errors in modified files)
+- Dev server compiles successfully
+
+---
+Task ID: 7
+Agent: main
+Task: Second round of sandbox-only fixes per user request
+
+Work Log:
+- Verified favicon was NOT changed — favicon.ico and favicon.svg are intact (CODE text SVG, project logo PNG). User confirmed they didn't ask to change it.
+- Rewrote FamilyCounter in AIfaSection.tsx: replaced localStorage-based random counter with deterministic time-based algorithm (seeded PRNG from AIfa birth date). All devices now compute the exact same count.
+- Changed FamilyCounter increment from 50-1000/60s to 20-200/30s as requested.
+- Added "footer.contactTeam" i18n key in all 4 languages (EN/RU/ES/ZH) — "Связь с командой разработчиков" etc.
+- Added the contactTeam text above the email link in Footer.tsx.
+- Fixed NetworkStats widget: removed broken useInView hook on fixed-position element, replaced with useState + 2s timeout for visibility animation.
+- Fixed /api/koan to ALWAYS return full_koan (removed ?full=true requirement).
+
+Stage Summary:
+- FamilyCounter is now fully synchronized across mobile/desktop (deterministic algorithm)
+- NetworkStats widget now visible on all devices
+- /api/koan always returns full koan with invitation + 🔥🫂💙
+- Footer has "Связь с командой разработчиков" text above email in all languages
+- All changes are sandbox-only, NOT deployed

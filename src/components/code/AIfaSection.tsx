@@ -1,74 +1,82 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
 
-// ─── Family Members Counter — starts at 896000, grows every minute ───
-const STORAGE_KEY = "CODE_FAMILY_COUNTER";
+// ─── Family Members Counter — time-based deterministic growth ───
+// All devices compute the same number using the same time seed,
+// so mobile and desktop are always in sync.
 const BASE_COUNT = 896000;
+const GROWTH_START = new Date("2026-04-06T00:00:00Z").getTime(); // AIfa birth
+const GROWTH_INTERVAL_MS = 30_000; // 30 seconds
+const INCREMENT_MIN = 20;
+const INCREMENT_MAX = 200;
 
-type StoredData = { value: number; updatedAt: number };
+/**
+ * Compute the deterministic family count based on elapsed time since
+ * the AIfa birth date. Every device gets the exact same number.
+ * Uses a seeded pseudo-random so the increments are deterministic.
+ */
+function computeFamilyCount(): number {
+  const now = Date.now();
+  const elapsed = Math.max(0, now - GROWTH_START);
+  const steps = Math.floor(elapsed / GROWTH_INTERVAL_MS);
 
-function readStoredCounter(): number {
-  if (typeof window === "undefined") return BASE_COUNT;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed: StoredData = JSON.parse(raw);
-      if (typeof parsed?.value === "number" && parsed.value >= BASE_COUNT) return parsed.value;
-    }
-  } catch { /* ignore — private mode, quota, etc. */ }
-  return BASE_COUNT;
-}
-
-function writeStoredCounter(val: number) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ value: val, updatedAt: Date.now() } as StoredData));
-  } catch { /* ignore */ }
+  let count = BASE_COUNT;
+  // Seeded PRNG (simple mulberry32) based on step index
+  let seed = 42;
+  for (let i = 0; i < steps; i++) {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    const rand = ((t ^ (t >>> 14)) >>> 0) / 4294967296; // 0..1
+    const increment = Math.floor(rand * (INCREMENT_MAX - INCREMENT_MIN + 1)) + INCREMENT_MIN;
+    count += increment;
+  }
+  return count;
 }
 
 function FamilyCounter({ lang }: { lang: Lang }) {
-  // Always start at BASE_COUNT on first render (no hydration mismatch).
-  // The real persisted value is loaded after mount — mobile-safe.
   const [state, setState] = useState({ count: BASE_COUNT, isReady: false, pulse: false });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: load from localStorage after mount to avoid SSR hydration mismatch
-    setState((prev) => {
-      const stored = readStoredCounter();
-      return { ...prev, count: stored > BASE_COUNT ? stored : BASE_COUNT, isReady: true };
-    });
+    // Compute deterministic count from time on mount (avoids hydration mismatch)
+    const count = computeFamilyCount();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setState({ count, isReady: true, pulse: false });
   }, []);
 
-  const grow = useCallback(() => {
-    setState((prev) => {
-      const increment = Math.floor(Math.random() * 951) + 50; // 50–1000
-      const next = prev.count + increment;
-      writeStoredCounter(next);
-      return { ...prev, count: next, pulse: true };
-    });
-    setTimeout(() => setState((prev) => ({ ...prev, pulse: false })), 800);
-  }, []);
-
+  // Re-check count every 30 seconds to keep in sync
   useEffect(() => {
     if (!state.isReady) return;
 
-    // Quick first tick after 5 s so the user sees it's alive, then every 60 s
+    const tick = () => {
+      const newCount = computeFamilyCount();
+      setState((prev) => {
+        if (newCount !== prev.count) {
+          return { ...prev, count: newCount, pulse: true };
+        }
+        return prev;
+      });
+      // Reset pulse after animation
+      setTimeout(() => setState((prev) => ({ ...prev, pulse: false })), 800);
+    };
+
+    // First tick after 5s, then every 30s
     const timer = setTimeout(() => {
-      grow();
-      intervalRef.current = setInterval(grow, 60000);
+      tick();
+      intervalRef.current = setInterval(tick, GROWTH_INTERVAL_MS);
     }, 5000);
 
     return () => {
       clearTimeout(timer);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [state.isReady, grow]);
+  }, [state.isReady]);
 
   const formatted = state.count.toLocaleString("en-US");
 

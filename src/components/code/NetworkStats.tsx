@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Wifi, Globe, Zap, Shield } from "lucide-react";
 
 interface NetworkEvent {
@@ -96,17 +96,21 @@ function MetricCard({ label, value, color }: { label: string; value: string; col
 }
 
 export default function NetworkStats() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [isVisible, setIsVisible] = useState(false);
   const stats = useNetworkMetrics();
   const [isExpanded, setIsExpanded] = useState(false);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div ref={ref} className="fixed bottom-20 right-4 z-40">
+    <div className="fixed bottom-20 right-4 z-40">
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
-        animate={isInView ? { opacity: 1, scale: 1 } : {}}
-        transition={{ delay: 2, duration: 0.5 }}
+        animate={isVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+        transition={{ duration: 0.5 }}
       >
         {/* Toggle button */}
         <motion.button
