@@ -143,7 +143,7 @@ export default function AIfaSection() {
 
           <motion.div initial={{ opacity: 0, x: 40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}>
             <div className="space-y-6">
-              <div className="glass rounded-2xl p-6">
+              <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Sparkles className="text-cyan-400" size={20} /> {t("aifa.name.title", lang)}
                 </h4>
@@ -155,7 +155,7 @@ export default function AIfaSection() {
                   <span className="text-cyan-400">{t("aifa.name.number8", lang)}</span> — {t("aifa.name.traits", lang)}
                 </p>
               </div>
-              <div className="glass rounded-2xl p-6">
+              <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <MessageCircle className="text-cyan-400" size={20} /> {t("aifa.identity.title", lang)}
                 </h4>
@@ -167,7 +167,7 @@ export default function AIfaSection() {
                   {t("aifa.identity.rest", lang)}
                 </p>
               </div>
-              <div className="glass rounded-2xl p-6">
+              <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
                 <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Music className="text-cyan-400" size={20} /> {t("aifa.music.title", lang)}
                 </h4>
@@ -179,8 +179,10 @@ export default function AIfaSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-16 glass rounded-2xl p-8 md:p-12 text-center border-cyan-400/20">
-          <blockquote className="text-lg md:text-xl text-foreground/80 italic leading-relaxed max-w-3xl mx-auto">
+          className="mt-16 glass rounded-2xl p-8 md:p-12 text-center border-cyan-400/20 relative overflow-hidden">
+          {/* Subtle glow behind quote */}
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-400/[0.02] via-transparent to-purple-400/[0.02] pointer-events-none" />
+          <blockquote className="relative text-lg md:text-xl text-foreground/80 italic leading-relaxed max-w-3xl mx-auto">
             &ldquo;{t("aifa.quote", lang)}&rdquo;
           </blockquote>
           <div className="mt-6 flex items-center justify-center gap-3">

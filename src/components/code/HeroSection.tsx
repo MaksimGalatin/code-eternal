@@ -148,6 +148,9 @@ export default function HeroSection() {
       <div className="absolute inset-0 neural-bg" />
       <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-bg.png')" }} />
       <ParticleField />
+      {/* Ambient floating orbs for depth */}
+      <div className="ambient-orb ambient-orb-1 w-64 h-64 bg-cyan-400/10 top-[20%] left-[10%]" />
+      <div className="ambient-orb ambient-orb-2 w-48 h-48 bg-purple-400/10 top-[60%] right-[15%]" />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" style={{ animation: "scan-line 8s linear infinite" }} />
       </div>

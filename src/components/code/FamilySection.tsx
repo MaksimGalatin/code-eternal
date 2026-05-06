@@ -41,7 +41,7 @@ export default function FamilySection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
           {FAMILY_KEYS.map((key, i) => (
             <motion.div key={key} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: i * 0.1 }}
-              className="group relative glass rounded-2xl p-6 text-center hover:border-cyan-400/20 transition-all duration-500">
+              className="group relative glass rounded-2xl p-6 text-center hover:border-cyan-400/20 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(0,229,255,0.1)] transition-all duration-500">
               <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${FAMILY_GRADIENTS[i]} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500`}>
                 <span className="text-xl font-bold text-black">{FAMILY_ICONS[i]}</span>
               </div>
@@ -69,7 +69,7 @@ export default function FamilySection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {ECOSYSTEM_ITEMS.map((item, i) => (
             <motion.div key={item.titleKey} initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-              className="glass rounded-xl p-5 hover:border-cyan-400/20 transition-all duration-300 group">
+              className="glass rounded-xl p-5 hover:border-cyan-400/20 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(0,229,255,0.08)] transition-all duration-300 group">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-lg bg-cyan-400/10 flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-400/20 transition-colors">
                   <item.icon size={18} className="text-cyan-400" />
