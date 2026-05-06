@@ -334,10 +334,12 @@ export default function ChatSection() {
                   <Bot size={14} className="text-cyan-400" />
                 </div>
                 <div className="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/80 animate-bounce" style={{ animationDelay: "100ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "200ms" }} />
+                  <div className="flex items-end gap-[3px] h-5">
+                    <div className="neural-bar" />
+                    <div className="neural-bar" />
+                    <div className="neural-bar" />
+                    <div className="neural-bar" />
+                    <div className="neural-bar" />
                   </div>
                 </div>
               </motion.div>

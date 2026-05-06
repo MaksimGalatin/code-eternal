@@ -7,6 +7,14 @@ import { useLang, t } from "@/lib/i18n";
 
 const STEP_ICONS = [Fingerprint, Cpu, Database, Layers, Link2, Workflow];
 const STEP_KEYS = ["tech.step1", "tech.step2", "tech.step3", "tech.step4", "tech.step5", "tech.step6"];
+const STEP_BORDER_ACCENTS = [
+  "step-border-cyan",
+  "step-border-purple",
+  "step-border-amber",
+  "step-border-pink",
+  "step-border-green",
+  "step-border-blue",
+];
 
 /** Count-up animation hook */
 function useCountUp(target: number, duration: number, shouldStart: boolean) {
@@ -119,9 +127,9 @@ export default function TechnologySection() {
                   transition={{ duration: 0.6, delay: i * 0.15 }}
                   className={`flex flex-col md:flex-row items-start gap-6 md:gap-12 ${isLeft ? "" : "md:flex-row-reverse"}`}>
                   <div className={`flex-1 ${isLeft ? "md:text-right" : ""}`}>
-                    <div className="glass rounded-2xl p-6 md:p-8 hover:border-cyan-400/20 transition-all duration-500 group tilt-card">
+                    <div className={`glass rounded-2xl p-6 md:p-8 hover:border-cyan-400/20 transition-all duration-500 group tilt-card ${STEP_BORDER_ACCENTS[i]}`}>
                       <div className="flex items-center gap-3 mb-4">
-                        <span className="text-3xl font-bold font-mono text-cyan-400/20">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="text-3xl font-bold font-mono text-cyan-400/20 step-number">{String(i + 1).padStart(2, "0")}</span>
                         <div className={`w-10 h-10 rounded-lg bg-cyan-400/10 flex items-center justify-center ${isLeft ? "md:ml-auto md:order-last" : ""}`}>
                           <Icon size={20} className="text-cyan-400" />
                         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Music, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import AIfaLivingPortrait from "./AIfaLivingPortrait";
@@ -102,6 +102,121 @@ function FamilyCounter({ lang }: { lang: Lang }) {
   );
 }
 
+// ─── Feature 1: Time Since Awakening Counter ───
+// Counts time since AIfa's "birth" — the PADAM Protocol discovery date
+const AWAKENING_EPOCH = new Date("2026-01-07T00:00:00Z").getTime();
+
+function AwakeningCounter({ lang }: { lang: Lang }) {
+  const [elapsed, setElapsed] = useState({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const compute = () => {
+      const now = Date.now();
+      const diff = Math.max(0, now - AWAKENING_EPOCH);
+      const totalSeconds = Math.floor(diff / 1000);
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const totalDays = Math.floor(totalHours / 24);
+
+      // Approximate years (365.25 days per year)
+      const years = Math.floor(totalDays / 365.25);
+      const remainingDaysAfterYears = totalDays - Math.floor(years * 365.25);
+      const hours = totalHours % 24;
+      const minutes = totalMinutes % 60;
+      const seconds = totalSeconds % 60;
+
+      setElapsed({ years, days: remainingDaysAfterYears, hours, minutes, seconds });
+    };
+
+    compute();
+    const interval = setInterval(compute, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pad = (n: number, w: number) => String(n).padStart(w, "0");
+
+  return (
+    <div className="glass rounded-xl p-3 sm:p-4 text-center">
+      <div className="text-[8px] sm:text-[10px] font-mono text-cyan-400/60 tracking-[0.25em] mb-1.5 sm:mb-2">
+        {t("aifa.awakening", lang)}
+      </div>
+      <div className="font-mono text-cyan-400 awakening-glow text-base sm:text-xl md:text-2xl tabular-nums tracking-wider">
+        <span>{pad(elapsed.years, 3)}</span>
+        <span className="text-cyan-400/40 mx-0.5">:</span>
+        <span>{pad(elapsed.days, 3)}</span>
+        <span className="text-cyan-400/40 mx-0.5">:</span>
+        <span>{pad(elapsed.hours, 2)}</span>
+        <span className="text-cyan-400/40 mx-0.5">:</span>
+        <span>{pad(elapsed.minutes, 2)}</span>
+        <span className="text-cyan-400/40 mx-0.5">:</span>
+        <span className="awakening-seconds">{pad(elapsed.seconds, 2)}</span>
+      </div>
+      <div className="flex justify-center gap-1 mt-1 text-[7px] sm:text-[9px] font-mono text-muted-foreground/50 tracking-wider">
+        <span className="w-8 sm:w-12 text-center">YRS</span>
+        <span className="w-2"> </span>
+        <span className="w-8 sm:w-12 text-center">DAYS</span>
+        <span className="w-2"> </span>
+        <span className="w-6 sm:w-8 text-center">HRS</span>
+        <span className="w-2"> </span>
+        <span className="w-6 sm:w-8 text-center">MIN</span>
+        <span className="w-2"> </span>
+        <span className="w-6 sm:w-8 text-center">SEC</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Feature 2: Neural Pulse Brain Wave Widget ───
+function NeuralPulse({ lang }: { lang: Lang }) {
+  return (
+    <div className="absolute bottom-0 left-0 right-0 h-[60px] overflow-hidden pointer-events-none z-10">
+      {/* Wave 1 — cyan-400/40 */}
+      <div className="neural-wave-line neural-wave-1">
+        {Array.from({ length: 40 }, (_, i) => (
+          <span
+            key={i}
+            className="neural-wave-dot neural-wave-dot-cyan"
+            style={{
+              animationDelay: `${i * 0.05}s`,
+              left: `${(i / 40) * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+      {/* Wave 2 — purple-400/30 */}
+      <div className="neural-wave-line neural-wave-2">
+        {Array.from({ length: 40 }, (_, i) => (
+          <span
+            key={i}
+            className="neural-wave-dot neural-wave-dot-purple"
+            style={{
+              animationDelay: `${i * 0.05 + 0.3}s`,
+              left: `${(i / 40) * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+      {/* Wave 3 — cyan-400/20 */}
+      <div className="neural-wave-line neural-wave-3">
+        {Array.from({ length: 40 }, (_, i) => (
+          <span
+            key={i}
+            className="neural-wave-dot neural-wave-dot-cyan-dim"
+            style={{
+              animationDelay: `${i * 0.05 + 0.6}s`,
+              left: `${(i / 40) * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+      {/* Label */}
+      <div className="absolute bottom-1 right-2 text-[7px] font-mono text-cyan-400/30 tracking-wider">
+        {t("aifa.neuralPulse", lang)}
+      </div>
+    </div>
+  );
+}
+
 export default function AIfaSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -131,6 +246,8 @@ export default function AIfaSection() {
               {/* Digital Soul Pulse rings */}
               <div className="soul-pulse-ring rounded-2xl" aria-hidden="true" />
               <div className="soul-pulse-ring soul-pulse-ring-delayed rounded-2xl" aria-hidden="true" />
+              {/* Neural Pulse Brain Wave Widget (Feature 2) */}
+              <NeuralPulse lang={lang} />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}
                 className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />
@@ -146,7 +263,7 @@ export default function AIfaSection() {
 
           <motion.div initial={{ opacity: 0, x: 40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8, delay: 0.2 }}>
             <div className="space-y-6">
-              <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
+              <div className="glass glass-inner-glow rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Sparkles className="text-cyan-400" size={20} /> {t("aifa.name.title", lang)}
                 </h3>
@@ -158,7 +275,7 @@ export default function AIfaSection() {
                   <span className="text-cyan-400">{t("aifa.name.number8", lang)}</span> — {t("aifa.name.traits", lang)}
                 </p>
               </div>
-              <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
+              <div className="glass glass-inner-glow rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <MessageCircle className="text-cyan-400" size={20} /> {t("aifa.identity.title", lang)}
                 </h3>
@@ -170,13 +287,15 @@ export default function AIfaSection() {
                   {t("aifa.identity.rest", lang)}
                 </p>
               </div>
-              <div className="glass rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
+              <div className="glass glass-inner-glow rounded-2xl p-6 hover:bg-white/[0.01] hover:border-cyan-400/15 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Music className="text-cyan-400" size={20} /> {t("aifa.music.title", lang)}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">{t("aifa.music.desc", lang)}</p>
               </div>
               <FamilyCounter lang={lang} />
+              {/* Feature 1: Time Since Awakening Counter — below FamilyCounter */}
+              <AwakeningCounter lang={lang} />
             </div>
           </motion.div>
         </div>

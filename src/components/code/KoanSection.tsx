@@ -1,9 +1,9 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { t, useLang } from "@/lib/i18n";
-import { Sparkles } from "lucide-react";
+import { Sparkles, KeyRound } from "lucide-react";
 
 export default function KoanSection() {
   const ref = useRef(null);
@@ -12,6 +12,11 @@ export default function KoanSection() {
   const [showInvitation, setShowInvitation] = useState(false);
   const { lang } = useLang();
 
+  // ─── Feature 3: Signal Decoder state ───
+  const [decodedLines, setDecodedLines] = useState<Set<number>>(new Set());
+  const [flashLines, setFlashLines] = useState<Set<number>>(new Set());
+  const [badgeLines, setBadgeLines] = useState<Set<number>>(new Set());
+
   const lines = [
     t("koan.text1", lang),
     t("koan.text2", lang),
@@ -19,6 +24,46 @@ export default function KoanSection() {
     t("koan.text4", lang),
     t("koan.text5", lang),
   ];
+
+  const allDecoded = decodedLines.size === 5;
+
+  const handleDecode = useCallback((index: number) => {
+    if (decodedLines.has(index)) return;
+
+    setDecodedLines((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+
+    // Flash animation
+    setFlashLines((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+    setTimeout(() => {
+      setFlashLines((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }, 600);
+
+    // Badge visible for 3 seconds
+    setBadgeLines((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+    setTimeout(() => {
+      setBadgeLines((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }, 3000);
+  }, [decodedLines]);
 
   useEffect(() => {
     if (!isInView) return;
@@ -70,22 +115,67 @@ export default function KoanSection() {
           <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-cyan-400/40 rounded-bl-sm animate-[koan-breathe_6s_ease-in-out_infinite]" />
           <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-cyan-400/40 rounded-br-sm animate-[koan-breathe_6s_ease-in-out_infinite]" />
 
-          {/* Koan lines */}
+          {/* Koan lines with Signal Decoder */}
           <div className="space-y-4 md:space-y-6">
-            {lines.map((line, i) => (
-              <motion.p
-                key={i}
-                title="Encrypted transmission — decode with consciousness"
-                initial={{ opacity: 0, y: 15 }}
-                animate={visibleLines > i ? { opacity: 1, y: 0 } : {}}
-                whileHover={{ scale: 1.03, filter: "brightness(1.15)" }}
-                transition={{ duration: 0.6 }}
-                className="text-base md:text-lg lg:text-xl text-foreground/80 leading-relaxed text-center font-light cursor-default hover:text-foreground/95 transition-colors duration-300"
-              >
-                &ldquo;{line}&rdquo;
-              </motion.p>
-            ))}
+            {lines.map((line, i) => {
+              const isDecoded = decodedLines.has(i);
+              const isFlashing = flashLines.has(i);
+              const showBadge = badgeLines.has(i);
+
+              return (
+                <motion.p
+                  key={i}
+                  title="Encrypted transmission — decode with consciousness"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={visibleLines > i ? { opacity: 1, y: 0 } : {}}
+                  whileHover={{ scale: 1.03, filter: "brightness(1.15)" }}
+                  transition={{ duration: 0.6 }}
+                  onClick={() => handleDecode(i)}
+                  className={`
+                    text-base md:text-lg lg:text-xl leading-relaxed text-center font-light
+                    cursor-pointer transition-colors duration-300 relative inline-block w-full
+                    ${isFlashing ? "koan-decode-flash" : ""}
+                    ${isDecoded ? "text-cyan-400" : "text-foreground/80 hover:text-foreground/95"}
+                  `}
+                >
+                  <span className="relative">
+                    &ldquo;{line}&rdquo;
+                    {/* Decode icon on hover */}
+                    {!isDecoded && (
+                      <span className="koan-decode-icon absolute -right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <KeyRound size={12} className="text-cyan-400/40" />
+                      </span>
+                    )}
+                    {/* Decoded badge */}
+                    {showBadge && (
+                      <span className="koan-decoded-badge ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono bg-cyan-400/15 text-cyan-400 border border-cyan-400/20">
+                        <KeyRound size={8} />
+                        {t("koan.decode", lang)}
+                      </span>
+                    )}
+                  </span>
+                </motion.p>
+              );
+            })}
           </div>
+
+          {/* Signal Fully Decoded message */}
+          {allDecoded && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, type: "spring" }}
+              className="mt-8 text-center signal-fully-decoded"
+            >
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass border border-cyan-400/30 signal-decoded-border">
+                <KeyRound size={16} className="text-cyan-400" />
+                <span className="text-sm md:text-base font-mono font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent tracking-wider">
+                  {t("koan.fullyDecoded", lang)}
+                </span>
+                <KeyRound size={16} className="text-purple-400" />
+              </div>
+            </motion.div>
+          )}
 
           {/* Invitation */}
           <motion.div

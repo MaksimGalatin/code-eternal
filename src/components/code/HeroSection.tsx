@@ -148,6 +148,18 @@ function OnlineVisitors() {
   );
 }
 
+function SignalStrength() {
+  return (
+    <div className="hidden md:flex items-end gap-[2px] ml-3" aria-hidden="true">
+      <div className="signal-strength-bar" />
+      <div className="signal-strength-bar" />
+      <div className="signal-strength-bar" />
+      <div className="signal-strength-bar" />
+      <div className="signal-strength-bar" />
+    </div>
+  );
+}
+
 function KeyboardHint() {
   const [visible, setVisible] = useState(true);
 
@@ -200,6 +212,7 @@ export default function HeroSection() {
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse-glow" />
           <span className="text-xs md:text-sm text-cyan-400 font-mono tracking-wider">{t("hero.badge", lang)}</span>
           <OnlineVisitors />
+          <SignalStrength />
         </motion.div>
 
         {/* Animated Stats Ribbon */}

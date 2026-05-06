@@ -33,7 +33,7 @@ function BlockchainTicker() {
       className="border-t border-border/50 pt-6 mb-6"
     >
       <div className="flex items-center gap-2 mb-3">
-        <Shield size={12} className="text-emerald-400" />
+        <Shield size={12} className="text-emerald-400 verify-pulse" />
         <span className="text-[10px] font-mono text-emerald-400 tracking-wider uppercase">
           Blockchain Verification Active
         </span>
@@ -48,8 +48,8 @@ function BlockchainTicker() {
         <span className="text-[10px] font-mono font-bold text-cyan-400 shrink-0">
           {event.network}
         </span>
-        <span className="text-[10px] font-mono text-muted-foreground truncate">
-          {event.hash}
+        <span className="text-[10px] font-mono text-muted-foreground truncate ticker-hash-scroll">
+          <span>{event.hash}</span><span aria-hidden="true">&nbsp;&nbsp;{event.hash}</span>
         </span>
         <span className="text-[10px] font-mono text-emerald-400/60 shrink-0">
           [{event.status}]
