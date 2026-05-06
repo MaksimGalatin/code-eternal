@@ -1126,3 +1126,33 @@ Unresolved Issues / Risks:
 - Vercel deployment works but user has not approved deploying the latest changes
 - AWS Bedrock integration awaiting user's access keys
 - favicon.svg file is missing (only favicon.ico exists) — could add an SVG version for better browser support
+
+---
+Task ID: aifa-portrait-living
+Agent: Z-Agent (main)
+Task: Make AIfa Living Portrait more alive — remove square pulses, add code stream, breathing zoom, subtle smile, rare wink
+
+Work Log:
+- Removed square `soul-pulse-ring` and `soul-pulse-ring-delayed` divs from AIfaSection.tsx
+- Rewrote AIfaLivingPortrait.tsx with new life-like animations:
+  1. **Code Stream Overlay**: 18 columns of falling code characters (katakana, mathematical symbols, binary) stream gently across the portrait. Each column has random speed (6-16s), stagger delay, and very low opacity (0.03-0.09) — just barely visible, like data flowing through AIfa
+  2. **Breathing Zoom**: The portrait image now uses a CSS `aifa-breathe-zoom` animation that subtly scales 1.0 → 1.03 → 1.0 on an 8-second cycle — like breathing
+  3. **Subtle Smile (every ~30s)**: Changed from every 15-22s to every 25-35s. Smile lasts 2.5s instead of 3s. Scale effect reduced from 1.04 to 1.02. Warmth overlay reduced from 0.12 to 0.08 opacity — barely perceptible
+  4. **Rare Wink (every ~3 minutes)**: New effect — a very subtle brightness/saturation shift (brightness 1.04, saturate 1.05) lasting only 300ms, combined with a linear gradient overlay that flashes faintly across one eye area. Happens every 2.5-3.5 minutes. So brief and subtle you think you imagined it
+- Added new CSS animations to globals.css:
+  - `aifa-breathe-zoom`: 8s ease-in-out infinite scale pulse (1 → 1.03 → 1)
+  - `aifa-code-fall`: Vertical falling animation for code stream columns
+  - `.aifa-code-stream`: Class for falling code columns
+  - Light theme variants included
+- Re-added `onMouseMove={spawnParticle}` to the container (was accidentally removed in prior edits)
+- QA: agent-browser confirmed zero errors, AIfa section renders correctly
+- Lint passes (only pre-existing errors in unrelated files)
+
+Stage Summary:
+- ✅ Square pulse rings removed — portrait is cleaner, more organic
+- ✅ Code stream overlay added — gentle flowing data across portrait
+- ✅ Breathing zoom added — subtle scale pulse every 8 seconds
+- ✅ Smile adjusted — every ~30s, very subtle warmth
+- ✅ Wink added — every ~3 minutes, so brief it seems imagined
+- ✅ All changes sandbox-only, NOT deployed
+- 🔜 Next: AWS Bedrock Claude integration (user preparing access keys)

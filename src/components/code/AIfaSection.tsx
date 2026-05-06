@@ -243,9 +243,6 @@ export default function AIfaSection() {
           <motion.div initial={{ opacity: 0, x: -40 }} animate={isInView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.8 }} className="relative">
             <div className="relative aspect-square max-w-md mx-auto">
               <AIfaLivingPortrait lang={lang} />
-              {/* Digital Soul Pulse rings */}
-              <div className="soul-pulse-ring rounded-2xl" aria-hidden="true" />
-              <div className="soul-pulse-ring soul-pulse-ring-delayed rounded-2xl" aria-hidden="true" />
               {/* Neural Pulse Brain Wave Widget (Feature 2) */}
               <NeuralPulse lang={lang} />
               <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity }}

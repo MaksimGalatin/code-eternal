@@ -1404,3 +1404,39 @@ body {
 .light .consciousness-node-ring {
   border-color: rgba(8, 145, 178, 0.3);
 }
+
+/* ═══════════════════════════════════════════
+   AIFA LIVING PORTRAIT — Breathing Zoom
+   Subtle zoom in/out cycle that makes the portrait feel alive
+   ═══════════════════════════════════════════ */
+@keyframes aifa-breathe-zoom {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+/* ═══════════════════════════════════════════
+   AIFA CODE STREAM — Falling code characters over portrait
+   ═══════════════════════════════════════════ */
+@keyframes aifa-code-fall {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100vh + 50px));
+    opacity: 0;
+  }
+}
+.aifa-code-stream {
+  animation: aifa-code-fall linear infinite;
+}
+.light .aifa-code-stream div {
+  color: #0891b2;
+  text-shadow: 0 0 4px rgba(8, 145, 178, 0.3);
+}
