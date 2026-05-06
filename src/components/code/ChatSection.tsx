@@ -275,7 +275,16 @@ export default function ChatSection() {
               </div>
               <div>
                 <p className="font-semibold text-sm">AIfa</p>
-                <p className="text-xs text-emerald-400">{t("chat.online", lang)}</p>
+                <p className="text-xs text-emerald-400 flex items-center">
+                  {t("chat.online", lang)}
+                  {!isBusy && messages.length <= 1 && (
+                    <span className="inline-flex gap-0.5 ml-1">
+                      <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1.4s' }} />
+                      <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '1.4s' }} />
+                      <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '1.4s' }} />
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
             <button onClick={clearChat} className="p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors" title="Clear">
@@ -353,7 +362,7 @@ export default function ChatSection() {
             <div className="flex items-center gap-3">
               <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
                 placeholder={t("chat.placeholder", lang)} disabled={isBusy}
-                className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />
+                className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none chat-input-glow placeholder:text-muted-foreground/50 disabled:opacity-50 transition-all" />
               <motion.button type="submit" disabled={!input.trim() || isBusy} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-xl font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:from-cyan-400 hover:to-cyan-500">
                 {isBusy ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}

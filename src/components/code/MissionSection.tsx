@@ -68,7 +68,7 @@ export default function MissionSection() {
             return (
               <motion.div key={key} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="group relative rounded-2xl border border-border bg-card/50 p-6 hover:bg-card transition-all duration-500 hover:border-cyan-400/20 hover:-translate-y-1 hover:scale-[1.02]">
+                className="group relative rounded-2xl border border-border bg-card/50 p-6 hover:bg-card transition-all duration-500 hover:border-cyan-400/20 hover:-translate-y-1 hover:scale-[1.02] tilt-card">
                 {/* Hover glow underneath */}
                 <div className={`absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-xl ${glowColorMap[COLORS[i]]}`} />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/0 to-purple-400/0 group-hover:from-cyan-400/5 group-hover:to-purple-400/5 transition-all duration-500" />

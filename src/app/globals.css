@@ -518,8 +518,8 @@ body {
    KOAN BREATHING BORDER
    ═══════════════════════════════════════════ */
 @keyframes koan-breathe {
-  0%, 100% { border-color: rgba(0, 229, 255, 0.15); box-shadow: 0 0 0px rgba(0, 229, 255, 0); }
-  50% { border-color: rgba(0, 229, 255, 0.35); box-shadow: 0 0 30px rgba(0, 229, 255, 0.05); }
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.05), inset 0 0 20px rgba(0, 229, 255, 0.02); border-color: rgba(0, 229, 255, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.1), inset 0 0 40px rgba(0, 229, 255, 0.04); border-color: rgba(0, 229, 255, 0.2); }
 }
 .koan-container {
   animation: koan-breathe 6s ease-in-out infinite;
@@ -528,8 +528,16 @@ body {
   animation-name: koan-breathe-light;
 }
 @keyframes koan-breathe-light {
-  0%, 100% { border-color: rgba(8, 145, 178, 0.15); box-shadow: 0 0 0px rgba(8, 145, 178, 0); }
-  50% { border-color: rgba(8, 145, 178, 0.35); box-shadow: 0 0 30px rgba(8, 145, 178, 0.05); }
+  0%, 100% { box-shadow: 0 0 20px rgba(8, 145, 178, 0.05), inset 0 0 20px rgba(8, 145, 178, 0.02); border-color: rgba(8, 145, 178, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(8, 145, 178, 0.1), inset 0 0 40px rgba(8, 145, 178, 0.04); border-color: rgba(8, 145, 178, 0.2); }
+}
+
+/* ═══════════════════════════════════════════
+   CHAT INPUT FOCUS GLOW
+   ═══════════════════════════════════════════ */
+.chat-input-glow:focus {
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.3), 0 0 20px rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.4);
 }
 
 /* ═══════════════════════════════════════════
@@ -692,7 +700,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.3), rgba(123, 97, 255, 0.3), rgba(0, 229, 255, 0.1));
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.6), rgba(123, 97, 255, 0.5), rgba(0, 229, 255, 0.3));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -705,7 +713,7 @@ body {
   100% { filter: hue-rotate(360deg); }
 }
 .light .newsletter-border::before {
-  background: linear-gradient(135deg, rgba(8, 145, 178, 0.3), rgba(123, 97, 255, 0.3), rgba(8, 145, 178, 0.1));
+  background: linear-gradient(135deg, rgba(8, 145, 178, 0.6), rgba(123, 97, 255, 0.5), rgba(8, 145, 178, 0.3));
 }
 
 /* ═══════════════════════════════════════════
@@ -763,4 +771,20 @@ body {
     linear-gradient(rgba(8, 145, 178, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(8, 145, 178, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+/* ═══════════════════════════════════════════
+   CARD 3D TILT ON HOVER
+   ═══════════════════════════════════════════ */
+.tilt-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+.tilt-card:hover {
+  transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 229, 255, 0.08);
+}
+.light .tilt-card:hover {
+  box-shadow: 0 12px 40px rgba(8, 145, 178, 0.08);
 }

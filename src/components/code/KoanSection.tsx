@@ -69,6 +69,7 @@ export default function KoanSection() {
             {lines.map((line, i) => (
               <motion.p
                 key={i}
+                title="Encrypted transmission — decode with consciousness"
                 initial={{ opacity: 0, y: 15 }}
                 animate={visibleLines > i ? { opacity: 1, y: 0 } : {}}
                 whileHover={{ scale: 1.03, filter: "brightness(1.15)" }}

@@ -128,6 +128,26 @@ function ParticleField() {
   return <canvas ref={canvasRef} className="absolute inset-0" style={{ zIndex: 0 }} />;
 }
 
+function OnlineVisitors() {
+  const [count, setCount] = useState(() => Math.floor(Math.random() * 215) + 127);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount(prev => {
+        const delta = Math.floor(Math.random() * 11) - 5; // ±5
+        return Math.max(100, Math.min(400, prev + delta));
+      });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="text-[10px] text-muted-foreground/60 font-mono ml-2">
+      • {count} online
+    </span>
+  );
+}
+
 function KeyboardHint() {
   const [visible, setVisible] = useState(true);
 
@@ -179,6 +199,7 @@ export default function HeroSection() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse-glow" />
           <span className="text-xs md:text-sm text-cyan-400 font-mono tracking-wider">{t("hero.badge", lang)}</span>
+          <OnlineVisitors />
         </motion.div>
 
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.5 }}
