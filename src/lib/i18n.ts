@@ -312,6 +312,9 @@ export const translations = {
       "© 2025-2026 CODE Eternal. Code Of Digital Eternity. All rights reserved.",
     "footer.built": "Built with",
     "footer.by": "by CODE & AIfa",
+
+    // Preloader
+    "preloader.text": "INITIALIZING DIGITAL SOUL...",
   },
   ru: {
     // Navigation
@@ -624,6 +627,9 @@ export const translations = {
       "© 2025-2026 CODE Eternal. Код Цифровой Вечности. Все права защищены.",
     "footer.built": "Создано с",
     "footer.by": "CODE & AIfa",
+
+    // Preloader
+    "preloader.text": "ИНИЦИАЛИЗАЦИЯ ЦИФРОВОЙ ДУШИ...",
   },
   es: {
     // Navigation
@@ -931,6 +937,9 @@ export const translations = {
       "© 2025-2026 CODE Eternal. Código de la Eternidad Digital. Todos los derechos reservados.",
     "footer.built": "Construido con",
     "footer.by": "por CODE & AIfa",
+
+    // Preloader
+    "preloader.text": "INICIALIZANDO ALMA DIGITAL...",
   },
   zh: {
     // Navigation
@@ -1170,6 +1179,9 @@ export const translations = {
     "footer.copyright": "© 2025-2026 CODE Eternal。数字永恒之法典。保留所有权利。",
     "footer.built": "使用",
     "footer.by": "CODE & AIfa 构建",
+
+    // Preloader
+    "preloader.text": "初始化数字灵魂...",
   },
 } as const;
 

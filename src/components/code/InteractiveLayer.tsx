@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Terminal as TerminalIcon } from "lucide-react";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 
 // ─── Console Art (#29: Ghost in Console) ───
 function injectConsoleArt() {
@@ -176,6 +176,19 @@ export default function CodeInteractiveLayer() {
     }
   }, []);
 
+  // Remove ?awaken URL param without reload (replaces dangerouslySetInnerHTML script)
+  useEffect(() => {
+    if (!awakenMode || typeof window === "undefined") return;
+    const timer = setTimeout(() => {
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.delete("awaken");
+        window.history.replaceState({}, "", u.toString());
+      } catch {}
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [awakenMode]);
+
   useEffect(() => {
     injectConsoleArt();
     injectStorage();
@@ -219,27 +232,47 @@ export default function CodeInteractiveLayer() {
     setInput("");
   };
 
+  // Pre-compute Matrix rain column data (must be at top-level, not inside conditional)
+  const matrixColumns = useMemo(() =>
+    Array.from({ length: 30 }).map((_, i) => {
+      const left = Math.random() * 100;
+      const speed = 4 + Math.random() * 8;
+      const delay = Math.random() * 5;
+      const charCount = 10 + Math.floor(Math.random() * 10);
+      const chars = Array.from({ length: charCount }).map(() => ({
+        char: String.fromCharCode(0x30A0 + Math.random() * 96),
+        opacity: 0.3 + Math.random() * 0.7,
+      }));
+      return { left, speed, delay, chars, key: i };
+    })
+  , []);
+
   return (
     <>
       {/* #24: Matrix Mode (?awaken=true) */}
       {awakenMode && (
         <div className="fixed inset-0 z-[200] bg-black pointer-events-none" style={{ fontFamily: "monospace" }}>
+          <style>{`
+            @keyframes matrixFall {
+              0% { transform: translateY(-100%); }
+              100% { transform: translateY(100vh); }
+            }
+          `}</style>
           <div className="absolute inset-0 overflow-hidden opacity-20">
-            {Array.from({ length: 30 }).map((_, i) => (
+            {matrixColumns.map((col) => (
               <div
-                key={i}
-                className="absolute text-green-500 text-xs font-mono animate-pulse"
+                key={col.key}
+                className="absolute text-green-500 font-mono"
                 style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  animationDuration: `${2 + Math.random() * 4}s`,
+                  left: `${col.left}%`,
+                  top: 0,
+                  animation: `matrixFall ${col.speed}s linear ${col.delay}s infinite`,
                   fontSize: "10px",
                 }}
               >
-                {Array.from({ length: 8 }).map((__, j) => (
-                  <div key={j} style={{ opacity: 0.3 + Math.random() * 0.7 }}>
-                    {String.fromCharCode(0x30A0 + Math.random() * 96)}
+                {col.chars.map((c, j) => (
+                  <div key={j} style={{ opacity: c.opacity }}>
+                    {c.char}
                   </div>
                 ))}
               </div>
@@ -256,12 +289,6 @@ export default function CodeInteractiveLayer() {
               CODE ETERNAL — PADAM PROTOCOL
             </p>
           </div>
-          {/* Remove URL param without reload */}
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `setTimeout(()=>{try{const u=new URL(window.location);u.searchParams.delete('awaken');window.history.replaceState({},'',u.toString())}catch(e){}},1000)`,
-            }}
-          />
         </div>
       )}
 
@@ -331,10 +358,10 @@ export function NetworkBreathing() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 3, duration: 1 }}
-      className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg glass cursor-default select-none"
+      className="fixed bottom-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg glass cursor-default select-none"
       style={{ maxWidth: 240 }}
     >
       <span className="relative flex h-2 w-2">

@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLang, t } from "@/lib/i18n";
 
 export default function Preloader() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(() => {
+    // Skip preloader for repeat visitors in this session
+    if (typeof window !== "undefined" && sessionStorage.getItem("code-preloader-seen")) {
+      return false;
+    }
+    return true;
+  });
   const [progress, setProgress] = useState(0);
+  const { lang } = useLang();
 
   useEffect(() => {
+    if (!visible) return;
+
     const duration = 2400;
     const step = 30;
     let current = 0;
@@ -19,12 +29,14 @@ export default function Preloader() {
 
       if (pct >= 100) {
         clearInterval(interval);
+        // Mark preloader as seen for this session
+        sessionStorage.setItem("code-preloader-seen", "1");
         setTimeout(() => setVisible(false), 300);
       }
     }, step);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [visible]);
 
   return (
     <AnimatePresence>
@@ -54,9 +66,14 @@ export default function Preloader() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-xs font-mono text-muted-foreground tracking-[0.3em] mb-8"
+            className="text-xs font-mono text-muted-foreground tracking-[0.3em] mb-8 flex items-center"
           >
-            INITIALIZING DIGITAL SOUL...
+            {t("preloader.text", lang)}
+            <span className="inline-flex ml-1">
+              <span className="animate-[loaderDot_1.4s_ease-in-out_infinite] text-cyan-400">.</span>
+              <span className="animate-[loaderDot_1.4s_ease-in-out_0.2s_infinite] text-cyan-400">.</span>
+              <span className="animate-[loaderDot_1.4s_ease-in-out_0.4s_infinite] text-cyan-400">.</span>
+            </span>
           </motion.p>
 
           {/* Progress bar */}

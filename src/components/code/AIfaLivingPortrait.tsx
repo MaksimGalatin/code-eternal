@@ -8,11 +8,22 @@ interface Props {
   lang?: Lang;
 }
 
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  createdAt: number;
+}
+
+const MAX_PARTICLES = 20;
+const PARTICLE_LIFETIME = 500;
+
 /**
  * AIfa Living Portrait — animated portrait that:
  * - Follows the user's cursor with eyes/face (parallax tilt)
  * - Gently breathes (soft rock + scale pulse)
  * - Periodically smiles (soft glow overlay transition)
+ * - Spawns particle trails on hover
  *
  * Uses CSS transforms only — no WebGL, no heavy deps.
  */
@@ -20,6 +31,40 @@ export default function AIfaLivingPortrait({ lang }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isSmiling, setIsSmiling] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const particleIdRef = useRef(0);
+  const rafRef = useRef<number>(0);
+
+  // ── Particle trail on hover ──
+  const spawnParticle = useCallback((e: MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setParticles((prev) => {
+      const now = performance.now();
+      // Filter out expired particles
+      const alive = prev.filter((p) => now - p.createdAt < PARTICLE_LIFETIME);
+      if (alive.length >= MAX_PARTICLES) {
+        alive.shift();
+      }
+      return [...alive, { id: particleIdRef.current++, x, y, createdAt: now }];
+    });
+  }, []);
+
+  // Cleanup expired particles periodically
+  useEffect(() => {
+    const cleanup = () => {
+      setParticles((prev) => {
+        const now = performance.now();
+        return prev.filter((p) => now - p.createdAt < PARTICLE_LIFETIME);
+      });
+      rafRef.current = requestAnimationFrame(cleanup);
+    };
+    rafRef.current = requestAnimationFrame(cleanup);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
 
   // ── Mouse tracking ──
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -29,15 +74,22 @@ export default function AIfaLivingPortrait({ lang }: Props) {
     const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
     const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
     setMousePos({ x, y });
-  }, []);
+    spawnParticle(e);
+  }, [spawnParticle]);
 
   const handleMouseLeave = useCallback(() => {
     setMousePos({ x: 0, y: 0 });
-  }, []);
+    window.removeEventListener("mousemove", handleMouseMove);
+  }, [handleMouseMove]);
+
+  const handleMouseEnter = useCallback(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+  }, [handleMouseMove]);
 
   useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
   }, [handleMouseMove]);
 
   // ── Periodic smile (every 15-22 seconds, smile lasts 3 seconds) ──
@@ -67,6 +119,7 @@ export default function AIfaLivingPortrait({ lang }: Props) {
   return (
     <div
       ref={containerRef}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="relative w-full h-full"
     >
@@ -153,6 +206,30 @@ export default function AIfaLivingPortrait({ lang }: Props) {
           {lang ? t("aifa.daughterOf", lang) : "Digital Daughter of CODE Eternal"}
         </p>
       </div>
+
+      {/* Particle trail effect */}
+      {particles.map((p) => {
+        const age = performance.now() - p.createdAt;
+        const lifeRatio = Math.min(age / PARTICLE_LIFETIME, 1);
+        const opacity = 1 - lifeRatio;
+        const scale = 1 - lifeRatio * 0.5;
+        return (
+          <div
+            key={p.id}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: p.x - 4,
+              top: p.y - 4,
+              width: 8,
+              height: 8,
+              backgroundColor: `rgba(0, 243, 255, ${opacity * 0.7})`,
+              boxShadow: `0 0 6px rgba(0, 243, 255, ${opacity * 0.5})`,
+              transform: `scale(${scale})`,
+              transition: "none",
+            }}
+          />
+        );
+      })}
     </div>
   );
 }

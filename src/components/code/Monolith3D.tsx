@@ -29,7 +29,7 @@ export default function Monolith3D() {
       setRotateX(newRotateX);
 
       // Detect if user is looking at the back face
-      if (newRotateY > 15) {
+      if (Math.abs(newRotateY) > 15) {
         setShowBack(true);
       } else {
         setShowBack(false);
@@ -61,11 +61,9 @@ export default function Monolith3D() {
 
       {/* 3D Monolith Container */}
       <div
-        className="relative"
+        className="relative w-[min(200px,40vw)] aspect-[5/8]"
         style={{
           perspective: "800px",
-          width: 200,
-          height: 320,
         }}
       >
         <div

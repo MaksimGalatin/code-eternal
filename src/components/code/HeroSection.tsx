@@ -14,10 +14,24 @@ function ParticleField() {
     if (!ctx) return;
 
     let animationId: number;
+    let rafId: number | null = null;
     let particles: Array<{
       x: number; y: number; vx: number; vy: number;
       size: number; opacity: number; color: string;
     }> = [];
+
+    // Mouse tracking for repulsion effect
+    const mouse = { x: -9999, y: -9999, radius: 120 };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas!.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    };
+    const handleMouseLeave = () => {
+      mouse.x = -9999;
+      mouse.y = -9999;
+    };
 
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     const createParticles = () => {
@@ -52,21 +66,66 @@ function ParticleField() {
     const animate = () => {
       ctx!.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach((p) => {
+        // Mouse repulsion: push particles away from cursor
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < mouse.radius && dist > 0) {
+          const force = (mouse.radius - dist) / mouse.radius;
+          const pushStrength = force * 1.5; // subtle repulsion
+          p.vx += (dx / dist) * pushStrength;
+          p.vy += (dy / dist) * pushStrength;
+        }
+
+        // Apply velocity with damping to settle back
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+
+        // Clamp velocity to prevent wild acceleration
+        const maxV = 2;
+        p.vx = Math.max(-maxV, Math.min(maxV, p.vx));
+        p.vy = Math.max(-maxV, Math.min(maxV, p.vy));
+
+        // Ensure minimum drift so particles keep moving naturally
+        if (Math.abs(p.vx) < 0.05) p.vx = (Math.random() - 0.5) * 0.1;
+        if (Math.abs(p.vy) < 0.05) p.vy = (Math.random() - 0.5) * 0.1;
+
         p.x += p.vx; p.y += p.vy;
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        // Clamp position to bounds
+        p.x = Math.max(0, Math.min(canvas.width, p.x));
+        p.y = Math.max(0, Math.min(canvas.height, p.y));
+
         ctx!.beginPath(); ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx!.fillStyle = p.color; ctx!.globalAlpha = p.opacity; ctx!.fill(); ctx!.globalAlpha = 1;
       });
       drawConnections();
       animationId = requestAnimationFrame(animate);
     };
+    const handleResize = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        resize();
+        createParticles();
+        rafId = null;
+      });
+    };
     resize(); createParticles(); animate();
-    window.addEventListener("resize", () => { resize(); createParticles(); });
-    return () => cancelAnimationFrame(animationId);
+    window.addEventListener("resize", handleResize);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      cancelAnimationFrame(animationId);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", handleResize);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }} />;
+  return <canvas ref={canvasRef} className="absolute inset-0" style={{ zIndex: 0 }} />;
 }
 
 export default function HeroSection() {

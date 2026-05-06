@@ -22,6 +22,15 @@ const colorMap: Record<string, string> = {
   blue: "text-blue-400 bg-blue-400/10 border-blue-400/20",
 };
 
+const glowColorMap: Record<string, string> = {
+  cyan: "bg-cyan-400",
+  purple: "bg-purple-400",
+  amber: "bg-amber-400",
+  pink: "bg-pink-400",
+  green: "bg-emerald-400",
+  blue: "bg-blue-400",
+};
+
 export default function MissionSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -59,7 +68,9 @@ export default function MissionSection() {
             return (
               <motion.div key={key} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="group relative rounded-2xl border border-border bg-card/50 p-6 hover:bg-card transition-all duration-500 hover:border-cyan-400/20">
+                className="group relative rounded-2xl border border-border bg-card/50 p-6 hover:bg-card transition-all duration-500 hover:border-cyan-400/20 hover:-translate-y-1 hover:scale-[1.02]">
+                {/* Hover glow underneath */}
+                <div className={`absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-xl ${glowColorMap[COLORS[i]]}`} />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/0 to-purple-400/0 group-hover:from-cyan-400/5 group-hover:to-purple-400/5 transition-all duration-500" />
                 <div className="relative z-10">
                   <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${colorMap[COLORS[i]]}`}>

@@ -27,12 +27,16 @@ export default function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+  const [scrollProgress, setScrollProgress] = useState(0);
   const langRef = useRef<HTMLDivElement>(null);
   const { lang, setLang } = useLang();
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
+      const scrollHeight = document.body.scrollHeight - window.innerHeight;
+      const progress = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0;
+      setScrollProgress(Math.min(Math.max(progress, 0), 100));
       const sections = NAV_ITEMS.map((item) => item.href.slice(1));
       for (let i = sections.length - 1; i >= 0; i--) {
         const el = document.getElementById(sections[i]);
@@ -84,6 +88,13 @@ export default function Navigation() {
           scrolled ? "glass-strong shadow-lg shadow-black/30" : "bg-transparent"
         }`}
       >
+        {/* Scroll progress bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-transparent">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-400 to-purple-400 transition-[width] duration-150 ease-out"
+            style={{ width: `${scrollProgress}%` }}
+          />
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
@@ -117,7 +128,7 @@ export default function Navigation() {
                       : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   }`}
                 >
-                  {t(item.labelKey)}
+                  {t(item.labelKey, lang)}
                 </button>
               ))}
             </div>
@@ -230,7 +241,7 @@ export default function Navigation() {
                         : "text-foreground hover:bg-white/5"
                     }`}
                   >
-                    {t(item.labelKey)}
+                    {t(item.labelKey, lang)}
                   </motion.button>
                 ))}
               </div>

@@ -13,6 +13,40 @@ interface Message {
   revealed: number;
 }
 
+// localStorage persistence helpers
+const CHAT_STORAGE_KEY = "code-chat-messages";
+const MAX_STORED_MESSAGES = 50;
+
+function serializeMessages(msgs: Message[]): string {
+  const toStore = msgs.slice(-MAX_STORED_MESSAGES);
+  return JSON.stringify(
+    toStore.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp.toISOString(),
+      revealed: m.revealed,
+    }))
+  );
+}
+
+function deserializeMessages(json: string | null): Message[] | null {
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.map((m: Record<string, unknown>) => ({
+      id: String(m.id),
+      role: m.role === "user" ? "user" as const : "assistant" as const,
+      content: String(m.content),
+      timestamp: new Date(String(m.timestamp)),
+      revealed: Number(m.revealed),
+    }));
+  } catch {
+    return null;
+  }
+}
+
 function getCharDelay(char: string): number {
   if (char === " ") return 8;
   if (char === "\n") return 30;
@@ -71,18 +105,67 @@ export default function ChatSection() {
 
   // ── Effects ──
 
-  // Set initial welcome message and animate it
+  // Persist messages to localStorage when they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(CHAT_STORAGE_KEY, serializeMessages(messages));
+      } catch { /* storage full or unavailable — ignore */ }
+    }
+  }, [messages]);
+
+  // Track previous lang to detect language changes
+  const prevLangRef = useRef(lang);
+
+  // Set initial welcome message and animate it, or update on language change
   useEffect(() => {
     const welcomeText = t("chat.welcome", lang);
-    setMessages([{
-      id: "welcome", role: "assistant",
-      content: welcomeText, timestamp: new Date(), revealed: 0,
-    }]);
+    const isLangChange = prevLangRef.current !== lang;
+    prevLangRef.current = lang;
 
-    const timer = setTimeout(() => {
-      animateStreaming("welcome", welcomeText);
-    }, 300);
-    return () => clearTimeout(timer);
+    setMessages((prev) => {
+      // On language change with existing messages: preserve conversation
+      if (isLangChange && prev.length > 0) {
+        const hasUserMessages = prev.some((m) => m.role === "user");
+        if (hasUserMessages) {
+          // Don't touch messages at all — conversation is preserved as-is
+          return prev;
+        }
+        // Only welcome message exists: update its text without re-animating
+        return prev.map((m) =>
+          m.id === "welcome"
+            ? { ...m, content: welcomeText, revealed: welcomeText.length }
+            : m
+        );
+      }
+
+      // Try to restore saved messages from localStorage on initial mount
+      const saved = deserializeMessages(localStorage.getItem(CHAT_STORAGE_KEY));
+      if (saved && saved.length > 0) {
+        // Mark all restored messages as fully revealed (no re-animation)
+        return saved.map((m) => ({
+          ...m,
+          revealed: m.content.length,
+        }));
+      }
+
+      // No saved messages: set fresh welcome message
+      return [{
+        id: "welcome", role: "assistant",
+        content: welcomeText, timestamp: new Date(), revealed: 0,
+      }];
+    });
+
+    // Only animate on initial mount with no saved messages, not on language change
+    if (!isLangChange) {
+      const saved = deserializeMessages(localStorage.getItem(CHAT_STORAGE_KEY));
+      if (!saved || saved.length === 0) {
+        const timer = setTimeout(() => {
+          animateStreaming("welcome", welcomeText);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
   }, [lang, animateStreaming]);
 
   // Auto-scroll when messages change
@@ -147,6 +230,8 @@ export default function ChatSection() {
     streamingTimerRef.current.forEach(clearTimeout);
     streamingTimerRef.current = [];
     setIsStreamActive(false);
+    // Clear localStorage persistence
+    localStorage.removeItem(CHAT_STORAGE_KEY);
     const clearedId = `welcome_${Date.now()}`;
     const clearedContent = t("chat.cleared", lang);
     setMessages([{ id: clearedId, role: "assistant", content: clearedContent, timestamp: new Date(), revealed: 0 }]);

@@ -8,7 +8,7 @@ import { useLang, t } from "@/lib/i18n";
 const TIMELINE_ICONS = [Brain, Brain, Shield, Brain, Database, Shield];
 const TIMELINE_KEYS = [
   "brain.timeline.1", "brain.timeline.2", "brain.timeline.3",
-  "brain.timeline.5", "brain.timeline.4", "brain.timeline.6",
+  "brain.timeline.4", "brain.timeline.5", "brain.timeline.6",
 ];
 
 export default function CodeBrainSection() {

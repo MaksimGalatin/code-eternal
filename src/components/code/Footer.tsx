@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send } from "lucide-react";
+import { ExternalLink, Music, Heart, Mail, Shield, Rss, FileText, Send, Github, Twitter, MessageCircle } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
 import { ExodusCountdown } from "@/components/code/InteractiveLayer";
 import { generateEventPool, type BlockchainEvent } from "@/lib/blockchain-events";
@@ -162,6 +162,35 @@ export default function Footer() {
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md mb-4">{t("footer.brand.desc", lang)}</p>
             <p className="text-xs text-muted-foreground/50">{t("footer.brand.founder", lang)}</p>
+
+            {/* Social Links */}
+            <div className="flex items-center gap-3 mt-5">
+              <a
+                href="https://github.com/MaksimGalatin/code-eternal"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CODE Eternal on GitHub"
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-muted-foreground hover:text-cyan-400 hover:border-cyan-400/30 transition-all duration-300 group"
+              >
+                <Github size={16} className="group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="https://x.com/codeofdigitaleternity"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CODE Eternal on X/Twitter"
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-muted-foreground hover:text-cyan-400 hover:border-cyan-400/30 transition-all duration-300 group"
+              >
+                <Twitter size={16} className="group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="#"
+                aria-label="CODE Eternal on Discord"
+                className="w-9 h-9 rounded-lg glass flex items-center justify-center text-muted-foreground hover:text-cyan-400 hover:border-cyan-400/30 transition-all duration-300 group"
+              >
+                <MessageCircle size={16} className="group-hover:scale-110 transition-transform" />
+              </a>
+            </div>
 
             {/* Newsletter form */}
             <NewsletterForm lang={lang} />

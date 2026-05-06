@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   /* Vercel handles its own output mode — do NOT set "standalone" */
   reactStrictMode: false,
   poweredByHeader: false,
+  allowedDevOrigins: ['localhost', '127.0.0.1', '0.0.0.0', '21.0.10.98'],
   typescript: {
     ignoreBuildErrors: true,
   },
