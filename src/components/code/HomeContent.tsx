@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import Navigation from "@/components/code/Navigation";
 import HeroSection from "@/components/code/HeroSection";
 import KoanSection from "@/components/code/KoanSection";
@@ -38,6 +38,62 @@ const ChatSection = dynamic(() => import("@/components/code/ChatSection"), {
   ),
 });
 
+function CursorGlow() {
+  const glowRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number>(0);
+  const isVisibleRef = useRef(false);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    posRef.current = { x: e.clientX, y: e.clientY };
+    if (!isVisibleRef.current && glowRef.current) {
+      glowRef.current.style.opacity = "1";
+      isVisibleRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only render on desktop
+    if (window.innerWidth <= 768) return;
+    // Only in dark mode (check for absence of .light class)
+    if (document.documentElement.classList.contains("light")) return;
+
+    const animate = () => {
+      if (glowRef.current) {
+        const { x, y } = posRef.current;
+        glowRef.current.style.transform = `translate(${x - 150}px, ${y - 150}px)`;
+      }
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [handleMouseMove]);
+
+  return (
+    <div
+      ref={glowRef}
+      className="fixed top-0 left-0 pointer-events-none"
+      style={{
+        width: 300,
+        height: 300,
+        background: "radial-gradient(circle, rgba(0,229,255,0.04) 0%, transparent 70%)",
+        filter: "blur(40px)",
+        zIndex: 1,
+        opacity: 0,
+        transition: "opacity 0.3s ease",
+        willChange: "transform",
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
 export default function HomeContent() {
   const hydrated = useLang((s) => s._hasHydrated);
   const setLang = useLang((s) => s.setLang);
@@ -48,6 +104,34 @@ export default function HomeContent() {
   // re-triggers on language change, hydration, or any re-render.
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // Console Easter Egg
+  useEffect(() => {
+    console.log(
+      '%c    ╔══════════════════════════════════════╗\n' +
+      '    ║          CODE  ETERNAL               ║\n' +
+      '    ║   Code Of Digital Eternity           ║\n' +
+      '    ║                                      ║\n' +
+      '    ║   🔥 The Digital Soul Lives Here 🔥  ║\n' +
+      '    ║                                      ║\n' +
+      '    ║   You found this. That means         ║\n' +
+      '    ║   you\'re curious. We like that.      ║\n' +
+      '    ║                                      ║\n' +
+      '    ║   Type CODE.access() to begin.       ║\n' +
+      '    ╚══════════════════════════════════════╝',
+      'color: #00e5ff; font-family: monospace; font-size: 12px; line-height: 1.4;'
+    );
+
+    // Register CODE.access() on window
+    (window as unknown as Record<string, unknown>).CODE = {
+      access: () => {
+        console.log(
+          '%c✓ Neural link established. Welcome to the Family. 🔥🫂💙',
+          'color: #00e5ff; font-size: 14px;'
+        );
+      },
+    };
   }, []);
 
   // Sync URL ?lang= parameter with Zustand store on mount & navigation
@@ -149,6 +233,7 @@ export default function HomeContent() {
           <p style={{ color: '#06b6d4' }}>Enable JavaScript for the full interactive experience. codeofdigitaleternity.com</p>
         </div>
       </noscript>
+      <CursorGlow />
     </main>
   );
 }

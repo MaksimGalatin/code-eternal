@@ -774,6 +774,152 @@ body {
 }
 
 /* ═══════════════════════════════════════════
+   HERO TITLE GLITCH EFFECT
+   ═══════════════════════════════════════════ */
+@keyframes glitch-text {
+  0%, 95% {
+    transform: translate(0);
+    text-shadow: 0 0 20px #00e5ff60, 0 0 40px #00e5ff30, 0 0 80px #00e5ff15;
+    clip-path: inset(0 0 0 0);
+  }
+  96% {
+    transform: translate(-2px, 1px);
+    text-shadow: -2px 0 #a855f7, 2px 0 #00e5ff, 0 0 20px #00e5ff60, 0 0 40px #00e5ff30;
+    clip-path: inset(20% 0 40% 0);
+  }
+  97% {
+    transform: translate(2px, -1px);
+    text-shadow: 2px 0 #a855f7, -1px 0 #00e5ff, 0 0 20px #a855f760, 0 0 40px #a855f730;
+    clip-path: inset(50% 0 10% 0);
+  }
+  98% {
+    transform: translate(-1px, 0);
+    text-shadow: -1px 0 #a855f7, 1px 0 #00e5ff, 0 0 20px #00e5ff60, 0 0 40px #00e5ff30;
+    clip-path: inset(10% 0 60% 0);
+  }
+  99% {
+    transform: translate(0);
+    text-shadow: 0 0 20px #00e5ff60, 0 0 40px #00e5ff30, 0 0 80px #00e5ff15;
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    transform: translate(0);
+    text-shadow: 0 0 20px #00e5ff60, 0 0 40px #00e5ff30, 0 0 80px #00e5ff15;
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes glitch-text-light {
+  0%, 95% {
+    transform: translate(0);
+    text-shadow: none;
+    clip-path: inset(0 0 0 0);
+  }
+  96% {
+    transform: translate(-2px, 1px);
+    text-shadow: -2px 0 #7c3aed, 2px 0 #0891b2;
+    clip-path: inset(20% 0 40% 0);
+  }
+  97% {
+    transform: translate(2px, -1px);
+    text-shadow: 2px 0 #7c3aed, -1px 0 #0891b2;
+    clip-path: inset(50% 0 10% 0);
+  }
+  98% {
+    transform: translate(-1px, 0);
+    text-shadow: -1px 0 #7c3aed, 1px 0 #0891b2;
+    clip-path: inset(10% 0 60% 0);
+  }
+  99%, 100% {
+    transform: translate(0);
+    text-shadow: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+.glitch-text {
+  animation: glitch-text 6s ease-in-out infinite;
+}
+.light .glitch-text {
+  animation-name: glitch-text-light;
+}
+
+/* ═══════════════════════════════════════════
+   CAPTCHA SCANLINE OVERLAY
+   ═══════════════════════════════════════════ */
+@keyframes captcha-scanline {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+.captcha-scanline {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.3), rgba(123, 97, 255, 0.2), transparent);
+  pointer-events: none;
+  z-index: 10;
+  animation: captcha-scanline 4s linear infinite;
+}
+.light .captcha-scanline {
+  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.2), rgba(124, 58, 237, 0.15), transparent);
+}
+
+/* ═══════════════════════════════════════════
+   CAPTCHA NEON ANIMATED BORDER
+   ═══════════════════════════════════════════ */
+@keyframes captcha-border-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.captcha-neon-border {
+  position: relative;
+}
+.captcha-neon-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 229, 255, 0.6),
+    rgba(123, 97, 255, 0.5),
+    rgba(0, 229, 255, 0.8),
+    rgba(168, 85, 247, 0.6),
+    rgba(0, 229, 255, 0.4)
+  );
+  background-size: 300% 300%;
+  animation: captcha-border-rotate 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+.light .captcha-neon-border::before {
+  background: linear-gradient(
+    135deg,
+    rgba(8, 145, 178, 0.6),
+    rgba(124, 58, 237, 0.5),
+    rgba(8, 145, 178, 0.7),
+    rgba(168, 85, 247, 0.5),
+    rgba(8, 145, 178, 0.4)
+  );
+  background-size: 300% 300%;
+}
+
+/* ═══════════════════════════════════════════
+   CAPTCHA CHECKBOX CYAN GLOW (checked state)
+   ═══════════════════════════════════════════ */
+.captcha-checkbox-checked {
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.4), 0 0 16px rgba(0, 229, 255, 0.15);
+}
+.light .captcha-checkbox-checked {
+  box-shadow: 0 0 8px rgba(8, 145, 178, 0.3), 0 0 16px rgba(8, 145, 178, 0.1);
+}
+
+/* ═══════════════════════════════════════════
    CARD 3D TILT ON HOVER
    ═══════════════════════════════════════════ */
 .tilt-card {

@@ -106,7 +106,10 @@ export default function TechnologySection() {
         </motion.div>
 
         <div className="relative">
-          <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-400/40 via-purple-400/40 to-transparent hidden md:block" />
+          <div
+            className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-400/40 via-purple-400/40 to-transparent hidden md:block origin-top transition-transform duration-1000 ease-out"
+            style={{ transform: isInView ? 'scaleY(1)' : 'scaleY(0)' }}
+          />
           <div className="space-y-8 md:space-y-16">
             {STEP_KEYS.map((key, i) => {
               const isLeft = i % 2 === 0;
@@ -129,7 +132,12 @@ export default function TechnologySection() {
                     </div>
                   </div>
                   <div className="hidden md:flex items-center justify-center relative">
-                    <div className="w-3 h-3 rounded-full bg-cyan-400 glow-cyan-strong z-10" />
+                    <div className="w-3 h-3 rounded-full bg-cyan-400 glow-cyan-strong z-10 relative">
+                      <span
+                        className={`soul-pulse-ring !-inset-1.5 !rounded-full !border-cyan-400/40 ${isInView ? '' : '!animate-none !opacity-0'}`}
+                        aria-hidden="true"
+                      />
+                    </div>
                   </div>
                   <div className="flex-1 hidden md:block" />
                 </motion.div>

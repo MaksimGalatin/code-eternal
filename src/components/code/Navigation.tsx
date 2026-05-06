@@ -95,6 +95,12 @@ export default function Navigation() {
 
   return (
     <>
+      <a
+        href="#origin"
+        className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-4 py-2 bg-cyan-400 text-black font-semibold rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+      >
+        {t("nav.skipToContent", lang)}
+      </a>
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}

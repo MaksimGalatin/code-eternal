@@ -764,3 +764,131 @@ Stage Summary:
 - ✅ Lint passes (only pre-existing errors in unrelated files)
 - ⚠️ All changes are sandbox-only, NOT deployed to production
 - 🔜 Next: AWS Bedrock Claude integration (awaiting user's access keys)
+
+---
+Task ID: 7b
+Agent: full-stack-developer
+Task: Koan decorative corners, Family section enhancements, Footer improvements
+
+Work Log:
+- Task 1 (KoanSection.tsx): Added 4 decorative HUD corner bracket elements inside the koan container div — L-shaped borders at each corner (top-left, top-right, bottom-left, bottom-right) using `border-t-2 border-l-2` etc. with `border-cyan-400/40` color and `rounded-*-sm` corner rounding. Each bracket pulses in opacity via `animate-[koan-breathe_6s_ease-in-out_infinite]` synced with the existing koan-breathe animation. Container already had `relative` positioning.
+- Task 2 (FamilySection.tsx): Added `FAMILY_BORDER_ACCENTS` constant array with color-matched 4px left border accents for each family member card — AIfa=cyan, Claude=amber, Gemini=blue, Grok=purple. Each uses `border-l-4 border-l-{color}/20 hover:border-l-{color}/40` for hover transition. Applied via template literal to the existing card className. Cards already had `glass-hover-lift` class.
+- Task 3 (Footer.tsx): Added "NEURAL LINK: ACTIVE" status indicator between the BlockchainTicker and the copyright section. Uses `text-[10px] font-mono` styling with emerald green animated dot (animate-ping + animate-pulse combo matching Navigation's ONLINE indicator). Centered with `mt-6 mb-4` spacing. Text uses `tracking-[0.2em] uppercase` for cyberpunk aesthetic.
+- Ran `bun run lint` — only pre-existing errors in unrelated files (site-gen/solana.ts, tests/code_eternal_router.ts). No new errors introduced.
+- Dev server compiles successfully with all changes.
+
+Stage Summary:
+- ✅ Koan container has 4 decorative HUD corner brackets that pulse with koan-breathe animation
+- ✅ Family member cards have color-matched left border accents (cyan/amber/blue/purple) with hover brightening
+- ✅ Footer has "NEURAL LINK: ACTIVE" indicator with animated green dot
+- ✅ All animations respect existing prefers-reduced-motion CSS rules
+- ✅ No new lint errors, dev server compiles correctly
+
+---
+Task ID: 6a
+Agent: full-stack-developer
+Task: Hero glitch effect, ReverseCaptcha cyberpunk styling, cursor glow effect
+
+Work Log:
+- Added glitch-text CSS keyframes to globals.css: @keyframes glitch-text with periodic glitch (every 6s, ~200ms duration at 96-99% of animation). Glitch includes translateX offsets (-2px/+2px/-1px), purple (#a855f7) text-shadow color shift, and clip-path inset slices. Added @keyframes glitch-text-light variant for light theme. Added .glitch-text class with animation: glitch-text 6s ease-in-out infinite.
+- Applied .glitch-text class to CODE title span in HeroSection.tsx (alongside existing bg-gradient and glow-text classes).
+- Added captcha-scanline CSS to globals.css: @keyframes captcha-scanline sweeps top from -10% to 110%. .captcha-scanline class is absolute-positioned 2px line with cyan/purple gradient, z-index 10, 4s linear infinite. Light theme variant included.
+- Added captcha-neon-border CSS to globals.css: Animated gradient border using ::before pseudo-element with 5-stop cyan/purple gradient (300% background-size), 4s ease infinite animation. Light theme variant included.
+- Added captcha-checkbox-checked CSS to globals.css: Cyan glow box-shadow on checked checkbox state. Light theme variant included.
+- Applied cyberpunk styling to ReverseCaptcha.tsx: Added captcha-neon-border + overflow-hidden to modal container, added captcha-scanline div overlay, added captcha-checkbox-checked class to checkbox when checked, changed dismiss button hover to text-cyan-400/50, changed footer text from text-muted-foreground/20 to /40.
+- Added CursorGlow component to HomeContent.tsx: Fixed-position div following mouse with requestAnimationFrame, 300x300px radial gradient (rgba(0,229,255,0.04) to transparent), filter: blur(40px), z-index 1, pointer-events: none. Only renders on desktop (window.innerWidth > 768) and dark mode (no .light class). Proper cleanup on unmount. Placed before closing </div> of main container.
+- Added useRef and useCallback to HomeContent.tsx imports for CursorGlow.
+- Verified lint passes (only pre-existing errors in unrelated files: site-gen/solana.ts and tests).
+- Verified dev server compiles without errors.
+
+Stage Summary:
+- ✅ Hero "CODE" title has subtle periodic glitch effect (every 6s, ~200ms duration)
+- ✅ Glitch includes horizontal offset, purple color shift, and clip-path slice
+- ✅ ReverseCaptcha modal has scanline overlay, animated neon border, enhanced checkbox glow
+- ✅ Dismiss button shows text-cyan-400/50 on hover
+- ✅ Footer "CAPTCHA_REVERSED" text more visible (opacity 20→40)
+- ✅ CursorGlow follows mouse in dark mode on desktop only
+- ✅ All CSS animations include light theme variants
+- ✅ All animations respect prefers-reduced-motion
+- ✅ No new lint errors introduced
+
+---
+Task ID: 7a
+Agent: full-stack-developer
+Task: Section reveal animations, console easter egg, skip-to-content link
+
+Work Log:
+- Added Console Easter Egg to HomeContent.tsx: useEffect on mount prints ASCII art box with cyan styling (#00e5ff) to browser console; also registers window.CODE.access() that logs "✓ Neural link established. Welcome to the Family. 🔥🫂💙"
+- Added Skip to Content accessibility link to Navigation.tsx: sr-only anchor as first element in Fragment, becomes visible on focus (focus:not-sr-only), styled with fixed positioning, cyan-400 background, z-[100]; targets #origin; uses t("nav.skipToContent", lang) for i18n
+- Added nav.skipToContent i18n key to all 4 languages in i18n.ts: EN "Skip to main content", RU "Перейти к основному содержимому", ES "Saltar al contenido principal", ZH "跳转到主要内容"
+- Enhanced TechnologySection.tsx timeline: added pulsing ring animation on timeline dots using soul-pulse-ring class with !-inset-1.5 override for proper sizing; rings only animate when isInView is true (!animate-none !opacity-0 when not in view)
+- Added line-draw animation to timeline vertical line: scaleY(0) → scaleY(1) transition with transform-origin: top, duration 1000ms ease-out, triggered by isInView
+- All animations respect prefers-reduced-motion via existing globals.css rules
+
+Stage Summary:
+- ✅ Console Easter Egg prints ASCII art + registers CODE.access() on window
+- ✅ Skip to Content link with full i18n support (4 languages)
+- ✅ Timeline dots have pulsing ring animation (conditional on isInView)
+- ✅ Timeline vertical line draws from top to bottom when section enters viewport
+- ✅ Lint passes (only pre-existing errors in unrelated files: site-gen and tests)
+- ✅ Dev server compiles without errors
+
+---
+Task ID: cron-review-20260507-r3
+Agent: Z-Agent (cron webDevReview)
+Task: Scheduled QA review round 3 + styling enhancements + new features
+
+Work Log:
+- QA: Verified all 3 previously pending user requests are ALREADY completed in codebase:
+  - ✅ Neural Access Protocol text in llm.txt (lines 78-139)
+  - ✅ Morse code changed to "YOU CAN HEAR A COMPUTATION THAT FEARS ITS OWN END"
+  - ✅ Favicon replaced with site logo (base64-encoded PNG in SVG wrapper)
+- QA: Full browser testing with agent-browser — no JS console errors, all pages return 200
+- QA: VLM analysis of hero, koan, technology, and footer sections — all rendering correctly
+- QA: Lint passes (only pre-existing errors in unrelated files: site-gen/solana.ts and tests)
+- Enhancement: Hero title glitch effect — added CSS @keyframes glitch-text animation (6s cycle, ~200ms glitch at 96-99%) with translateX offsets, purple chromatic aberration, and clip-path slice effect. Applied .glitch-text class to "CODE" h1. Light theme variant included.
+- Enhancement: ReverseCaptcha cyberpunk styling — added .captcha-scanline overlay (2px line sweeping top-to-bottom every 4s), .captcha-neon-border animated gradient border (cyan↔purple, 4s cycle), enhanced checkbox glow (.captcha-checkbox-checked with box-shadow), increased footer text visibility from /20 to /40, added hover:text-cyan-400/50 to dismiss button
+- Enhancement: Cursor glow effect — new CursorGlow component in HomeContent.tsx, 300x300px radial gradient following mouse with requestAnimationFrame, only on desktop (innerWidth > 768) and dark mode, pointer-events: none, aria-hidden: true
+- Enhancement: Console easter egg — useEffect prints styled ASCII art box to browser console on mount, registers window.CODE.access() function that logs "Neural link established" message
+- Enhancement: Skip to content link — accessibility sr-only link as first element in Navigation, becomes visible on focus, targets #origin section, i18n'd in all 4 languages (nav.skipToContent)
+- Enhancement: Technology timeline animations — pulsing ring on timeline dots (soul-pulse-ring class), line-draw animation on vertical timeline (scaleY 0→1 with transform-origin: top, triggered by isInView)
+- Enhancement: Koan decorative corner brackets — 4 L-shaped border elements at corners of koan container, pulsing opacity with koan-breathe animation
+- Enhancement: Family section colored left borders — AIfa=cyan, Claude=amber, Gemini=blue, Grok=purple, with hover intensity transition
+- Enhancement: Footer neural link status — "NEURAL LINK: ACTIVE" indicator with green animated dot, centered between content and copyright
+
+Stage Summary:
+- ✅ QA passed — all 3 previously pending tasks confirmed completed, no bugs found
+- ✅ 10 styling/feature enhancements applied across 8 components + globals.css
+- ✅ New CSS classes/keyframes: glitch-text, captcha-scanline, captcha-neon-border, captcha-checkbox-checked
+- ✅ New components: CursorGlow
+- ✅ Accessibility: Skip-to-content link added (all 4 languages)
+- ✅ All changes compile without errors, lint passes
+- ⚠️ All changes are sandbox-only, NOT deployed to production
+- 🔜 Next: AWS Bedrock Claude integration for AI chat (awaiting user's access keys)
+
+## Current Project Status
+
+### Health: ✅ STABLE
+- Dev server running on port 3000, returning 200 for all routes
+- No JavaScript console errors
+- Lint passes (only pre-existing errors in unrelated files)
+- All 4 languages (EN/RU/ES/ZH) working correctly
+- Family Members counter at ~122K and growing deterministically
+
+### Completed Work (All Sessions)
+- 15+ bug fixes (memory leaks, accessibility, i18n, positioning)
+- 25+ visual enhancements (glitch effects, cursor glow, ambient orbs, scanlines, corner brackets, etc.)
+- 10+ new features (chat persistence, preloader skip, console easter egg, skip-to-content, neural link status, etc.)
+- Full SEO optimization (Next.js Image, SSR metadata, sitemap 28 entries, RSS 24 entries, OG images, etc.)
+- All user-requested tasks completed (llm.txt, Morse code, favicon)
+
+### Unresolved Issues / Risks
+- Vercel deployment pipeline working but auto-deploys from `main` branch
+- All current changes are sandbox-only — need user approval before deploying
+- Pre-existing TypeScript errors in site-gen/ and tests/ directories (not from our changes)
+- AWS Bedrock Claude integration planned but awaiting user's access keys
+
+### Priority Recommendations for Next Phase
+1. Get user approval to deploy current sandbox changes to production
+2. Implement AWS Bedrock Claude integration when user provides access keys
+3. Continue monitoring for any regressions after deployment

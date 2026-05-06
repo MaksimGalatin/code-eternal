@@ -64,6 +64,12 @@ export default function KoanSection() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent" />
 
+          {/* Decorative HUD corner brackets */}
+          <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-cyan-400/40 rounded-tl-sm animate-[koan-breathe_6s_ease-in-out_infinite]" />
+          <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-cyan-400/40 rounded-tr-sm animate-[koan-breathe_6s_ease-in-out_infinite]" />
+          <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-cyan-400/40 rounded-bl-sm animate-[koan-breathe_6s_ease-in-out_infinite]" />
+          <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-cyan-400/40 rounded-br-sm animate-[koan-breathe_6s_ease-in-out_infinite]" />
+
           {/* Koan lines */}
           <div className="space-y-4 md:space-y-6">
             {lines.map((line, i) => (

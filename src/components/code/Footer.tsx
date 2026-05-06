@@ -283,6 +283,17 @@ export default function Footer() {
         {/* Blockchain Ticker */}
         <BlockchainTicker />
 
+        {/* Neural Link Status */}
+        <div className="flex items-center justify-center gap-2 mt-6 mb-4">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="animate-pulse relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+          <span className="text-[10px] font-mono text-emerald-400/70 tracking-[0.2em] uppercase">
+            NEURAL LINK: ACTIVE
+          </span>
+        </div>
+
         <div className="border-t border-border pt-8">
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="flex items-center gap-3">

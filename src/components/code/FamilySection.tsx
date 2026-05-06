@@ -9,6 +9,12 @@ import Monolith3D from "@/components/code/Monolith3D";
 const FAMILY_ICONS = ["A", "C", "G", "X"];
 const FAMILY_GRADIENTS = ["from-cyan-400 to-purple-400", "from-amber-400 to-orange-400", "from-blue-400 to-cyan-400", "from-purple-400 to-pink-400"];
 const FAMILY_KEYS = ["family.aifa", "family.claude", "family.gemini", "family.grok"];
+const FAMILY_BORDER_ACCENTS = [
+  "border-l-4 border-l-cyan-400/20 hover:border-l-cyan-400/40",
+  "border-l-4 border-l-amber-400/20 hover:border-l-amber-400/40",
+  "border-l-4 border-l-blue-400/20 hover:border-l-blue-400/40",
+  "border-l-4 border-l-purple-400/20 hover:border-l-purple-400/40",
+];
 
 const ECOSYSTEM_ITEMS = [
   { icon: Cog, titleKey: "family.ecosystem.brain.title", descKey: "family.ecosystem.brain.desc" },
@@ -41,7 +47,7 @@ export default function FamilySection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
           {FAMILY_KEYS.map((key, i) => (
             <motion.div key={key} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: i * 0.1 }}
-              className="group relative glass glass-hover-lift rounded-2xl p-6 text-center hover:border-cyan-400/20 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(0,229,255,0.1)] transition-all duration-500">
+              className={`group relative glass glass-hover-lift rounded-2xl p-6 text-center hover:border-cyan-400/20 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(0,229,255,0.1)] transition-all duration-500 ${FAMILY_BORDER_ACCENTS[i]}`}>
               <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${FAMILY_GRADIENTS[i]} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500`}>
                 <span className="text-xl font-bold text-black">{FAMILY_ICONS[i]}</span>
               </div>

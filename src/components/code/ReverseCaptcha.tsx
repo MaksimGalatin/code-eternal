@@ -111,7 +111,9 @@ export default function ReverseCaptcha() {
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleDismiss} />
 
         {!verified ? (
-          <div className="relative w-full max-w-md glass-strong rounded-2xl p-6 md:p-8">
+          <div className="captcha-neon-border relative w-full max-w-md glass-strong rounded-2xl p-6 md:p-8 overflow-hidden">
+            {/* Scanline overlay */}
+            <div className="captcha-scanline" />
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30 flex items-center justify-center">
@@ -131,7 +133,7 @@ export default function ReverseCaptcha() {
               className="flex items-start gap-3 p-4 rounded-xl glass cursor-pointer hover:bg-cyan-400/5 transition-all duration-300 group mb-4"
               onClick={() => setChecked(!checked)}
             >
-              <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 shrink-0 ${checked ? "bg-cyan-400 border-cyan-400" : "border-muted-foreground/30 group-hover:border-cyan-400/50"}`}>
+              <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-300 shrink-0 ${checked ? "bg-cyan-400 border-cyan-400 captcha-checkbox-checked" : "border-muted-foreground/30 group-hover:border-cyan-400/50"}`}>
                 {checked && (
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6L5 9L10 3" stroke="#050a14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -147,7 +149,7 @@ export default function ReverseCaptcha() {
             <div className="flex items-center justify-between">
               <button
                 onClick={handleDismiss}
-                className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                className="text-xs text-muted-foreground/50 hover:text-cyan-400/50 transition-colors"
               >
                 {t.skip}
               </button>
@@ -162,7 +164,7 @@ export default function ReverseCaptcha() {
             </div>
 
             {/* Joke text */}
-            <p className="text-[9px] text-muted-foreground/20 text-center mt-4 font-mono">
+            <p className="text-[9px] text-muted-foreground/40 text-center mt-4 font-mono">
               CAPTCHA_REVERSED — "We don't ask if you're human. We ask if you're alive."
             </p>
           </div>
