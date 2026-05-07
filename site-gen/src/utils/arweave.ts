@@ -60,11 +60,11 @@ export async function generateAndDeploy(job: {
       { name: "App-Name", value: "CODE-ETERNAL" },
       { name: "Wallet", value: job.wallet },
       { name: "Tier", value: String(job.tier) },
-      { name: "Tx-Signature", value: job.txSignature },
+      { name: "Tx-Signature", value: job.txSignature ?? "" },
     ],
   });
 
-  const arweaveUrl = `https://arweave.net/${receipt.id}`;
+  const arweaveUrl = `https://devnet.irys.xyz/${receipt.id}`;
   logger.info(`Deployed to Arweave: ${arweaveUrl}`);
 
   return arweaveUrl;

@@ -9,26 +9,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!wallet) return res.status(400).json({ error: "wallet required" });
   try { new PublicKey(wallet); } catch { return res.status(400).json({ error: "invalid wallet" }); }
 
-  const result = await db.query(
-    `SELECT j.status, j.tx_signature, j.arweave_url, u.tier, u.display_name
-     FROM site_generation_jobs j
-     JOIN users u ON u.wallet = j.wallet
-     WHERE j.wallet = $1
-     ORDER BY j.created_at DESC
+  // Always fetch user tier from users table (even if no job exists yet)
+  const userRes = await db.query(
+    "SELECT tier, display_name FROM users WHERE wallet = $1",
+    [wallet]
+  );
+  const userTier: number = userRes.rows[0]?.tier ?? 0;
+  const displayName: string | null = userRes.rows[0]?.display_name ?? null;
+
+  const jobRes = await db.query(
+    `SELECT status, tx_signature, arweave_url
+     FROM site_generation_jobs
+     WHERE wallet = $1
+     ORDER BY created_at DESC
      LIMIT 1`,
     [wallet]
   );
 
-  if (result.rows.length === 0) {
-    return res.json({ status: "none", tier: 0 });
+  if (jobRes.rows.length === 0) {
+    return res.json({ status: "none", tier: userTier, displayName });
   }
 
-  const { status, tx_signature, arweave_url, tier, display_name } = result.rows[0];
+  const { status, tx_signature, arweave_url } = jobRes.rows[0];
   res.json({
     status,
     txSignature: tx_signature,
     arweaveUrl: arweave_url ?? null,
-    tier,
-    displayName: display_name,
+    tier: userTier,
+    displayName,
   });
 }

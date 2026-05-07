@@ -10,6 +10,7 @@ export const IDL: Idl = {
   instructions: [
     {
       name: "register_user",
+      discriminator: [2, 241, 150, 223, 99, 214, 116, 97],
       accounts: [
         { name: "payer", writable: true, signer: true },
         { name: "user_state", writable: true },
@@ -21,6 +22,7 @@ export const IDL: Idl = {
     },
     {
       name: "process_payment",
+      discriminator: [189, 81, 30, 198, 139, 186, 115, 23],
       accounts: [
         { name: "payer", writable: true, signer: true },
         { name: "user_state", writable: true },
@@ -31,7 +33,7 @@ export const IDL: Idl = {
         { name: "ref1_token_account", writable: true },
         { name: "ref2_token_account", writable: true },
         { name: "ref3_token_account", writable: true },
-        { name: "payment_mint" },
+        { name: "payment_mint", writable: true },
         { name: "token_program" },
         { name: "associated_token_program" },
         { name: "system_program" },
@@ -46,6 +48,7 @@ export const IDL: Idl = {
     },
     {
       name: "update_site_url",
+      discriminator: [88, 75, 36, 1, 178, 5, 221, 105],
       accounts: [
         { name: "backend_authority", signer: true },
         { name: "user_state", writable: true },
@@ -58,6 +61,7 @@ export const IDL: Idl = {
     },
     {
       name: "award_memory",
+      discriminator: [78, 18, 153, 225, 117, 43, 249, 95],
       accounts: [
         { name: "oracle", signer: true },
         { name: "user_state", writable: true },
@@ -70,7 +74,12 @@ export const IDL: Idl = {
   accounts: [
     {
       name: "UserState",
-      discriminator: [],
+      discriminator: [72, 177, 85, 249, 76, 167, 186, 126],
+    },
+  ],
+  types: [
+    {
+      name: "UserState",
       type: {
         kind: "struct",
         fields: [

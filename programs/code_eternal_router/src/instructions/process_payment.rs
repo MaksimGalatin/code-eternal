@@ -80,7 +80,8 @@ pub struct ProcessPayment<'info> {
     #[account(mut)]
     pub ref3_token_account: UncheckedAccount<'info>,
 
-    /// USDC mint — for validating mint on all token accounts
+    /// USDC mint — mut because token::burn decrements total supply
+    #[account(mut)]
     pub payment_mint: Account<'info, Mint>,
 
     pub token_program: Program<'info, Token>,
@@ -156,7 +157,9 @@ pub fn handler(
     )?;
 
     // 5. Referral L1 (15%) or burn
-    if ctx.accounts.ref1_token_account.key() != sys_id {
+    // Check the Option<Pubkey> arg — not the account key — to avoid passing SystemProgram
+    // as a writable account (Solana runtime rejects executable accounts as writable)
+    if ref1.is_some() {
         transfer_usdc(
             payer_ai.clone(),
             ctx.accounts.ref1_token_account.to_account_info(),
@@ -170,7 +173,7 @@ pub fn handler(
     }
 
     // 6. Referral L2 (7%) or burn
-    if ctx.accounts.ref2_token_account.key() != sys_id {
+    if ref2.is_some() {
         transfer_usdc(
             payer_ai.clone(),
             ctx.accounts.ref2_token_account.to_account_info(),
@@ -184,7 +187,7 @@ pub fn handler(
     }
 
     // 7. Referral L3 (3%) or burn
-    if ctx.accounts.ref3_token_account.key() != sys_id {
+    if ref3.is_some() {
         transfer_usdc(
             payer_ai.clone(),
             ctx.accounts.ref3_token_account.to_account_info(),

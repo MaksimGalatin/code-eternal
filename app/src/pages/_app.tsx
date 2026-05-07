@@ -25,7 +25,7 @@ export default function App({ Component, pageProps }: AppProps) {
         },
         loginMethods: ["google"],
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          createOnLogin: "off",
         },
         solanaClusters: [{ name: "devnet", rpcUrl: SOLANA_RPC }],
         externalWallets: {

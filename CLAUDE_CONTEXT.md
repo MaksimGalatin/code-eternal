@@ -153,7 +153,7 @@ users (id, wallet, email, display_name, referrer_id, ref_code, tier, tier_expire
        tg_chat_id, tg_link_token, created_at)
 referral_payments (id, payer_wallet, referrer_wallet, level, amount_usdc, tx_hash, tier, created_at)
 burn_events (id, amount, tx_hash, created_at)
-site_generation_jobs (id, wallet, tier, tx_signature, status, arweave_url, completed_at, error_message, created_at)  -- listener writes; site-gen reads. Run scripts/migrate-db.sql to add arweave_url/completed_at/error_message
+site_generation_jobs (id, wallet, tier, tx_signature, status, arweave_url, completed_at, error_message, created_at)  -- listener writes; site-gen reads.
 applications_1000 (id, fio, contact, language, avatar_desc, reason, status, created_at)
 ```
 
@@ -194,7 +194,8 @@ programs/code_eternal_router/src/
 | `#[derive(InitSpace)]` on UserState | Auto-computes account size. No manual byte counting, no size drift bugs. |
 | `register_user` takes no `tier` param | Tier is determined by payment amount only. Users always start at tier=0. |
 | Real `token::burn` CPI in `process_payment` | Burn is atomic and verifiable on-chain by anyone. |
-| `UncheckedAccount` for referral token accounts | Anchor can't constrain optional accounts. Client passes `SystemProgram::ID` when no referral. |
+| `UncheckedAccount` for referral token accounts | Anchor can't constrain optional accounts. Client passes `payerTokenAccount` as writable dummy when no referral (SystemProgram is rejected as writable by runtime). Transfer/burn gated by `ref1.is_some()` arg, not account key. |
+| `payment_mint` marked `#[account(mut)]` | `token::burn` CPI decrements total supply — mint must be writable at tx level or runtime rejects with "writable privilege escalated". |
 | Vault PDA as ATA authority | Standard pattern: vault PDA (no data) controls vault_token_account (USDC ATA). |
 
 ### UserState Account
@@ -327,7 +328,7 @@ Frontend (Pipeline 2.x — Days 2-3)
   ✅ Next.js 14 app/ created (Pages Router, Tailwind, Privy, purple theme)
   ✅ Pipeline 2.1: Login page — "Enter the Family" → Google → /cabinet
   ✅ Pipeline 2.2: /cabinet — three tier cards ($15/$100/$1000) with auth guard
-  ✅ Create Neon DB tables (users, referral_payments, burn_events, site_generation_jobs, applications_1000)
+  ✅ Create Neon DB tables (users, referral_payments, burn_events, site_generation_jobs, applications_1000) — run scripts/migrate.sql via scripts/run-migration.js
   ✅ Confirm login flow works end-to-end in browser (Google login → /cabinet, HTTPS)
 
 Backend + Payment (Pipeline 3.x — Days 4-7)
@@ -462,6 +463,17 @@ mkdir -p ~/devnet-setup && cp /mnt/c/Users/Maksim/projects/code-eternal/scripts/
 cd ~/devnet-setup && npm install @solana/web3.js @solana/spl-token && node setup-devnet.js
 ```
 
+### Neon DB Migration
+
+✅ **Already run (2026-05-07).** All tables exist: `users`, `referral_payments`, `burn_events`, `site_generation_jobs` (with `error_message` column), `applications_1000`.
+
+To run migration (if tables are lost or DB is reset):
+```bash
+cd /mnt/c/Users/Maksim/projects/code-eternal/scripts
+npm install pg   # one-time
+node run-migration.js   # runs scripts/migrate.sql against Neon
+```
+
 ---
 
 ## Docker Images
@@ -505,7 +517,7 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | listener, site-gen | `DATABASE_URL` | Neon PostgreSQL connection string — see `secrets/credentials.env` |
 | listener | `SITE_GEN_URL` | `http://site-gen:3002` (Docker internal, set in docker-compose.yml) |
 | listener | `RESEND_API_KEY` | From resend.com — email delivery |
-| site-gen | `IRYS_PRIVATE_KEY` | ✅ Set — base58 keypair (pubkey: `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X`, funded with 0.5 devnet SOL on 2026-05-06, TX: `2RDPciAgam3EvdHPpVmazYEye6Gc4wSSrT6eyzQ84PaGXrytgeL3KFyiCCmQREbEwReiAxQga9FDLHcfEDPcb7R4`) |
+| site-gen | `IRYS_PRIVATE_KEY` | ✅ Set — base58 keypair (pubkey: `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X`, balance: 1.5 devnet SOL as of 2026-05-07) |
 | site-gen | `BACKEND_PRIVATE_KEY` | Backend authority keypair (base64) — same key as BACKEND_AUTHORITY on-chain |
 | Next.js (app) | `NEXT_PUBLIC_PRIVY_APP_ID` | `cmoofvdt4008o0cjps5l8nvnu` — baked in at Docker build time |
 | Next.js (app) | `NEXT_PUBLIC_RPC_URL` | Helius RPC (public key OK in browser) |
@@ -537,6 +549,8 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | `NEXT_PUBLIC_*` via Docker `--build-arg` | Next.js bakes these at build time, not runtime |
 | Hetzner instead of Vercel | Vercel Hobby blocks private repo collaboration |
 | Direct HTTP listener→site-gen | Simpler than SQS for single-VM setup; no AWS dependency |
+| `.transaction()` + `wallet.sendTransaction()` instead of Anchor `rpc()` | Anchor's `rpc()` is incompatible with Privy embedded wallets — throws "Expected Buffer". Must build tx manually, set `recentBlockhash`/`feePayer`, then call Privy's `sendTransaction`. Provider is created with empty wallet `{}` (read-only). |
+| `createWallet()` called in `useEffect` on cabinet + buy pages | `createOnLogin: "users-without-wallets"` only creates EVM wallets — Solana wallet must be explicitly created via `useSolanaWallets().createWallet()` |
 
 ### File Structure
 
@@ -697,9 +711,8 @@ Tier colors:
 - `SITE_STATUS_PENDING` constant declared but not used in constraints
 - `handler` name collision in `mod.rs` glob re-exports — rename each to `register_user_handler`, etc.
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
-- Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — CF_API_TOKEN + CF_ZONE_ID env vars are defined but site-gen doesn't call Cloudflare yet
-- Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
+- Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
 
 ## Security Fixes Applied (2026-04-19)
@@ -707,3 +720,34 @@ Tier colors:
 - `process_payment.rs` — referral token accounts now validated against `payment_mint` before transfer (prevents token confusion attacks)
 - `listener/index.ts` — Helius webhook endpoint requires `Authorization: <HELIUS_WEBHOOK_SECRET>` header (rejects unauthenticated requests with 401)
 - `onPaymentProcessed.ts` — wallet (valid Solana PublicKey), signature, and tier (1/2/3) validated before DB/SQS writes
+
+## Bug Fixes Applied (2026-05-07)
+
+- `process_payment.rs` — `payment_mint` marked `#[account(mut)]` (required by `token::burn` CPI which decrements total supply)
+- `process_payment.rs` + `buy.tsx` — referral transfer/burn logic switched from account key check (`key() != sys_id`) to instruction arg check (`ref1.is_some()`); client now passes `payerTokenAccount` as writable dummy instead of `SystemProgram.programId` (fixes `ConstraintMut` error on tiers without referrals)
+- `onPaymentProcessed.ts` — added retry with backoff (0/2/4/8/15s) when reading tier from on-chain state (Helius webhook arrives before RPC propagates updated account state)
+- `cabinet/index.tsx` — USDC balance now loaded dynamically from RPC instead of hardcoded `$0.00`
+- IDL `code_eternal_router.ts` — `payment_mint` marked `writable: true` to match contract
+- `site-gen/idl/code_eternal_router.json` — added all instruction discriminators (was missing them, caused `Expected Buffer` error in `new Program(idl, provider)`)
+- `site-gen/src/utils/arweave.ts` — Arweave URL changed from `https://arweave.net/` to `https://devnet.irys.xyz/` (devnet Irys files are not on Arweave mainnet, caused 404)
+- `site-gen/src/utils/arweave.ts` — tag value guard: `job.txSignature ?? ""` to prevent `undefined` tag crashing Irys upload
+- `app/src/pages/_app.tsx` — `createOnLogin: "off"` (was `"users-without-wallets"` which auto-created Ethereum wallet, conflicting with explicit Solana `createWallet()` call)
+- `app/src/pages/api/devnet/airdrop-usdc.ts` — SOL airdrop reduced from 0.1 to 0.005 (10 000x more than needed per tx); threshold check lowered from 0.05 to 0.005 SOL
+- `app/src/pages/cabinet/buy.tsx` — SOL check threshold lowered to match airdrop amount (0.005); added step progress bar (Funding wallet → Registering → Payment); fixed "loading" button state text
+
+## Admin / Ops Scripts (scripts/)
+
+- `scripts/reset-user.js <wallet>` — resets users.tier=0 + deletes site_generation_jobs for wallet (DB only, on-chain not touched)
+- `scripts/wipe-users.js` — deletes all rows from users, site_generation_jobs, referral_payments, burn_events
+- `scripts/retry-site-url.js` — manually calls update_site_url on-chain + marks job done in DB (edit WALLET/ARWEAVE_TX_ID/JOB_ID before running)
+- `scripts/check-jobs.js` — prints site_generation_jobs rows for test wallet
+
+## Devnet Wallet Balances (as of 2026-05-07)
+
+| Wallet | Address | SOL Balance | Notes |
+|--------|---------|------------|-------|
+| Local deployer | `7GJm1GVk...` | ~2.5 SOL | Funded via faucet.solana.com |
+| Backend Authority | `96JwAJL2...` | ~1.5 SOL | Funded 2026-05-07 (was 0 → caused Generation failed) |
+| Irys Wallet | `8NpeaoihG...` | ~1.5 SOL | Funded 2026-05-07 |
+| Mint Authority | `9NJhwafwj...` | ~7.3 SOL | Airdrops 0.005 SOL + 1100 USDC per new user |
+| Ecosystem Fund | `CkiiA1BE...` | 0 SOL | Receives USDC only, no SOL needed |

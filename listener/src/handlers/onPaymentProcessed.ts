@@ -29,11 +29,17 @@ async function fetchUserTier(walletAddress: string): Promise<number | null> {
     new PublicKey(PROGRAM_ID)
   );
 
-  const accountInfo = await connection.getAccountInfo(userStatePDA);
-  if (!accountInfo) return null;
-
-  const tier = decodeTier(accountInfo.data);
-  return [1, 2, 3].includes(tier) ? tier : null;
+  // Helius webhook fires fast — RPC may not have propagated state yet. Retry with backoff.
+  const delays = [0, 2000, 4000, 8000, 15000];
+  for (const delay of delays) {
+    if (delay > 0) await new Promise(r => setTimeout(r, delay));
+    const accountInfo = await connection.getAccountInfo(userStatePDA);
+    if (!accountInfo) continue;
+    const tier = decodeTier(accountInfo.data);
+    if ([1, 2, 3].includes(tier)) return tier;
+    logger.warn(`fetchUserTier: tier=${tier} not valid yet for ${walletAddress}, retrying...`);
+  }
+  return null;
 }
 
 async function getReferralChain(
@@ -170,9 +176,8 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
   }
   const burnAmount = (totalUsdc * burnBps) / 10000;
 
-  const jobId = `job_${signature}_${Date.now()}`;
-
   const client = await db.connect();
+  let jobId: number;
   try {
     await client.query("BEGIN");
 
@@ -182,7 +187,7 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
     // Record burn
     await client.query(
       `INSERT INTO burn_events (amount, tx_hash, created_at)
-       SELECT $1, $2, NOW() WHERE NOT EXISTS (SELECT 1 FROM burn_events WHERE tx_hash = $2)`,
+       VALUES ($1, $2, NOW()) ON CONFLICT (tx_hash) DO NOTHING`,
       [burnAmount, signature]
     );
 
@@ -198,12 +203,13 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
       }
     }
 
-    // Create site generation job record
-    await client.query(
-      `INSERT INTO site_generation_jobs (id, wallet, tier, tx_signature, status, created_at)
-       VALUES ($1, $2, $3, $4, 'pending', NOW())`,
-      [jobId, payerWallet, tier, signature]
+    // Create site generation job — id is SERIAL, let DB auto-assign
+    const jobRes = await client.query(
+      `INSERT INTO site_generation_jobs (wallet, tier, tx_signature, status, created_at)
+       VALUES ($1, $2, $3, 'pending', NOW()) RETURNING id`,
+      [payerWallet, tier, signature]
     );
+    jobId = jobRes.rows[0].id;
 
     await client.query("COMMIT");
   } catch (err) {
@@ -216,7 +222,7 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
 
   logger.info(
     `Recorded: wallet=${payerWallet} tier=${tier} burn=${burnAmount} USDC ` +
-    `refs=${refWallets.filter(Boolean).length}`
+    `refs=${refWallets.filter(Boolean).length} jobId=${jobId}`
   );
 
   // Send confirmation email (non-fatal)

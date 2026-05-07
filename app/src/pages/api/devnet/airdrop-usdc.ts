@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import { getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -36,6 +36,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       Buffer.from(mintAuthorityStr, "base64")
     );
     const mint = new PublicKey(mintStr);
+
+    // Transfer SOL for fees from our controlled mint authority keypair (no faucet rate limits)
+    const solBalance = await connection.getBalance(recipient);
+    if (solBalance < 0.005 * 1e9) {
+      const solTx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: mintAuthority.publicKey,
+          toPubkey: recipient,
+          lamports: 5_000_000, // 0.005 SOL — enough for ~500 txs
+        })
+      );
+      await sendAndConfirmTransaction(connection, solTx, [mintAuthority], { commitment: "confirmed" });
+    }
 
     // Create recipient ATA if it doesn't exist, then mint 1100 USDC
     const ata = await getOrCreateAssociatedTokenAccount(

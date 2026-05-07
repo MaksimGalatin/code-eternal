@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSolanaWallets } from "@privy-io/react-auth/solana";
-import { Connection, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
 import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
@@ -42,10 +42,17 @@ function shortAddr(addr: string) {
 export default function BuyPage() {
   const router = useRouter();
   const { authenticated, ready } = usePrivy();
-  const { wallets } = useSolanaWallets();
+  const { wallets, createWallet } = useSolanaWallets();
   const wallet = wallets[0];
 
-  const [step, setStep] = useState<Step>("loading");
+  // Auto-create Solana embedded wallet if user has none
+  useEffect(() => {
+    if (ready && authenticated && wallets.length === 0) {
+      createWallet().catch(() => {});
+    }
+  }, [ready, authenticated, wallets.length]);
+
+  const [step, setStep] = useState<Step>("ready");
   const [balance, setBalance] = useState<number>(0);
   const [tier, setTier] = useState<(typeof TIERS)[number] | null>(null);
   const [txSig, setTxSig] = useState<string>("");
@@ -95,8 +102,12 @@ export default function BuyPage() {
       const payer = new PublicKey(wallet.address);
       const usdcMint = new PublicKey(USDC_MINT_STR);
 
-      // Auto-airdrop if balance is insufficient (devnet PoC)
-      if (balance < tier.price) {
+      // Always ensure wallet has SOL + USDC before transacting (devnet PoC)
+      // SOL check is always needed — wallet may have USDC from a previous airdrop
+      // but SOL gets consumed by failed tx attempts and never replenished unless we check
+      const solBalance = await connection.getBalance(payer);
+      const needsUsdc = balance < tier.price;
+      if (needsUsdc || solBalance < 5_000_000) {
         setStep("airdropping");
         const res = await fetch("/api/devnet/airdrop-usdc", {
           method: "POST",
@@ -108,22 +119,17 @@ export default function BuyPage() {
         await loadBalance();
       }
 
-      // Wrap Privy wallet into Anchor-compatible wallet interface
-      const anchorWallet = {
-        publicKey: payer,
-        signTransaction: <T extends Transaction | VersionedTransaction>(tx: T) =>
-          wallet.signTransaction(tx as Transaction) as Promise<T>,
-        signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]) => {
-          const anyWallet = wallet as any;
-          if (anyWallet.signAllTransactions) {
-            return anyWallet.signAllTransactions(txs);
-          }
-          return Promise.all(txs.map((tx) => wallet.signTransaction(tx as Transaction))) as Promise<any>;
+      // Anchor needs wallet.publicKey to build transactions — sign methods are never called
+      // (we use .transaction() then wallet.sendTransaction(), not .rpc())
+      const provider = new AnchorProvider(
+        connection,
+        {
+          publicKey: payer,
+          signTransaction: async (tx: any) => tx,
+          signAllTransactions: async (txs: any[]) => txs,
         },
-      };
-      const provider = new AnchorProvider(connection, anchorWallet as any, {
-        commitment: "confirmed",
-      });
+        { commitment: "confirmed" }
+      );
       const program = new Program(IDL, provider);
 
       // Derive PDAs
@@ -150,13 +156,15 @@ export default function BuyPage() {
 
       const ref1TokenAccount = ref1
         ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref1))
-        : SystemProgram.programId;
+        : payerTokenAccount; // writable dummy; ref1 arg is null so contract won't transfer
       const ref2TokenAccount = ref2
         ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref2))
-        : SystemProgram.programId;
+        : payerTokenAccount;
       const ref3TokenAccount = ref3
         ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref3))
-        : SystemProgram.programId;
+        : payerTokenAccount;
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
 
       // Register user on-chain if UserState PDA doesn't exist yet
       setStep("registering");
@@ -167,19 +175,30 @@ export default function BuyPage() {
         needsRegister = true;
       }
       if (needsRegister) {
-        await program.methods
+        const registerTx = await program.methods
           .registerUser(null)
           .accounts({
             payer,
             userState: userStatePDA,
             systemProgram: SystemProgram.programId,
           })
-          .rpc();
+          .transaction();
+        registerTx.recentBlockhash = blockhash;
+        registerTx.feePayer = payer;
+        const registerSig = await wallet.sendTransaction(registerTx, connection);
+        await connection.confirmTransaction(
+          { signature: registerSig, blockhash, lastValidBlockHeight },
+          "confirmed"
+        );
       }
+
+      // Refresh blockhash before payment tx
+      const { blockhash: payBlockhash, lastValidBlockHeight: payLVBH } =
+        await connection.getLatestBlockhash("confirmed");
 
       // Call process_payment
       setStep("paying");
-      const sig = await program.methods
+      const payTx = await program.methods
         .processPayment(
           new BN(tier.amount),
           Number(router.query.tier),
@@ -202,7 +221,14 @@ export default function BuyPage() {
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
-        .rpc();
+        .transaction();
+      payTx.recentBlockhash = payBlockhash;
+      payTx.feePayer = payer;
+      const sig = await wallet.sendTransaction(payTx, connection);
+      await connection.confirmTransaction(
+        { signature: sig, blockhash: payBlockhash, lastValidBlockHeight: payLVBH },
+        "confirmed"
+      );
 
       setTxSig(sig);
       setStep("success");
@@ -213,11 +239,9 @@ export default function BuyPage() {
     }
   }
 
+  const walletReady = !!wallet;
   const isProcessing = ["loading", "airdropping", "registering", "paying"].includes(step);
-  const canPay =
-    !isProcessing &&
-    step !== "success" &&
-    !!tier && !!USDC_MINT_STR;
+  const canPay = walletReady && !isProcessing && step !== "success" && !!tier && !!USDC_MINT_STR;
 
   if (!ready || !authenticated) {
     return null; // Or a loading spinner
@@ -378,6 +402,45 @@ export default function BuyPage() {
                 </div>
               )}
 
+              {/* Progress steps */}
+              {isProcessing && (
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                    {(["airdropping", "registering", "paying"] as Step[]).map((s, i) => {
+                      const labels = ["Funding wallet", "Registering", "Payment"];
+                      const idx = ["airdropping", "registering", "paying"].indexOf(step);
+                      const done = i < idx;
+                      const active = s === step;
+                      return (
+                        <div key={s} style={{ textAlign: "center", flex: 1 }}>
+                          <div style={{
+                            width: "24px", height: "24px", borderRadius: "50%",
+                            background: done ? "#10B981" : active ? tier.color : "#2a2a3a",
+                            margin: "0 auto 4px",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "11px", fontWeight: "bold",
+                            transition: "background 0.3s",
+                          }}>
+                            {done ? "✓" : i + 1}
+                          </div>
+                          <div style={{ fontSize: "10px", color: active ? "#E8E8F0" : "#4a4a5e" }}>
+                            {labels[i]}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ height: "3px", background: "#2a2a3a", borderRadius: "2px" }}>
+                    <div style={{
+                      height: "100%", borderRadius: "2px",
+                      background: tier.color,
+                      width: step === "airdropping" ? "15%" : step === "registering" ? "50%" : "85%",
+                      transition: "width 0.5s ease",
+                    }} />
+                  </div>
+                </div>
+              )}
+
               {/* Pay button */}
               <button
                 onClick={handlePay}
@@ -390,8 +453,12 @@ export default function BuyPage() {
                   cursor: canPay ? "pointer" : "not-allowed",
                 }}
               >
-                {step === "airdropping"
-                  ? "Getting test USDC..."
+                {!walletReady
+                  ? "Preparing wallet..."
+                  : step === "loading"
+                  ? "Loading balance..."
+                  : step === "airdropping"
+                  ? "Funding wallet..."
                   : step === "registering"
                   ? "Registering on-chain..."
                   : step === "paying"
