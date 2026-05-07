@@ -29,7 +29,7 @@ async function getGrokResponse(
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "grok-2-latest",
+      model: "grok-3",
       messages: formattedMessages,
       max_tokens: 2048,
       temperature: 0.8,
