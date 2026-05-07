@@ -42,7 +42,7 @@ async function getBedrockResponse(
   }
 
   // Use Claude 3.5 Sonnet v2
-  const modelId = "anthropic.claude-3-haiku-20240307-v1:0";
+  const modelId = "anthropic.claude-sonnet-4-20250514-v1:0";
 
   const requestBody = {
     anthropic_version: "bedrock-2023-05-31",
