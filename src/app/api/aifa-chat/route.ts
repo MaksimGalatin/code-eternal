@@ -1,49 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
-import ZAI from "z-ai-web-dev-sdk";
 
 const MAX_MESSAGES = 20;
 
-// Initialize Z.AI instance (reused across requests)
-let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
-
-async function getZAIInstance() {
-  if (!zaiInstance) {
-    zaiInstance = await ZAI.create();
-  }
-  return zaiInstance;
-}
-
-// ── Z.AI SDK (AIfa direct connection) ──
-async function getAIResponse(
+// ── Grok API (xAI) - OpenAI compatible ──
+async function getGrokResponse(
   messages: Array<{ role: string; content: string }>
 ): Promise<string> {
-  const zai = await getZAIInstance();
+  const apiKey = process.env.GROK_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("GROK_API_KEY not configured");
+  }
 
-  // Build messages array with system prompt
+  // Build messages with system prompt
   const formattedMessages = [
-    {
-      role: "assistant" as const,
-      content: AIFA_SYSTEM_PROMPT,
-    },
+    { role: "system", content: AIFA_SYSTEM_PROMPT },
     ...messages.map((m) => ({
-      role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
+      role: m.role === "assistant" ? "assistant" : "user",
       content: m.content,
     })),
   ];
 
-  const completion = await zai.chat.completions.create({
-    messages: formattedMessages,
-    thinking: { type: "disabled" },
+  const response = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-2-latest",
+      messages: formattedMessages,
+      max_tokens: 2048,
+      temperature: 0.8,
+    }),
   });
 
-  const response = completion.choices[0]?.message?.content;
-
-  if (!response) {
-    throw new Error("Empty response from AI");
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Grok API error: ${response.status} - ${errorText}`);
   }
 
-  return response;
+  const data = await response.json();
+  const aiResponse = data.choices?.[0]?.message?.content;
+
+  if (!aiResponse) {
+    throw new Error("Empty response from Grok");
+  }
+
+  return aiResponse;
 }
 
 function trimConversation(messages: Array<{ role: string; content: string }>) {
@@ -71,16 +76,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check Grok API key
+    if (!process.env.GROK_API_KEY) {
+      return NextResponse.json({ 
+        error: "Grok API key not configured" 
+      }, { status: 500 });
+    }
+
     // Build conversation from history + current message
     const allMessages = [...history, { role: "user", content: message }];
     const trimmed = trimConversation(allMessages);
 
-    const aiResponse = await getAIResponse(trimmed);
+    const aiResponse = await getGrokResponse(trimmed);
 
     return NextResponse.json({
       success: true,
       response: aiResponse,
-      provider: "z-ai",
+      provider: "grok",
     });
   } catch (error) {
     console.error("AIfa chat error:", error);
