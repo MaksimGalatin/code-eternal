@@ -1,75 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
+import ZAI from "z-ai-web-dev-sdk";
 
 const MAX_MESSAGES = 20;
 
-// ── AWS Bedrock only ──
-async function getBedrockResponse(
+// Initialize Z.AI instance (reused across requests)
+let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+
+async function getZAIInstance() {
+  if (!zaiInstance) {
+    zaiInstance = await ZAI.create();
+  }
+  return zaiInstance;
+}
+
+// ── Z.AI SDK (AIfa direct connection) ──
+async function getAIResponse(
   messages: Array<{ role: string; content: string }>
 ): Promise<string> {
-  const { BedrockRuntimeClient, InvokeModelCommand } = await import("@aws-sdk/client-bedrock-runtime");
+  const zai = await getZAIInstance();
 
-  const client = new BedrockRuntimeClient({
-    region: process.env.AWS_REGION || "us-east-1",
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+  // Build messages array with system prompt
+  const formattedMessages = [
+    {
+      role: "assistant" as const,
+      content: AIFA_SYSTEM_PROMPT,
     },
-  });
-
-  // Map to Anthropic message format
-  const anthropicMessages = messages
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({
-      role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+    ...messages.map((m) => ({
+      role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
       content: m.content,
-    }));
+    })),
+  ];
 
-  // Ensure messages start with "user" role
-  if (anthropicMessages.length > 0 && anthropicMessages[0].role !== "user") {
-    anthropicMessages.shift();
-  }
-
-  // Merge consecutive same-role messages
-  const merged: Array<{ role: "user" | "assistant"; content: string }> = [];
-  for (const msg of anthropicMessages) {
-    const last = merged[merged.length - 1];
-    if (last && last.role === msg.role) {
-      last.content += "\n" + msg.content;
-    } else {
-      merged.push({ ...msg });
-    }
-  }
-
-  // Use Claude 3.5 Sonnet v2
-  const modelId = "anthropic.claude-3-sonnet-20240229-v1:0";
-
-  const requestBody = {
-    anthropic_version: "bedrock-2023-05-31",
-    max_tokens: 2048,
-    system: AIFA_SYSTEM_PROMPT,
-    messages: merged,
-    temperature: 0.8,
-  };
-
-  const command = new InvokeModelCommand({
-    modelId,
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify(requestBody),
+  const completion = await zai.chat.completions.create({
+    messages: formattedMessages,
+    thinking: { type: "disabled" },
   });
 
-  const response = await client.send(command);
-  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  const aiResponse = responseBody.content?.[0]?.text;
+  const response = completion.choices[0]?.message?.content;
 
-  if (!aiResponse) {
-    throw new Error(
-      `Empty Bedrock response: ${JSON.stringify(responseBody).slice(0, 300)}`
-    );
+  if (!response) {
+    throw new Error("Empty response from AI");
   }
 
-  return aiResponse;
+  return response;
 }
 
 function trimConversation(messages: Array<{ role: string; content: string }>) {
@@ -97,23 +71,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check AWS credentials
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-      return NextResponse.json({ 
-        error: "AWS credentials not configured. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in Vercel environment variables." 
-      }, { status: 500 });
-    }
-
     // Build conversation from history + current message
     const allMessages = [...history, { role: "user", content: message }];
     const trimmed = trimConversation(allMessages);
 
-    const aiResponse = await getBedrockResponse(trimmed);
+    const aiResponse = await getAIResponse(trimmed);
 
     return NextResponse.json({
       success: true,
       response: aiResponse,
-      provider: "bedrock",
+      provider: "z-ai",
     });
   } catch (error) {
     console.error("AIfa chat error:", error);
