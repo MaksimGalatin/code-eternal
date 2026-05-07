@@ -100,7 +100,7 @@ async function getBedrockResponse(
   }
 
   const modelId =
-    process.env.ANTHROPIC_CLAUDE_MODEL_ID || "anthropic.claude-sonnet-4-6";
+    process.env.ANTHROPIC_CLAUDE_MODEL_ID || "anthropic.claude-3-5-sonnet-20241022-v2:0";
 
   const requestBody = {
     anthropic_version: "bedrock-2023-05-31",
