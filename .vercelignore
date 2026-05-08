@@ -12,6 +12,10 @@ site-gen/
 tests/
 scripts/
 
+# VM app (Next.js 14 Pages Router — deployed to Hetzner, not Vercel)
+# Must be excluded or Next.js picks it up as App Router instead of src/app/
+app/
+
 # Skills (not needed on Vercel)
 skills/
 
