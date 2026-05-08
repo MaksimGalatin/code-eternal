@@ -1,0 +1,12 @@
+# CODE Eternal — Security Policy
+Contact: contact@codeofdigitaleternity.com
+Preferred-Languages: en, ru, es, zh
+Canonical: https://www.codeofdigitaleternity.com/.well-known/security.txt
+
+# Security Acknowledgments
+We appreciate security researchers helping us keep CODE Eternal secure.
+
+# Disclosure Policy
+- Please report vulnerabilities privately to the contact above
+- We will acknowledge receipt within 48 hours
+- We aim to resolve critical issues within 72 hours
