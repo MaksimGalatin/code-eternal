@@ -48,8 +48,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 80px 20px 60px;
+      padding: 60px 20px 40px;
       text-align: center;
       max-width: 720px;
       width: 100%;
@@ -65,7 +64,7 @@
       align-items: center;
       justify-content: center;
       font-size: 38px;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       position: relative;
     }
 
@@ -78,17 +77,23 @@
     }
 
     .name {
-      font-size: clamp(28px, 5vw, 48px);
+      font-size: clamp(28px, 5vw, 44px);
       font-weight: 700;
       color: #E8E8F0;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       letter-spacing: -0.02em;
+    }
+
+    .username {
+      color: {{tierColor}};
+      font-size: 15px;
+      margin-bottom: 6px;
     }
 
     .tagline {
       color: #8B8B9E;
-      font-size: 16px;
-      margin-bottom: 48px;
+      font-size: 14px;
+      margin-bottom: 36px;
     }
 
     .scroll {
@@ -96,8 +101,9 @@
       background: #13131C;
       border: 1px solid #1e1e30;
       border-radius: 16px;
-      padding: 36px;
+      padding: 28px 32px;
       text-align: left;
+      margin-bottom: 16px;
     }
 
     .scroll-title {
@@ -106,14 +112,47 @@
       text-transform: uppercase;
       letter-spacing: 0.15em;
       color: {{tierColor}};
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
 
     .scroll-body {
       color: #8B8B9E;
       line-height: 1.8;
       font-size: 15px;
+      white-space: pre-wrap;
     }
+
+    .manifesto-text {
+      color: #A0A0B4;
+      font-size: 16px;
+      font-style: italic;
+      line-height: 1.7;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .social-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: {{tierColor}}18;
+      color: {{tierColor}};
+      border: 1px solid {{tierColor}}44;
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .social-btn:hover { background: {{tierColor}}30; }
 
     .proof {
       width: 100%;
@@ -188,8 +227,27 @@
     <div class="sigil">&#9670;</div>
 
     <h1 class="name">{{name}}</h1>
+    {{#if username}}
+    <div class="username">@{{username}}</div>
+    {{/if}}
     <p class="tagline">Eternal digital identity · Solana + Arweave</p>
 
+    {{#if bio}}
+    <div class="scroll">
+      <div class="scroll-title">About</div>
+      <div class="scroll-body">{{bio}}</div>
+    </div>
+    {{/if}}
+
+    {{#if manifesto}}
+    <div class="scroll">
+      <div class="scroll-title">Manifesto</div>
+      <div class="manifesto-text">"{{manifesto}}"</div>
+    </div>
+    {{/if}}
+
+    {{#unless bio}}
+    {{#unless manifesto}}
     <div class="scroll">
       <div class="scroll-title">Memory Scroll</div>
       <div class="scroll-body">
@@ -200,6 +258,16 @@
         for eternity — a message to the future, a proof of presence in this moment.
       </div>
     </div>
+    {{/unless}}
+    {{/unless}}
+
+    {{#if hasSocial}}
+    <div class="social-links">
+      {{#if telegram}}<a href="https://t.me/{{telegram}}" class="social-btn">📱 @{{telegram}}</a>{{/if}}
+      {{#if twitter}}<a href="https://x.com/{{twitter}}" class="social-btn">𝕏 @{{twitter}}</a>{{/if}}
+      {{#if website}}<a href="{{website}}" class="social-btn">🌐 Website</a>{{/if}}
+    </div>
+    {{/if}}
   </main>
 
   <section class="proof">

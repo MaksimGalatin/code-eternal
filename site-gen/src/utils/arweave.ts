@@ -18,6 +18,12 @@ export async function generateAndDeploy(job: {
   txSignature: string;
   timestamp: number;
   displayName?: string;
+  username?: string;
+  bio?: string;
+  manifesto?: string;
+  telegram?: string;
+  twitter?: string;
+  website?: string;
 }): Promise<string> {
   const templateSource = fs.readFileSync(TEMPLATE_PATH, "utf-8");
   const template = Handlebars.compile(templateSource);
@@ -27,6 +33,7 @@ export async function generateAndDeploy(job: {
 
   const html = template({
     name: job.displayName || walletShort,
+    username: job.username || null,
     wallet: job.wallet,
     walletShort,
     tier: tierMeta.name,
@@ -38,6 +45,12 @@ export async function generateAndDeploy(job: {
       day: "numeric",
     }),
     year: new Date().getFullYear(),
+    bio: job.bio || null,
+    manifesto: job.manifesto || null,
+    telegram: job.telegram || null,
+    twitter: job.twitter || null,
+    website: job.website || null,
+    hasSocial: !!(job.telegram || job.twitter || job.website),
   });
 
   // 2. Upload to Arweave via Irys

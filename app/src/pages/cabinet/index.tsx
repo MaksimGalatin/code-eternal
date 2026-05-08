@@ -111,7 +111,8 @@ export default function CabinetPage() {
   const [siteTelegram,    setSiteTelegram]    = useState("");
   const [siteTwitter,     setSiteTwitter]     = useState("");
   const [siteWebUrl,      setSiteWebUrl]      = useState("");
-  const [siteSubmitted,   setSiteSubmitted]   = useState(false);
+  const [siteCreating,    setSiteCreating]    = useState(false);
+  const [siteError,       setSiteError]       = useState("");
   const [metricsData,     setMetricsData]     = useState<MetricsData|null>(null);
   // AIfa chat
   const [alfaMsgs,        setAlfaMsgs]        = useState(INIT_ALFA_MSGS);
@@ -230,6 +231,39 @@ export default function CabinetPage() {
       if (p.id !== id || p.status !== "active") return p;
       return { ...p, votesFor: type==="for" ? p.votesFor+1 : p.votesFor, votesAgainst: type==="against" ? p.votesAgainst+1 : p.votesAgainst };
     }));
+  }
+
+  async function handleCreateSite() {
+    if (!wallet || siteCreating || !siteUsername || !siteDisplayName) return;
+    setSiteCreating(true);
+    setSiteError("");
+    try {
+      const r = await fetch("/api/site/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: wallet.address,
+          displayName: siteDisplayName,
+          username: siteUsername,
+          bio: siteBio || undefined,
+          manifesto: siteManifesto || undefined,
+          telegram: siteTelegram || undefined,
+          twitter: siteTwitter || undefined,
+          website: siteWebUrl || undefined,
+        }),
+      });
+      if (!r.ok) {
+        const err = await r.json();
+        setSiteError(err.error || "Failed to create site");
+        return;
+      }
+      setSiteStatus({ status: "pending", tier: currentTier });
+      setActiveTab("cabinet");
+    } catch (e: any) {
+      setSiteError(e.message || "Network error");
+    } finally {
+      setSiteCreating(false);
+    }
   }
 
   const email = user?.email?.address ?? user?.google?.email ?? "";
@@ -897,12 +931,6 @@ export default function CabinetPage() {
                     Choose a Tier →
                   </button>
                 </div>
-              ) : siteSubmitted ? (
-                <div className="glass-panel" style={{ padding: "48px", textAlign: "center" }}>
-                  <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
-                  <div style={{ fontSize: "18px", fontWeight: 700, color: "#10B981", marginBottom: "8px" }}>Site content saved!</div>
-                  <div style={{ fontSize: "13px", color: "rgb(107,114,128)" }}>Your eternal site will be updated on Arweave</div>
-                </div>
               ) : (
                 <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
                   {/* Form */}
@@ -985,14 +1013,17 @@ export default function CabinetPage() {
                     </div>
 
                     <button
-                      disabled={!siteUsername || !siteDisplayName}
-                      onClick={() => setSiteSubmitted(true)}
-                      style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: siteUsername && siteDisplayName ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: siteUsername && siteDisplayName ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: "white", transition: "opacity 0.15s" }}
+                      disabled={!siteUsername || !siteDisplayName || siteCreating || currentTier === 0}
+                      onClick={handleCreateSite}
+                      style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: "white", transition: "all 0.15s", opacity: siteCreating ? 0.7 : 1 }}
                     >
-                      🌐 Create Eternal Site
+                      {siteCreating ? "⏳ Generating..." : "🌐 Create Eternal Site"}
                     </button>
+                    {siteError && (
+                      <div style={{ marginTop: "8px", fontSize: "12px", color: "#ef4444", textAlign: "center" }}>{siteError}</div>
+                    )}
                     <div style={{ marginTop: "10px", fontSize: "11px", color: "rgb(107,114,128)", textAlign: "center" }}>
-                      Your site will be permanently saved on Arweave — it cannot be deleted or changed
+                      {currentTier === 0 ? "Purchase a tier to activate site creation" : "Your site will be permanently saved on Arweave — it cannot be deleted or changed"}
                     </div>
                   </div>
 
