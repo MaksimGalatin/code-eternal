@@ -122,11 +122,22 @@ Listener:
 
 site-gen (Docker, /jobs endpoint):
   → compile HTML from template using user data (Handlebars, site-gen/src/templates/site.html)
+    Supports optional fields: username, bio, manifesto, telegram, twitter, website
   → upload to Arweave via Irys SDK (free <100KB, base58 IRYS_PRIVATE_KEY, node: devnet.irys.xyz)
   → call update_site_url() on-chain with backend keypair (sets arweave_url + site_status=1 in UserState)
   → update site_generation_jobs.status="done" + arweave_url in Neon DB
   → (post-hackathon: create Cloudflare CNAME subdomain for username.codeofdigitaleternity.com)
 User sees: Arweave URL shown in cabinet site status panel
+
+UI-triggered site regeneration (from Site tab):
+  User fills form (username, bio, manifesto, social links) → clicks "Create Eternal Site"
+  → POST /api/site/create (Next.js API)
+    → checks tier > 0 in DB (403 if no subscription)
+    → updates users.display_name
+    → inserts new site_generation_jobs row with synthetic tx_signature (ui-regen-{wallet}-{ts})
+    → fire-and-forget POST to site-gen:3002/jobs with all custom fields
+  → cabinet navigates to Cabinet tab showing pending status
+  → site-gen generates and deploys exactly like payment-triggered flow
 ```
 
 ### Think-to-Earn
@@ -338,6 +349,9 @@ Backend + Payment (Pipeline 3.x — Days 4-7)
 
 Site + NFT (Pipeline 4.x — Days 8-11)
   ✅ Pipeline 4.1: auto site-gen on payment (Arweave + on-chain URL + cabinet status panel; Cloudflare subdomain post-hackathon)
+  ✅ Pipeline 4.x: full cabinet redesign — 7 tabs live (Cabinet, AIfa Terminal, Games, DAO, Site, Smart Contract, Metrics)
+  ✅ Pipeline 4.x: AIfa chat — real Grok API (grok-beta), CODE ETERNAL system prompt, conversation history
+  ✅ Pipeline 4.x: Site tab — user fills username/bio/manifesto/social → POST /api/site/create → real Arweave site (button gated on tier > 0)
   □  Pipeline 4.2: cNFT Guardian Passport mint (Metaplex Bubblegum)
 
 Widgets + Bots (Pipeline 5.x — Days 12-13)
@@ -526,6 +540,8 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Next.js (app) | `MOCK_USDC_MINT` | Same as above, server-side only (for airdrop endpoint) |
 | Next.js (app) | `MOCK_USDC_MINT_AUTHORITY` | Base64 keypair that has mint authority over mock USDC (for devnet airdrop) |
 | Next.js (app) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
+| Next.js (app) | `GROK_API_KEY` | xAI Grok API key — used by `/api/chat.ts` for AIfa chat (falls back to placeholder if absent) |
+| Next.js (app) | `SITE_GEN_URL` | `http://site-gen:3002` — used by `/api/site/create.ts` to dispatch job (same as listener's var) |
 | All | `NODE_ENV` | `production` |
 
 ---
@@ -568,6 +584,9 @@ app/src/
 │       ├── users/site-status.ts       # GET — site job status + arweave URL from DB ✅
 │       ├── referrals/chain.ts         # GET — return ref1/ref2/ref3 wallets ✅
 │       ├── devnet/airdrop-usdc.ts     # POST — mint 1100 test USDC to wallet ✅
+│       ├── site/create.ts             # POST — UI-triggered site gen (checks tier, dispatches to site-gen) ✅
+│       ├── chat.ts                    # POST — Grok API proxy for AIfa chat ✅
+│       ├── stats/metrics.ts           # GET — burn count, tx count, wallets, treasury, history ✅
 │       ├── referrals/income.ts        # GET — earnings + payment history (Pipeline 5.1) □
 │       ├── stats/burned.ts            # GET — total burn_events sum (Pipeline 5.2) □
 │       ├── applications/1000.ts       # POST — save + email architect (Pipeline 5.3) □
@@ -680,7 +699,11 @@ site-gen/
 
 ### Handlebars Template Variables
 
-`site.html` uses: `{{name}}`, `{{wallet}}`, `{{tier}}`, `{{tierColor}}`, `{{txSignature}}`, `{{registeredAt}}`, `{{year}}`
+`site.html` uses:
+- Required: `{{name}}`, `{{wallet}}`, `{{walletShort}}`, `{{tier}}`, `{{tierColor}}`, `{{txSignature}}`, `{{registeredAt}}`, `{{year}}`
+- Optional (UI-provided): `{{username}}`, `{{bio}}`, `{{manifesto}}`, `{{telegram}}`, `{{twitter}}`, `{{website}}`, `{{hasSocial}}`
+- If `bio` and `manifesto` are both absent, a default "Memory Scroll" paragraph is shown.
+- `hasSocial` is computed in `arweave.ts` as `!!(telegram || twitter || website)`.
 
 Tier colors:
 - Tier 1 (Spark): `#7C3AED`
@@ -695,6 +718,50 @@ Tier colors:
   userState: userStatePda,
   userWallet: userWallet,                       // matches user_wallet in Rust
 })
+```
+
+---
+
+## Cabinet — Tab Architecture
+
+`/cabinet` (index.tsx) renders 7 tabs in a single-page component. All tabs are unlocked.
+
+| Tab | ID | Content |
+|-----|-----|---------|
+| Cabinet | `cabinet` | Tier cards, site status panel, referral link, income widget, top contributors, recent txns |
+| AIfa Terminal | `alfa` | Chat UI backed by `/api/chat` (Grok API, model `grok-beta`, CODE ETERNAL system prompt) |
+| Games | `games` | Chess board (8×8, Unicode pieces, white vs "AI" — AI just re-enables white turn after 1s), move history |
+| DAO | `dao` | 3 hardcoded governance proposals, For/Against voting in local state, stats row |
+| Site | `site` | Form (username, display name, bio, manifesto, avatar placeholder, social links) + live preview panel. POST `/api/site/create` on submit. Button disabled when tier=0 or creating. |
+| Smart Contract | `contract` | Distribution visualization (5/15/7/3/5/65), PDA architecture table, real Program ID |
+| Metrics | `metrics` | 6 stat cards (burn, txns, wallets, treasury, avg fee, slot), SVG burn sparkline, SVG payment donut, event feed |
+
+**Key state for Site tab:**
+- `siteCreating` — disables button + shows "⏳ Generating..."
+- `siteError` — shows red error message below button
+- On success: `setSiteStatus({ status:"pending", tier })` then `setActiveTab("cabinet")`
+
+---
+
+## Docker Build Commands (from WSL — docker is not in PATH in Bash tool)
+
+Use `wsl -e bash -c "..."` from the Bash tool to run docker:
+
+```bash
+# App
+wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
+  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=cmoofvdt4008o0cjps5l8nvnu \
+  --build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5 \
+  --build-arg NEXT_PUBLIC_PROGRAM_ID=8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
+  --build-arg 'NEXT_PUBLIC_RPC_URL=<value>' \
+  -t maxshchuplov/code-eternal-app:latest --push ./app"
+
+# Site-gen
+wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
+  -t maxshchuplov/code-eternal-site-gen:latest --push ./site-gen"
+
+# Deploy on VM
+wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull app site-gen && docker compose -f docker/docker-compose.yml up -d app site-gen'"
 ```
 
 ---
