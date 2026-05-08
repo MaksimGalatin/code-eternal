@@ -735,6 +735,22 @@ Tier colors:
 - `app/src/pages/api/devnet/airdrop-usdc.ts` — SOL airdrop reduced from 0.1 to 0.005 (10 000x more than needed per tx); threshold check lowered from 0.05 to 0.005 SOL
 - `app/src/pages/cabinet/buy.tsx` — SOL check threshold lowered to match airdrop amount (0.005); added step progress bar (Funding wallet → Registering → Payment); fixed "loading" button state text
 
+## Buy Flow — Expected UX Behavior
+
+**New user buying any tier (first purchase):**
+- Progress bar shows 3 steps: **Funding wallet → Registering → Payment**
+- **Two Privy confirmation dialogs appear** — this is correct, not a bug:
+  1. `register_user` — creates UserState PDA on Solana (no USDC, tiny SOL fee)
+  2. `process_payment` — actual USDC payment ($15/$100/$1000)
+- Total USDC charged: once only (process_payment)
+
+**Returning user upgrading tier:**
+- Only **one Privy dialog** (process_payment), registration already done
+
+**Expected noise in listener logs (not bugs):**
+- `Could not determine tier for 96JwAJL2...` — listener fires on `update_site_url` txs from site-gen (same program ID), tries to process as payment, fails silently. No impact.
+- `duplicate key value violates unique constraint "site_generation_jobs_tx_signature_key"` — Helius retries webhooks 3-5x per transaction. Deduplication on tx_signature works correctly, only first insert succeeds.
+
 ## Admin / Ops Scripts (scripts/)
 
 - `scripts/reset-user.js <wallet>` — resets users.tier=0 + deletes site_generation_jobs for wallet (DB only, on-chain not touched)

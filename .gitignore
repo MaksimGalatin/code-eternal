@@ -25,3 +25,6 @@ target
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .vercel
+
+# Reference workspace (temporary, not part of project)
+workspace-fdd78127-560d-44c2-99d0-3c5dd7b4fc58/
