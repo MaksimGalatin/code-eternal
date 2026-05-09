@@ -61,16 +61,19 @@ app.post("/webhook/helius", async (req, res) => {
 async function processEvent(event: any) {
   const { signature } = event;
 
-  // Helius enhanced transactions: check if any instruction targets our program.
-  // For WebSocket events, the programId is at the top level.
+  // Only process process_payment transactions — they always have USDC token transfers.
+  // register_user and update_site_url have no token transfers, so we skip them.
   const programIdStr = PROGRAM_ID.toString();
   const hasOurProgram =
     event.instructions?.some((ix: any) => ix.programId === programIdStr) ||
     event.programId === programIdStr;
+  const hasTokenTransfers = Array.isArray(event.tokenTransfers) && event.tokenTransfers.length > 0;
 
-  if (hasOurProgram) {
+  if (hasOurProgram && hasTokenTransfers) {
     logger.info(`Our program instruction detected: ${signature}`);
     await handlePaymentProcessed(event);
+  } else if (hasOurProgram) {
+    logger.info(`Skipping non-payment tx (no token transfers): ${signature}`);
   }
 }
 
