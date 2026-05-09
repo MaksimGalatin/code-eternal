@@ -1058,7 +1058,7 @@ export default function CabinetPage() {
                         <span style={{ fontSize: "11px", color: "rgb(107,114,128)", marginLeft: "6px" }}>{siteUsername || "username"}.aifa.digital</span>
                       </div>
                       {/* Preview content */}
-                      <div style={{ padding: "24px", minHeight: "300px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                      <div style={{ padding: "24px", minHeight: "300px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden", wordBreak: "break-word" }}>
                         {/* Avatar */}
                         <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "linear-gradient(135deg,#7C3AED,#06B6D4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "14px" }}>
                           {tierObj?.icon ?? "👤"}
