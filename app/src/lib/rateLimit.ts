@@ -13,8 +13,8 @@ export function rateLimit(ip: string, max: number, windowMs: number): boolean {
   return true;
 }
 
-export function getIp(req: { headers: Record<string, string | string[] | undefined>; socket?: { remoteAddress?: string } }): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) return (Array.isArray(forwarded) ? forwarded[0] : forwarded).split(",")[0].trim();
-  return req.socket?.remoteAddress ?? "unknown";
+export function getIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return "unknown";
 }

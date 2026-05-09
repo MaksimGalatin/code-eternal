@@ -24,7 +24,39 @@
       "Bash(git stash *)",
       "Bash(grep -v \"^commit\\\\|^Author\\\\|^Date\\\\|^$\\\\|^    \")",
       "Bash(git ls-tree *)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(ssh -o ConnectTimeout=10 root@128.140.0.118 'echo \"SSH OK\"')",
+      "Bash(vercel --version)",
+      "Bash(npm list *)",
+      "PowerShell(npm install -g vercel 2>&1)",
+      "PowerShell(tail -5)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "PowerShell(*)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Bash(git cherry-pick *)",
+      "PowerShell(claude mcp list 2>&1)",
+      "Read(//c/Users/Maksim/AppData/**)",
+      "Read(//mnt/c/Users/Maksim/projects/code-eternal/secrets/**)",
+      "Read(//c/Users/Maksim/**)",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\web\\\\public\\\\images\\\\code-logo.png\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\public\\\\logo.png\" -Force)",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\public\" -Force)",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\web\\\\public\\\\images\\\\code-logo.png\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\public\\\\logo.png\")",
+      "Bash(Get-ChildItem -Recurse -Force -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(xargs cat)",
+      "PowerShell(gh secret set DEPLOY_KEYPAIR --body \\(Get-Content \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\secrets\\\\upgrade-authority-keypair.json\" -Raw\\) --repo MaksimShchuplov/code-eternal 2>&1)",
+      "Bash(dpkg --print-architecture)",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\contract\" -Force)",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\Anchor.toml\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\contract\\\\Anchor.toml\")",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\Cargo.toml\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\contract\\\\Cargo.toml\")",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\Cargo.lock\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\contract\\\\Cargo.lock\")",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\programs\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\contract\\\\programs\")",
+      "PowerShell(Move-Item \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\app\\\\tests\" \"c:\\\\Users\\\\Maksim\\\\projects\\\\code-eternal\\\\contract\\\\tests\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Maksim"
     ]
   }
 }
