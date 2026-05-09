@@ -228,31 +228,37 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
   // Send confirmation email (non-fatal)
   await sendConfirmationEmail(payerWallet, tier, signature, totalUsdc);
 
-  // Dispatch to site-gen
+  // Dispatch to site-gen with exponential-backoff retry
   const siteGenUrl = process.env.SITE_GEN_URL || "http://site-gen:3002";
   const siteGenSecret = process.env.SITE_GEN_SECRET;
-  try {
-    const res = await fetch(`${siteGenUrl}/jobs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(siteGenSecret ? { "Authorization": `Bearer ${siteGenSecret}` } : {}),
-      },
-      body: JSON.stringify({
-        jobId,
-        wallet: payerWallet,
-        tier,
-        txSignature: signature,
-        burnAmount,
-        timestamp: Math.floor(Date.now() / 1000),
-      }),
-    });
-    if (!res.ok) {
-      logger.error(`site-gen rejected job ${jobId}: ${res.status} ${await res.text()}`);
-    } else {
-      logger.info(`Job ${jobId} dispatched to site-gen`);
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (siteGenSecret) headers["Authorization"] = `Bearer ${siteGenSecret}`;
+  const payload = JSON.stringify({ jobId, wallet: payerWallet, tier, txSignature: signature, burnAmount, timestamp: Math.floor(Date.now() / 1000) });
+
+  const MAX_ATTEMPTS = 4;
+  const DELAYS_MS = [0, 2000, 4000, 8000];
+  let dispatched = false;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    if (DELAYS_MS[attempt] > 0) await new Promise(r => setTimeout(r, DELAYS_MS[attempt]));
+    try {
+      const res = await fetch(`${siteGenUrl}/jobs`, { method: "POST", headers, body: payload });
+      if (res.ok) {
+        logger.info(`Job ${jobId} dispatched to site-gen (attempt ${attempt + 1})`);
+        dispatched = true;
+        break;
+      }
+      logger.warn(`site-gen rejected job ${jobId} (attempt ${attempt + 1}): HTTP ${res.status}`);
+    } catch (err) {
+      logger.warn(`site-gen unreachable for job ${jobId} (attempt ${attempt + 1}):`, err);
     }
-  } catch (err) {
-    logger.error(`Failed to reach site-gen for job ${jobId}:`, err);
+  }
+
+  if (!dispatched) {
+    logger.error(`All ${MAX_ATTEMPTS} dispatch attempts failed for job ${jobId} — marking as error`);
+    await db.query(
+      "UPDATE site_generation_jobs SET status='error', error_message=$1 WHERE id=$2",
+      ["site-gen unreachable after all retry attempts", jobId]
+    );
   }
 }

@@ -31,4 +31,7 @@ pub enum CodeEternalError {
 
     #[msg("Referral token account mint does not match payment mint")]
     InvalidReferralMint,
+
+    #[msg("Site URL was updated too recently — wait before updating again")]
+    UpdateCooldown,
 }

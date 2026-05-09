@@ -93,29 +93,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
     const jobId = insertResult.rows[0].id;
 
-    // Dispatch to site-gen (fire-and-forget — site-gen acks immediately)
-    fetch(`${SITE_GEN_URL}/jobs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(SITE_GEN_SECRET ? { "Authorization": `Bearer ${SITE_GEN_SECRET}` } : {}),
-      },
-      body: JSON.stringify({
-        jobId,
-        wallet,
-        tier,
-        txSignature: originalTxSig,
-        timestamp: Math.floor(registeredAt.getTime() / 1000),
-        displayName: displayName || undefined,
-        username: username || undefined,
-        bio: bio || undefined,
-        manifesto: manifesto || undefined,
-        telegram: telegram || undefined,
-        twitter: twitter || undefined,
-        website: website || undefined,
-        avatarDataUrl: avatarDataUrl || undefined,
-      }),
-    }).catch(err => console.error("site-gen dispatch error:", err));
+    // Dispatch to site-gen with retry (background — response already sent)
+    const siteGenHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    if (SITE_GEN_SECRET) siteGenHeaders["Authorization"] = `Bearer ${SITE_GEN_SECRET}`;
+    const siteGenPayload = JSON.stringify({
+      jobId, wallet, tier,
+      txSignature: originalTxSig,
+      timestamp: Math.floor(registeredAt.getTime() / 1000),
+      displayName: displayName || undefined,
+      username: username || undefined,
+      bio: bio || undefined,
+      manifesto: manifesto || undefined,
+      telegram: telegram || undefined,
+      twitter: twitter || undefined,
+      website: website || undefined,
+      avatarDataUrl: avatarDataUrl || undefined,
+    });
+    (async () => {
+      const MAX = 3;
+      for (let i = 0; i < MAX; i++) {
+        if (i > 0) await new Promise(r => setTimeout(r, i * 2000));
+        try {
+          const r = await fetch(`${SITE_GEN_URL}/jobs`, { method: "POST", headers: siteGenHeaders, body: siteGenPayload });
+          if (r.ok) { console.log(`site-gen dispatch ok (attempt ${i + 1})`); return; }
+          console.error(`site-gen dispatch attempt ${i + 1} failed: HTTP ${r.status}`);
+        } catch (err) {
+          console.error(`site-gen dispatch attempt ${i + 1} error:`, err);
+        }
+      }
+      // All attempts failed — mark job as error so UI shows it
+      const pool = (await import("@/lib/db")).db;
+      await pool.query("UPDATE site_generation_jobs SET status='error', error_message=$1 WHERE id=$2",
+        ["site-gen unreachable", jobId]);
+    })().catch(err => console.error("site-gen dispatch fatal:", err));
 
     res.json({ jobId });
   } catch (err) {

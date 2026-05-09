@@ -2,6 +2,9 @@ use anchor_lang::prelude::*;
 use crate::state::{UserState, SITE_STATUS_READY, SITE_STATUS_ERROR};
 use crate::errors::CodeEternalError;
 
+/// Minimum seconds between site URL updates per user
+pub const UPDATE_COOLDOWN_SECS: i64 = 60;
+
 #[derive(Accounts)]
 pub struct UpdateSiteUrl<'info> {
     /// Authorized backend — public key is hardcoded
@@ -37,11 +40,20 @@ pub fn handler(
         CodeEternalError::UrlTooLong // TODO: rename to InvalidSiteStatus post-hackathon
     );
 
+    let clock = Clock::get()?;
     let user_state = &mut ctx.accounts.user_state;
+
+    // Rate-limit: reject if last update was less than UPDATE_COOLDOWN_SECS ago
+    require!(
+        user_state.last_site_update == 0
+            || clock.unix_timestamp - user_state.last_site_update >= UPDATE_COOLDOWN_SECS,
+        CodeEternalError::UpdateCooldown
+    );
+
     user_state.arweave_url = arweave_url;
     user_state.site_status = site_status;
+    user_state.last_site_update = clock.unix_timestamp;
 
-    let clock = Clock::get()?;
     emit!(SiteUrlUpdated {
         wallet: user_state.owner,
         arweave_url,

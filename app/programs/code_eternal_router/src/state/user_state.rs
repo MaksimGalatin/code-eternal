@@ -30,6 +30,9 @@ pub struct UserState {
     /// Site status: 0=pending, 1=ready, 2=error
     pub site_status: u8,
 
+    /// Unix timestamp of the last site URL update (for cooldown enforcement)
+    pub last_site_update: i64,
+
     /// PDA bump seed
     pub bump: u8,
 }

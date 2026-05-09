@@ -40,6 +40,7 @@ pub fn handler(
     user_state.memory_score = 0;
     user_state.arweave_url = [0u8; 64];
     user_state.site_status = 0; // pending
+    user_state.last_site_update = 0; // never updated
     user_state.bump = ctx.bumps.user_state;
 
     emit!(UserRegistered {
