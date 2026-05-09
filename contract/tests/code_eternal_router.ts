@@ -274,6 +274,61 @@ describe("code_eternal_router", () => {
     const r2Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, ref2.publicKey);
     const r3Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, ref3.publicKey);
 
+    // ref1 and ref2 must have active subscriptions (tier_expires > now) so their referral
+    // shares are paid out rather than redirected to vault. Pay ref2 first (its referrer ref3
+    // will be inactive, ref3's cut goes to vault), then ref1 (ref2 is now active).
+    await mintTo(conn, wallet.payer, usdcMint, r2Ata.address, wallet.publicKey, 20_000_000);
+    await mintTo(conn, wallet.payer, usdcMint, r1Ata.address, wallet.publicKey, 20_000_000);
+
+    // ref2 buys tier 1 — referrer = ref3 (inactive, ref3's cut goes to vault)
+    await program.methods
+      .processPayment(TIER_1, 1, ref3.publicKey, null, null)
+      .accounts({
+        payer:                      ref2.publicKey,
+        userState:                  ref2Pda,
+        payerTokenAccount:          r2Ata.address,
+        vault:                      vaultPda,
+        vaultTokenAccount:          vaultTokenAccount,
+        ecosystemFundTokenAccount:  ecosystemFundTokenAccount,
+        ref1TokenAccount:           r3Ata.address,
+        ref2TokenAccount:           payer2Ata.address,
+        ref3TokenAccount:           payer2Ata.address,
+        paymentMint:                usdcMint,
+        tokenProgram:               TOKEN_PROGRAM_ID,
+        associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram:              SystemProgram.programId,
+      })
+      .remainingAccounts([
+        { pubkey: ref3Pda, isWritable: false, isSigner: false },
+      ])
+      .signers([ref2])
+      .rpc();
+
+    // ref1 buys tier 1 — referrer = ref2 (now active above), L2 = ref3 (inactive → vault)
+    await program.methods
+      .processPayment(TIER_1, 1, ref2.publicKey, ref3.publicKey, null)
+      .accounts({
+        payer:                      ref1.publicKey,
+        userState:                  ref1Pda,
+        payerTokenAccount:          r1Ata.address,
+        vault:                      vaultPda,
+        vaultTokenAccount:          vaultTokenAccount,
+        ecosystemFundTokenAccount:  ecosystemFundTokenAccount,
+        ref1TokenAccount:           r2Ata.address,
+        ref2TokenAccount:           r3Ata.address,
+        ref3TokenAccount:           payer2Ata.address,
+        paymentMint:                usdcMint,
+        tokenProgram:               TOKEN_PROGRAM_ID,
+        associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram:              SystemProgram.programId,
+      })
+      .remainingAccounts([
+        { pubkey: ref2Pda, isWritable: false, isSigner: false },
+        { pubkey: ref3Pda, isWritable: false, isSigner: false },
+      ])
+      .signers([ref1])
+      .rpc();
+
     const r1Before    = (await getAccount(conn, r1Ata.address)).amount;
     const r2Before    = (await getAccount(conn, r2Ata.address)).amount;
     const r3Before    = (await getAccount(conn, r3Ata.address)).amount;
