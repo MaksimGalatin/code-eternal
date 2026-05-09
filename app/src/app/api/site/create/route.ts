@@ -16,16 +16,6 @@ const TELEGRAM_RE = /^[A-Za-z0-9_]{5,32}$/;
 const WEBSITE_RE = /^https:\/\/[^\s]{1,200}$/;
 
 export async function POST(req: Request) {
-  // Rate limit: 20 site creates per 10 minutes per IP
-  const retryAfter = rateLimit(getIp(req), 20, 10 * 60 * 1000);
-  if (retryAfter !== null) {
-    const mins = Math.ceil(retryAfter / 60);
-    return NextResponse.json(
-      { error: `Too many requests. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` },
-      { status: 429, headers: { "Retry-After": String(retryAfter) } }
-    );
-  }
-
   // Verify Privy auth token — ensures caller owns the wallet they claim
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -111,6 +101,16 @@ export async function POST(req: Request) {
     );
     const originalTxSig = jobRow.rows[0]?.tx_signature ?? "unknown";
     const regenTxSig = `ui-regen-${wallet.slice(0, 8)}-${Date.now()}`;
+
+    // Rate limit only counts actual dispatches — not validation failures or auth errors
+    const retryAfter = rateLimit(getIp(req), 20, 10 * 60 * 1000);
+    if (retryAfter !== null) {
+      const mins = Math.ceil(retryAfter / 60);
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
 
     const insertResult = await client.query(
       `INSERT INTO site_generation_jobs (wallet, tier, tx_signature, status, created_at)
