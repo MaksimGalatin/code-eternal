@@ -9,6 +9,7 @@ export async function GET() {
     const { rows } = await db.query(
       `SELECT wallet, tier, tx_signature, status, created_at
        FROM site_generation_jobs
+       WHERE tx_signature NOT LIKE 'ui-regen-%'
        ORDER BY created_at DESC
        LIMIT 10`
     );
