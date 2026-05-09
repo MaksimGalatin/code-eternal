@@ -49,6 +49,8 @@ jobs:
 
       - name: Start local validator and run tests
         working-directory: contract
+        env:
+          BACKEND_PRIVATE_KEY: ${{ secrets.BACKEND_PRIVATE_KEY }}
         run: |
           solana-test-validator --reset --quiet &
           VALIDATOR_PID=$!

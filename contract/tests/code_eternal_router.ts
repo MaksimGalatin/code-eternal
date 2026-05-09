@@ -32,6 +32,9 @@ const REF3_AMT  = BigInt(450_000);    // 3%
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function loadBackendKeypair(): Keypair {
+  if (process.env.BACKEND_PRIVATE_KEY) {
+    return Keypair.fromSecretKey(Buffer.from(process.env.BACKEND_PRIVATE_KEY, "base64"));
+  }
   const env = fs.readFileSync(
     path.join(__dirname, "../../secrets/credentials.env"),
     "utf8"
