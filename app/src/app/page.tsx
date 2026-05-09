@@ -9,6 +9,12 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Save referral code before any redirect so it survives login flow
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) localStorage.setItem("ref_code", ref);
+  }, []);
+
+  useEffect(() => {
     if (ready && authenticated) {
       router.push("/cabinet");
     }

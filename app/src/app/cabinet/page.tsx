@@ -153,7 +153,10 @@ export default function CabinetPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet: wallet.address, email: user.email?.address ?? user.google?.email ?? null, refCode }),
-    }).then(r => r.json()).then(({ refCode: c }) => { if (c) setMyRefCode(c); }).catch(() => {});
+    }).then(r => r.json()).then(({ refCode: c }) => {
+      if (c) setMyRefCode(c);
+      localStorage.removeItem("ref_code"); // clear after registration so it doesn't persist
+    }).catch(() => {});
 
     fetch(`/api/users/site-status?wallet=${wallet.address}`)
       .then(r => r.json()).then(setSiteStatus).catch(() => {});
