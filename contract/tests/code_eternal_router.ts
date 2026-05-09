@@ -234,7 +234,7 @@ describe("code_eternal_router", () => {
 
     const state = await fetchUserState(conn, payerStatePda);
     expect(state.tier).to.equal(1);
-    expect(state.tierExpires).to.be.greaterThan(0n); // should be ~now + 30 days
+    expect(state.tierExpires > 0n).to.be.true; // should be ~now + 30 days
   });
 
   it("process_payment Tier1, 3 referrals: vault=65%, ref1=15%, ref2=7%, ref3=3%, burn=5%", async () => {
