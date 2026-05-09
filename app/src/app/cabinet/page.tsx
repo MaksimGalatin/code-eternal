@@ -1504,42 +1504,55 @@ export default function CabinetPage() {
               </div>
 
               {/* Account architecture */}
+              <div className="glass-panel" style={{ padding: "24px", marginBottom: "20px" }}>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "rgb(232,232,240)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  🏗️ UserState PDA
+                </div>
+                <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "14px", fontFamily: "monospace" }}>
+                  Seeds: [&quot;user&quot;, wallet_pubkey] · 172 bytes · owner: {PROGRAM_ID_STR.slice(0,8)}…
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "8px" }}>
+                  {[
+                    { name:"owner",            val:"Pubkey",            c:"#7C3AED", note:"user wallet" },
+                    { name:"referrer",         val:"Option<Pubkey>",    c:"#06B6D4", note:"who referred" },
+                    { name:"tier",             val:"u8  0|1|2|3",       c:"#10B981", note:"Spark/Archives/DNA" },
+                    { name:"registered_at",    val:"i64  unix ts",      c:"#F59E0B", note:"registration time" },
+                    { name:"tier_expires",     val:"i64  unix ts",      c:"#f472b6", note:"30-day subscription" },
+                    { name:"memory_score",     val:"u64",               c:"#06B6D4", note:"Think-to-Earn pts" },
+                    { name:"arweave_url",      val:"[u8; 64]",          c:"#7C3AED", note:"Arweave TX ID" },
+                    { name:"site_status",      val:"u8  0|1|2",         c:"#10B981", note:"pending/ready/error" },
+                    { name:"last_site_update", val:"i64  unix ts",      c:"#F59E0B", note:"60s cooldown" },
+                    { name:"bump",             val:"u8",                c:"rgb(139,139,158)", note:"PDA bump seed" },
+                  ].map(f => (
+                    <div key={f.name} style={{ background:"rgba(10,10,15,0.5)", border:"1px solid rgba(42,42,58,0.6)", borderRadius:"8px", padding:"10px 12px", display:"flex", flexDirection:"column", gap:"3px" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:"12px", fontFamily:"monospace", color:f.c, fontWeight:700 }}>{f.name}</span>
+                        <span style={{ fontSize:"11px", fontFamily:"monospace", color:"rgb(107,114,128)" }}>{f.val}</span>
+                      </div>
+                      <span style={{ fontSize:"10px", color:"rgba(139,139,158,0.7)" }}>{f.note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Instructions */}
               <div className="glass-panel" style={{ padding: "24px" }}>
                 <div style={{ fontSize: "14px", fontWeight: 700, color: "rgb(232,232,240)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  🏗️ Account Architecture
+                  ⚡ Instructions
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {[
-                    { title:"UserState PDA", color:"#7C3AED", fields:[
-                      { name:'Seeds', val:'["user", wallet_pubkey]', c:"#F59E0B" },
-                      { name:"owner", val:"Pubkey", c:"#7C3AED" },
-                      { name:"referrer", val:"Option<Pubkey>", c:"#06B6D4" },
-                      { name:"tier", val:"u8 (0|1|2|3)", c:"#10B981" },
-                      { name:"registered_at", val:"i64", c:"#F59E0B" },
-                      { name:"memory_score", val:"u64", c:"#06B6D4" },
-                      { name:"arweave_url", val:"[u8; 64]", c:"#7C3AED" },
-                      { name:"site_status", val:"u8 (0|1|2)", c:"#10B981" },
-                      { name:"bump", val:"u8", c:"rgb(139,139,158)" },
-                    ]},
-                    { title:"Vault PDA", color:"#06B6D4", fields:[
-                      { name:'Seeds', val:'["vault"]', c:"#F59E0B" },
-                      { name:"Vault Token Account", val:"ATA (USDC)", c:"#7C3AED" },
-                      { name:"burn_pct", val:"5%", c:"#ef4444" },
-                      { name:"ecosystem_pct", val:"5%", c:"#F59E0B" },
-                      { name:"l1_pct", val:"15%", c:"#7C3AED" },
-                      { name:"l2_pct", val:"7%", c:"#8B5CF6" },
-                      { name:"l3_pct", val:"3%", c:"#06B6D4" },
-                      { name:"treasury_pct", val:"65%", c:"#10B981" },
-                    ]},
-                  ].map(acc => (
-                    <div key={acc.title} style={{ background:"rgba(10,10,15,0.6)", border:"1px solid rgba(42,42,58,0.8)", borderRadius:"12px", padding:"16px" }}>
-                      <div style={{ fontSize:"13px", fontWeight:700, color:acc.color, marginBottom:"12px" }}>⬡ {acc.title}</div>
-                      {acc.fields.map(f => (
-                        <div key={f.name} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"1px solid rgba(42,42,58,0.3)" }}>
-                          <span style={{ fontSize:"11px", color:"rgb(139,139,158)", fontFamily:"monospace" }}>{f.name}</span>
-                          <span style={{ fontSize:"11px", fontFamily:"monospace", color:f.c }}>{f.val}</span>
-                        </div>
-                      ))}
+                    { ix:"register_user",    caller:"User wallet",    color:"#7C3AED", desc:"Creates UserState PDA. Stores referrer. Tier starts at 0 until payment." },
+                    { ix:"process_payment",  caller:"User wallet",    color:"#10B981", desc:"Distributes USDC atomically: 5% burn · 5% ecosystem · 15/7/3% referrals (→ vault if expired, → burn if absent) · 65% treasury. Sets tier_expires = now + 30 days." },
+                    { ix:"update_site_url",  caller:"Backend keypair",color:"#F59E0B", desc:"Writes 43-char Arweave TX ID + site status to UserState. 60s cooldown enforced on-chain. Signer must match hardcoded BACKEND_AUTHORITY." },
+                    { ix:"award_memory",     caller:"Backend keypair",color:"#06B6D4", desc:"Oracle adds memory_score points (Think-to-Earn / Proof-of-Memory). Score is permanent and cumulative." },
+                  ].map(r => (
+                    <div key={r.ix} style={{ background:"rgba(10,10,15,0.5)", border:"1px solid rgba(42,42,58,0.6)", borderRadius:"10px", padding:"14px 16px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"6px", flexWrap:"wrap" }}>
+                        <span style={{ fontSize:"13px", fontFamily:"monospace", fontWeight:700, color:r.color }}>{r.ix}</span>
+                        <span style={{ fontSize:"10px", background:`rgba(42,42,58,0.8)`, color:"rgb(139,139,158)", padding:"2px 8px", borderRadius:"20px" }}>{r.caller}</span>
+                      </div>
+                      <div style={{ fontSize:"12px", color:"rgb(139,139,158)", lineHeight:1.5 }}>{r.desc}</div>
                     </div>
                   ))}
                 </div>
