@@ -105,6 +105,7 @@ export default function CabinetPage() {
   const [recentTxns,   setRecentTxns]   = useState<RecentTxn[]>([]);
   const [nftFlipped,      setNftFlipped]      = useState(false);
   const [siteUsername,    setSiteUsername]    = useState("");
+  const [usernameErr,    setUsernameErr]     = useState("");
   const [siteDisplayName, setSiteDisplayName] = useState("");
   const [siteBio,         setSiteBio]         = useState("");
   const [siteManifesto,   setSiteManifesto]   = useState("");
@@ -953,12 +954,18 @@ export default function CabinetPage() {
                         <span>👤</span> Username <span style={{ color: "#ef4444" }}>*</span>
                       </label>
                       <div style={{ display: "flex", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)", borderRadius: "10px", overflow: "hidden" }}>
-                        <input id="site-username" type="text" value={siteUsername} onChange={e => setSiteUsername(e.target.value.replace(/[^a-z0-9_-]/gi,"").toLowerCase())}
+                        <input id="site-username" type="text" value={siteUsername}
+                          onChange={e => {
+                            const raw = e.target.value;
+                            const filtered = raw.replace(/[^a-z0-9_-]/gi, "").toLowerCase();
+                            setSiteUsername(filtered);
+                            setUsernameErr(filtered.length < raw.length ? "Latin characters only: a–z, 0–9, _ and –" : "");
+                          }}
                           placeholder="yourname"
                           style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
                         <span style={{ flexShrink: 0, padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.aifa.digital</span>
                       </div>
-                      <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "4px" }}>Latin letters, numbers, _ and – only</div>
+                      {usernameErr && <div style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{usernameErr}</div>}
                     </div>
 
                     {/* Display name */}
