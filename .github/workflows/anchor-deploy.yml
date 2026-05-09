@@ -4,10 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'app/programs/**'
-      - 'app/Anchor.toml'
-      - 'app/Cargo.toml'
-      - 'app/Cargo.lock'
+      - 'contract/**'
   workflow_dispatch: # manual trigger from GitHub UI
 
 jobs:
@@ -40,11 +37,11 @@ jobs:
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
       - name: Build smart contract
-        working-directory: app
+        working-directory: contract
         run: cargo-build-sbf 2>&1
 
       - name: Deploy to Devnet
-        working-directory: app
+        working-directory: contract
         env:
           DEPLOY_KEYPAIR: ${{ secrets.DEPLOY_KEYPAIR }}
         run: |
