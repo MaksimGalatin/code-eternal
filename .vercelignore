@@ -1,19 +1,5 @@
-# Smart contract / Rust
-Cargo.toml
-Cargo.lock
-Anchor.toml
-programs/
-
-# Infrastructure
-docker/
-infra/
-listener/
-site-gen/
-tests/
-scripts/
-
-# VM app (Next.js 14 Pages Router — deployed to Hetzner, not Vercel)
-# Leading / required — without it, pattern matches web/src/app/ too, breaking Vercel build
+# VM app stack (Next.js 14, smart contract, Docker, listener, site-gen, scripts)
+# Leading / required — without it, pattern also matches web/src/app/
 /app/
 
 # Skills (not needed on Vercel)
@@ -22,12 +8,6 @@ skills/
 # Examples
 examples/
 mini-services/
-
-# Uploads
-upload/
-
-# Database
-db/
 
 # Logs
 *.log
