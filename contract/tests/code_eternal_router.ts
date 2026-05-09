@@ -79,10 +79,13 @@ function decodeUserState(data: Buffer) {
   };
 }
 
-async function fetchUserState(conn: Connection, pda: PublicKey) {
-  const info = await conn.getAccountInfo(pda, "confirmed");
-  if (!info) throw new Error(`UserState not found at ${pda}`);
-  return decodeUserState(Buffer.from(info.data));
+async function fetchUserState(conn: Connection, pda: PublicKey, retries = 6, delayMs = 500) {
+  for (let i = 0; i < retries; i++) {
+    const info = await conn.getAccountInfo(pda, "confirmed");
+    if (info) return decodeUserState(Buffer.from(info.data));
+    if (i < retries - 1) await new Promise(r => setTimeout(r, delayMs));
+  }
+  throw new Error(`UserState not found at ${pda} after ${retries} attempts`);
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -207,9 +210,9 @@ describe("code_eternal_router", () => {
         vault:                      vaultPda,
         vaultTokenAccount:          vaultTokenAccount,
         ecosystemFundTokenAccount:  ecosystemFundTokenAccount,
-        ref1TokenAccount:           SystemProgram.programId,
-        ref2TokenAccount:           SystemProgram.programId,
-        ref3TokenAccount:           SystemProgram.programId,
+        ref1TokenAccount:           payerTokenAccount,
+        ref2TokenAccount:           payerTokenAccount,
+        ref3TokenAccount:           payerTokenAccount,
         paymentMint:                usdcMint,
         tokenProgram:               TOKEN_PROGRAM_ID,
         associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -303,6 +306,7 @@ describe("code_eternal_router", () => {
       .signers([backendKeypair])
       .rpc();
 
+    await new Promise(r => setTimeout(r, 1000));
     const state = await fetchUserState(conn, payerStatePda);
     expect(state.siteStatus).to.equal(1);
     expect(
