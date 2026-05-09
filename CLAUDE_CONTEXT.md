@@ -380,6 +380,8 @@ Site + NFT (Pipeline 4.x — Days 8-11)
   ✅ Pipeline 4.x: full cabinet redesign — 7 tabs live (Cabinet, AIfa Terminal, Games, DAO, Site, Smart Contract, Metrics)
   ✅ Pipeline 4.x: AIfa chat — real Grok API (grok-3-mini), CODE ETERNAL system prompt, conversation history
   ✅ Pipeline 4.x: Site tab — user fills username/bio/manifesto/social → POST /api/site/create → real Arweave site (button gated on tier > 0)
+  ✅ Pipeline 4.x: Site tab avatar upload — client-side canvas resize+JPEG compression, base64 embedded in HTML, 95KB Arweave free-tier guard
+  ✅ Pipeline 4.x: Privy login modal logo configured (app/public/logo.png)
   □  Pipeline 4.2: cNFT Guardian Passport mint (Metaplex Bubblegum)
 
 Widgets + Bots (Pipeline 5.x — Days 12-13)
@@ -739,9 +741,10 @@ app/site-gen/
 
 `site.html` uses:
 - Required: `{{name}}`, `{{wallet}}`, `{{walletShort}}`, `{{tier}}`, `{{tierColor}}`, `{{txSignature}}`, `{{registeredAt}}`, `{{year}}`
-- Optional (UI-provided): `{{username}}`, `{{bio}}`, `{{manifesto}}`, `{{telegram}}`, `{{twitter}}`, `{{website}}`, `{{hasSocial}}`
+- Optional (UI-provided): `{{username}}`, `{{bio}}`, `{{manifesto}}`, `{{telegram}}`, `{{twitter}}`, `{{website}}`, `{{hasSocial}}`, `{{avatarDataUrl}}`
 - If `bio` and `manifesto` are both absent, a default "Memory Scroll" paragraph is shown.
 - `hasSocial` is computed in `arweave.ts` as `!!(telegram || twitter || website)`.
+- `avatarDataUrl` — base64 JPEG data URL (max ~80KB); when present, renders as `<img class="avatar">` instead of diamond sigil. Arweave.ts enforces 95KB total HTML limit.
 
 Tier colors:
 - Tier 1 (Spark): `#7C3AED`
@@ -845,6 +848,15 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
+
+## Changes Applied (2026-05-10)
+
+- **Privy login logo** — copied `web/public/images/code-logo.png` → `app/public/logo.png`; `_app.tsx` `appearance.logo` now points to `https://app.codeofdigitaleternity.com/logo.png`
+- **Username field fix (Site tab)** — added `minWidth: 0` on input + `flexShrink: 0` on `.aifa.digital` span (flex collapse bug); added `htmlFor`/`id` link; red error message appears when user types non-Latin characters (Cyrillic silently stripped by regex — now surfaced as "Latin characters only: a–z, 0–9, _ and –")
+- **Avatar upload (Site tab)** — real `<input type="file">` behind styled div; client-side canvas resize to 200×200 px + JPEG compression loop (quality 0.8→0.25) until base64 <80KB; shows circular preview + KB indicator after pick; hard error if still >90KB
+- **Site size guard** — `arweave.ts` throws before Irys upload if rendered HTML >95 KB (keeps uploads within Irys free tier)
+- **API body limits** — `api/site/create.ts` bodyParser limit raised to 200KB (`export const config`); `site-gen` Express raised to `express.json({ limit: "200kb" })`
+- **Template avatar** — `site.html` shows `<img class="avatar">` when `avatarDataUrl` present, falls back to diamond sigil `◆`
 
 ## Changes Applied (2026-05-09)
 
