@@ -81,7 +81,8 @@ async function sendConfirmationEmail(
 
   const tierNames: Record<number, string> = { 1: "Spark", 2: "Family Archives", 3: "Digital DNA" };
   const tierName = tierNames[tier] ?? "Unknown";
-  const displayName = user.display_name || `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+  const rawName = user.display_name || `${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+  const displayName = rawName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
   try {
     const { Resend } = await import("resend");

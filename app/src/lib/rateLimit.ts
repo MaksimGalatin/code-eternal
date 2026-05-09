@@ -14,6 +14,10 @@ export function rateLimit(ip: string, max: number, windowMs: number): boolean {
 }
 
 export function getIp(req: Request): string {
+  // x-real-ip is set by Vercel/nginx to the true client IP and cannot be spoofed by the client
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  // Fall back to x-forwarded-for (first entry = client IP when Vercel is the edge terminator)
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
   return "unknown";

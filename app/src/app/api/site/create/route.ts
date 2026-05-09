@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { privyServer } from "@/lib/privy";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 import { PublicKey } from "@solana/web3.js";
 
 const SITE_GEN_URL = process.env.SITE_GEN_URL || "http://site-gen:3002";
@@ -7,12 +9,37 @@ const SITE_GEN_SECRET = process.env.SITE_GEN_SECRET;
 
 const MAX = { displayName: 60, bio: 2000, manifesto: 500, telegram: 32, twitter: 15, website: 256 };
 const AVATAR_MAX_LEN = 120_000;
-const AVATAR_RE = /^data:image\/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$/;
+const AVATAR_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
 const TWITTER_RE = /^[A-Za-z0-9_]{1,15}$/;
 const TELEGRAM_RE = /^[A-Za-z0-9_]{5,32}$/;
-const WEBSITE_RE = /^https?:\/\/[^\s]{1,200}$/;
+const WEBSITE_RE = /^https:\/\/[^\s]{1,200}$/;
 
 export async function POST(req: Request) {
+  // Rate limit: 5 site creates per 10 minutes per IP
+  if (!rateLimit(getIp(req), 5, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: "too many requests" }, { status: 429 });
+  }
+
+  // Verify Privy auth token — ensures caller owns the wallet they claim
+  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  let authenticatedWallet: string;
+  try {
+    const claims = await privyServer.verifyAuthToken(token);
+    const privyUser = await privyServer.getUser(claims.userId);
+    const solanaAcct = (privyUser.linkedAccounts as any[]).find(
+      (a: any) =>
+        a.type === "wallet" && a.chainType === "solana" && a.walletClientType === "privy"
+    );
+    if (!solanaAcct?.address) {
+      return NextResponse.json({ error: "no solana wallet linked" }, { status: 403 });
+    }
+    authenticatedWallet = solanaAcct.address as string;
+  } catch {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json();
   const { wallet, displayName, username, bio, manifesto, telegram, twitter, website, avatarDataUrl } = body as {
     wallet?: string;
@@ -28,6 +55,11 @@ export async function POST(req: Request) {
 
   if (!wallet) return NextResponse.json({ error: "wallet required" }, { status: 400 });
   try { new PublicKey(wallet); } catch { return NextResponse.json({ error: "invalid wallet" }, { status: 400 }); }
+
+  // Wallet in body must match the authenticated Privy user's wallet
+  if (wallet !== authenticatedWallet) {
+    return NextResponse.json({ error: "wallet mismatch" }, { status: 403 });
+  }
 
   if (displayName && displayName.length > MAX.displayName)
     return NextResponse.json({ error: `displayName max ${MAX.displayName} chars` }, { status: 400 });

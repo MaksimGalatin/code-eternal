@@ -5,7 +5,8 @@ import { logger } from "./logger";
 const PROGRAM_ID = new PublicKey(process.env.PROGRAM_ID!);
 const RPC_URL = process.env.HELIUS_RPC_URL!;
 
-const IRYS_URL_RE = /^https:\/\/(devnet\.)?irys\.xyz\/[A-Za-z0-9_-]{30,64}$/;
+const IRYS_BASE_URL = process.env.IRYS_BASE_URL ?? "https://devnet.irys.xyz";
+const IRYS_URL_RE = /^https:\/\/([a-z0-9.-]+\.)?irys\.xyz\/[A-Za-z0-9_-]{30,64}$/;
 
 export async function updateSiteUrlOnChain(
   walletAddress: string,
@@ -84,5 +85,5 @@ export async function readOnChainArweaveUrl(walletAddress: string): Promise<stri
 
   const end = urlBytes.indexOf(0);
   const txId = Buffer.from(end === -1 ? urlBytes : urlBytes.slice(0, end)).toString("utf8");
-  return txId ? `https://devnet.irys.xyz/${txId}` : null;
+  return txId ? `${IRYS_BASE_URL}/${txId}` : null;
 }

@@ -89,7 +89,7 @@ const INIT_PROPOSALS: Proposal[] = [
 
 export default function CabinetPage() {
   const router = useRouter();
-  const { user, logout, authenticated, ready } = usePrivy();
+  const { user, logout, authenticated, ready, getAccessToken } = usePrivy();
   const { wallets, createWallet } = useSolanaWallets();
   const wallet = wallets[0];
 
@@ -285,9 +285,13 @@ export default function CabinetPage() {
     setSiteCreating(true);
     setSiteError("");
     try {
+      const token = await getAccessToken();
       const r = await fetch("/api/site/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           wallet: wallet.address,
           displayName: siteDisplayName,
