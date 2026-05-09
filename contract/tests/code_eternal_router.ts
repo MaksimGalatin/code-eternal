@@ -110,7 +110,11 @@ describe("code_eternal_router", () => {
   let ref1: Keypair, ref2: Keypair, ref3: Keypair;
 
   before(async () => {
-    backendKeypair = loadBackendKeypair();
+    try {
+      backendKeypair = loadBackendKeypair();
+    } catch {
+      console.warn("BACKEND_PRIVATE_KEY not available — update_site_url tests will be skipped");
+    }
     payer = Keypair.generate();
     ref1  = Keypair.generate();
     ref2  = Keypair.generate();
@@ -283,7 +287,8 @@ describe("code_eternal_router", () => {
 
   // ─── update_site_url ───────────────────────────────────────────────────────
 
-  it("update_site_url: backend sets arweave URL and site_status=1", async () => {
+  it("update_site_url: backend sets arweave URL and site_status=1", async function() {
+    if (!backendKeypair) return this.skip();
     const TX_ID = "SomeArweaveTxId1234567890abcdefghijklm"; // ≤43 chars
     const arweaveUrl = new Uint8Array(64);
     arweaveUrl.set(Buffer.from(TX_ID));
@@ -305,7 +310,8 @@ describe("code_eternal_router", () => {
     ).to.equal(TX_ID);
   });
 
-  it("update_site_url: rejects unauthorized signer", async () => {
+  it("update_site_url: rejects unauthorized signer", async function() {
+    if (!backendKeypair) return this.skip();
     const bad = Keypair.generate();
     await confirm(conn, await conn.requestAirdrop(bad.publicKey, 1e9));
 
