@@ -112,6 +112,45 @@ pub fn handler(
         CodeEternalError::InsufficientFunds
     );
 
+    // 2a. Prevent tier downgrade
+    require!(tier >= ctx.accounts.user_state.tier, CodeEternalError::TierDowngrade);
+
+    // 2b. Validate referral chain against on-chain stored referrers.
+    // ref1 must match the payer's stored referrer; ref2/ref3 are validated by
+    // reading the referrer's own UserState from ctx.remaining_accounts (readonly).
+    require!(ref1 == ctx.accounts.user_state.referrer, CodeEternalError::InvalidReferral);
+    if let Some(ref1_key) = ref1 {
+        let ref1_info = ctx.remaining_accounts
+            .get(0)
+            .ok_or(error!(CodeEternalError::InvalidReferral))?;
+        require!(
+            *ref1_info.owner == crate::ID,
+            CodeEternalError::InvalidReferral
+        );
+        let ref1_data = ref1_info.try_borrow_data()?;
+        let mut ref1_slice: &[u8] = &ref1_data;
+        let ref1_state = UserState::try_deserialize(&mut ref1_slice)
+            .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
+        require!(ref1_state.owner == ref1_key, CodeEternalError::InvalidReferral);
+        require!(ref2 == ref1_state.referrer, CodeEternalError::InvalidReferral);
+
+        if let Some(ref2_key) = ref2 {
+            let ref2_info = ctx.remaining_accounts
+                .get(1)
+                .ok_or(error!(CodeEternalError::InvalidReferral))?;
+            require!(
+                *ref2_info.owner == crate::ID,
+                CodeEternalError::InvalidReferral
+            );
+            let ref2_data = ref2_info.try_borrow_data()?;
+            let mut ref2_slice: &[u8] = &ref2_data;
+            let ref2_state = UserState::try_deserialize(&mut ref2_slice)
+                .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
+            require!(ref2_state.owner == ref2_key, CodeEternalError::InvalidReferral);
+            require!(ref3 == ref2_state.referrer, CodeEternalError::InvalidReferral);
+        }
+    }
+
     // 3. Calculate distribution
     let ecosystem_fund_amount = calc_bps(amount_usdc, ECOSYSTEM_FUND_BPS)?;
     let ref1_amount   = calc_bps(amount_usdc, REF1_BPS)?;

@@ -101,6 +101,9 @@
     { "code": 6004, "name": "UnauthorizedBackend", "msg": "Unauthorized backend authority" },
     { "code": 6005, "name": "UrlTooLong", "msg": "Arweave URL too long or invalid status" },
     { "code": 6006, "name": "Overflow", "msg": "Arithmetic overflow" },
-    { "code": 6007, "name": "InvalidReferralMint", "msg": "Referral account mint mismatch" }
+    { "code": 6007, "name": "InvalidReferralMint", "msg": "Referral account mint mismatch" },
+    { "code": 6008, "name": "UpdateCooldown",      "msg": "Site URL updated too recently" },
+    { "code": 6009, "name": "TierDowngrade",       "msg": "Tier cannot be downgraded" },
+    { "code": 6010, "name": "InvalidReferral",     "msg": "Referral chain does not match on-chain state" }
   ]
 }

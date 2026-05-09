@@ -34,4 +34,10 @@ pub enum CodeEternalError {
 
     #[msg("Site URL was updated too recently — wait before updating again")]
     UpdateCooldown,
+
+    #[msg("Tier cannot be downgraded to a lower level")]
+    TierDowngrade,
+
+    #[msg("Referral chain does not match on-chain stored referrers")]
+    InvalidReferral,
 }

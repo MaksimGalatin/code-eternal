@@ -235,23 +235,36 @@ describe("code_eternal_router", () => {
   });
 
   it("process_payment Tier1, 3 referrals: vault=65%, ref1=15%, ref2=7%, ref3=3%, burn=5%", async () => {
-    // Fresh payer2 — needs its own UserState (register_user first)
+    // Fund ref1/ref2/ref3 with SOL so they can pay PDA rent
+    await confirm(conn, await conn.requestAirdrop(ref1.publicKey, 2e9));
+    await confirm(conn, await conn.requestAirdrop(ref2.publicKey, 2e9));
+    await confirm(conn, await conn.requestAirdrop(ref3.publicKey, 2e9));
+
+    // Derive UserState PDAs for ref1/ref2/ref3
+    const [ref1Pda] = PublicKey.findProgramAddressSync([Buffer.from("user"), ref1.publicKey.toBuffer()], PROGRAM_ID);
+    const [ref2Pda] = PublicKey.findProgramAddressSync([Buffer.from("user"), ref2.publicKey.toBuffer()], PROGRAM_ID);
+    const [ref3Pda] = PublicKey.findProgramAddressSync([Buffer.from("user"), ref3.publicKey.toBuffer()], PROGRAM_ID);
+
+    // Register the chain: ref3 ← ref2 ← ref1 ← payer2
+    await program.methods.registerUser(null)
+      .accounts({ payer: ref3.publicKey, userState: ref3Pda, systemProgram: SystemProgram.programId })
+      .signers([ref3]).rpc();
+    await program.methods.registerUser(ref3.publicKey)
+      .accounts({ payer: ref2.publicKey, userState: ref2Pda, systemProgram: SystemProgram.programId })
+      .signers([ref2]).rpc();
+    await program.methods.registerUser(ref2.publicKey)
+      .accounts({ payer: ref1.publicKey, userState: ref1Pda, systemProgram: SystemProgram.programId })
+      .signers([ref1]).rpc();
+
+    // Fresh payer2 — registered with ref1 as referrer
     const payer2 = Keypair.generate();
     await confirm(conn, await conn.requestAirdrop(payer2.publicKey, 2e9));
-
-    const payer2Ata = await getOrCreateAssociatedTokenAccount(
-      conn, wallet.payer, usdcMint, payer2.publicKey
-    );
+    const payer2Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, payer2.publicKey);
     await mintTo(conn, wallet.payer, usdcMint, payer2Ata.address, wallet.publicKey, 2_000_000_000);
-
-    const [payer2Pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("user"), payer2.publicKey.toBuffer()], PROGRAM_ID
-    );
-    await program.methods
-      .registerUser(null)
+    const [payer2Pda] = PublicKey.findProgramAddressSync([Buffer.from("user"), payer2.publicKey.toBuffer()], PROGRAM_ID);
+    await program.methods.registerUser(ref1.publicKey)
       .accounts({ payer: payer2.publicKey, userState: payer2Pda, systemProgram: SystemProgram.programId })
-      .signers([payer2])
-      .rpc();
+      .signers([payer2]).rpc();
 
     // Create referral ATAs (token accounts owned by ref1/ref2/ref3 wallets)
     const r1Ata = await getOrCreateAssociatedTokenAccount(conn, wallet.payer, usdcMint, ref1.publicKey);
@@ -280,6 +293,11 @@ describe("code_eternal_router", () => {
         associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram:              SystemProgram.programId,
       })
+      // ref1_state and ref2_state passed as remaining accounts for on-chain chain validation
+      .remainingAccounts([
+        { pubkey: ref1Pda, isWritable: false, isSigner: false },
+        { pubkey: ref2Pda, isWritable: false, isSigner: false },
+      ])
       .signers([payer2])
       .rpc();
 

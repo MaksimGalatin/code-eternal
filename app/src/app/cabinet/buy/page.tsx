@@ -145,13 +145,22 @@ function BuyPageInner() {
       const ref2TokenAccount = ref2 ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref2)) : payerTokenAccount;
       const ref3TokenAccount = ref3 ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref3)) : payerTokenAccount;
 
+      // UserState PDAs for referrers — passed as remaining accounts so the contract
+      // can verify the chain matches what was stored on-chain at register_user time.
+      const ref1StatePda = ref1
+        ? PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref1).toBuffer()], PROGRAM_ID)[0]
+        : null;
+      const ref2StatePda = ref2
+        ? PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref2).toBuffer()], PROGRAM_ID)[0]
+        : null;
+
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
 
       setStep("registering");
       let needsRegister = false;
       try { await (program.account as any).userState.fetch(userStatePDA); } catch { needsRegister = true; }
       if (needsRegister) {
-        const registerTx = await program.methods.registerUser(null)
+        const registerTx = await program.methods.registerUser(ref1 ? new PublicKey(ref1) : null)
           .accounts({ payer, userState: userStatePDA, systemProgram: SystemProgram.programId })
           .transaction();
         registerTx.recentBlockhash = blockhash;
@@ -173,7 +182,10 @@ function BuyPageInner() {
         ecosystemFundTokenAccount, ref1TokenAccount, ref2TokenAccount, ref3TokenAccount,
         paymentMint: usdcMint, tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID, systemProgram: SystemProgram.programId,
-      }).transaction();
+      }).remainingAccounts([
+        ...(ref1StatePda ? [{ pubkey: ref1StatePda, isWritable: false, isSigner: false }] : []),
+        ...(ref2StatePda ? [{ pubkey: ref2StatePda, isWritable: false, isSigner: false }] : []),
+      ]).transaction();
       payTx.recentBlockhash = payBlockhash;
       payTx.feePayer        = payer;
       const sig = await wallet.sendTransaction(payTx, connection);
