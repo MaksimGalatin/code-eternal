@@ -5,7 +5,17 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: "CODE ETERNAL — Your Memory Lives Forever",
   description: "Web3 AI immortality ecosystem on Solana.",
-  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+    other: [
+      { rel: "manifest", url: "/site.webmanifest" },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
