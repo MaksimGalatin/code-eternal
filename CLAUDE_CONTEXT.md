@@ -34,14 +34,15 @@ From every payment:
 | Recipient | % | Notes |
 |-----------|---|-------|
 | Burn | 5% | Always, on-chain via `token::burn` CPI |
-| Referral L1 | 15% | Or added to burn if slot is empty |
-| Referral L2 | 7% | Or added to burn if slot is empty |
-| Referral L3 | 3% | Or added to burn if slot is empty |
+| Referral L1 | 15% | → vault if referrer subscription expired; burn if no referrer |
+| Referral L2 | 7% | → vault if referrer subscription expired; burn if no referrer |
+| Referral L3 | 3% | Burn if no referrer; no expiry check for L3 on-chain |
 | Ecosystem Fund | 5% | Project-controlled wallet (development, grants, ops) |
 | Vault (treasury) | 65% | Protocol PDA |
 | **Total** | **100%** | ✅ |
 
 Maximum burn (no referrals): **30%** (5+15+7+3)
+Expired referrer (L1/L2): their share → **vault**, not burn — keeps tokenomics balanced
 
 **Important:** Burn uses `token::burn` CPI — atomic, on-chain, verifiable on explorer.
 The payer signs the transaction and authorizes the burn from their own token account.
@@ -134,12 +135,13 @@ User clicks "Buy" on tier card → /cabinet/buy?tier=N
 Frontend calls /api/referrals/chain?wallet=... → gets ref1/ref2/ref3 from Neon DB
 Frontend builds Anchor tx → process_payment (smart contract):
   Contract atomically:
-    5%  → token::burn CPI
-    15% → ref1 token account (or burn if empty)
-    7%  → ref2 token account (or burn if empty)
-    3%  → ref3 token account (or burn if empty)
+    5%  → token::burn CPI (always)
+    15% → ref1 token account if active; → vault if expired; → burn if absent
+    7%  → ref2 token account if active; → vault if expired; → burn if absent
+    3%  → ref3 token account if present; → burn if absent (no expiry check for L3)
     5%  → ecosystem_fund_token_account
     65% → vault PDA (treasury)
+  Referrer activity = clock.unix_timestamp <= referrer.tier_expires (on-chain check)
   Emits: PaymentProcessed event
 
 Helius webhook → listener (Docker, /webhook/helius)
@@ -296,10 +298,11 @@ pub struct UserState {
 **Compiles, tested, and deployed to Devnet via GitHub Actions CI/CD.** `contract/target/deploy/code_eternal_router.so` produced.
 Program ID: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` (deployed 2026-04-19, CI/CD auto-redeploys on `contract/**` push)
 
-### Compiler Warnings (non-blocking, known issues)
+### Compiler Warnings
 
-- `ambiguous_glob_reexports` on `handler` — all instruction modules export a fn named `handler`; rename post-hackathon
-- `unexpected_cfg` on `anchor-debug` — known Anchor 0.30.1 issue with Rust 1.89, safe to ignore
+Both known warnings resolved (2026-05-12):
+- `ambiguous_glob_reexports` — fixed by replacing `pub use X::*` with explicit struct re-exports in `instructions/mod.rs`
+- `unexpected_cfgs` — suppressed with `#![allow(unexpected_cfgs)]` in `lib.rs` (Anchor 0.30.1 + Rust 1.89 issue from macro expansion)
 
 ---
 
@@ -416,7 +419,7 @@ Site + NFT (Pipeline 4.x — Days 8-11)
   □  Pipeline 4.2: cNFT Guardian Passport mint (Metaplex Bubblegum)
 
 Widgets + Bots (Pipeline 5.x — Days 12-13)
-  □  Pipeline 5.1: IncomeWidget + /api/referrals/income
+  ✅ Pipeline 5.1: /api/referrals/income — earnings by level + locked income (expires param) — route done; UI widget in cabinet
   □  Pipeline 5.2: BurnCounter + /api/stats/burned
   □  Pipeline 5.3: /cabinet/apply-1000 form + email to architect
   □  Pipeline 5.4: Telegram bot (Grammy) — referral push notifications
@@ -809,7 +812,7 @@ Tier colors:
 | AIfa Terminal | `alfa` | Chat UI backed by `/api/chat` (Grok API, model `grok-3-mini`, CODE ETERNAL system prompt) |
 | Games | `games` | Chess board (8×8, Unicode pieces, white vs "AI" — AI just re-enables white turn after 1s), move history |
 | DAO | `dao` | 3 hardcoded governance proposals, For/Against voting in local state, stats row |
-| Site | `site` | Form (username, display name, bio, manifesto, avatar placeholder, social links) + live preview panel. POST `/api/site/create` on submit. Button disabled when tier=0 or creating. |
+| Site | `site` | Form (username, display name, bio, manifesto, avatar placeholder, social links) + live preview panel. POST `/api/site/create` on submit. Button disabled when tier=0, subscription expired, or creating. |
 | Smart Contract | `contract` | Distribution visualization (5/15/7/3/5/65), PDA architecture table, real Program ID |
 | Metrics | `metrics` | 6 stat cards (burn, txns, wallets, treasury, avg fee, slot), SVG burn sparkline, SVG payment donut, event feed |
 
@@ -877,16 +880,33 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 
 ## Known Issues (post-hackathon backlog)
 
-- `UrlTooLong` error is reused for invalid site status — add `InvalidSiteStatus` variant
+- `UrlTooLong` error is reused for invalid site status — add `InvalidSiteStatus` variant post-hackathon
 - `SITE_STATUS_PENDING` constant declared but not used in constraints
-- `handler` name collision in `mod.rs` glob re-exports — rename each to `register_user_handler`, etc.
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
 - Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
-- **Tier downgrade constraint vs. subscription renewal**: `process_payment.rs` currently requires `tier >= user_state.tier` (prevents downgrade). This is correct while tiers are permanent on-chain. If subscription expiry is added in the future (requiring `tier_expires` field in `UserState`), the constraint must change to: allow any tier if `clock.unix_timestamp > tier_expires`, otherwise require `tier >= current_tier`. The DB has `tier_expires` but the smart contract has no on-chain expiry concept yet.
+- **Tier downgrade on renewal**: when subscription is expired (`clock.unix_timestamp > tier_expires`), any tier is accepted (allows buying tier 1 after being tier 3 and expiring). When active, `tier >= current_tier` is enforced. This is the current correct behavior.
+- **L3 referrer expiry not enforced on-chain** — ref3 always gets paid regardless of their subscription status (would require a 3rd remaining_account; skipped for simplicity)
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
+
+## Changes Applied (2026-05-12)
+
+- **Compiler warnings resolved** — `instructions/mod.rs`: replaced `pub use X::*` with explicit `pub use X::StructName` for the four Accounts structs, eliminating `ambiguous_glob_reexports` on `handler`. `lib.rs`: added `#![allow(unexpected_cfgs)]` to suppress Anchor 0.30.1 + Rust 1.89 macro-generated `cfg(anchor-debug)` warning.
+- **3-referrals CI test fix** — newly registered referrers have `tier_expires=0` which the new expiry check treated as inactive. Fix: ref2 and ref1 each buy tier 1 (as setup) before the main payer2 payment, making `ref1_active=true` and `ref2_active=true` so REF1_AMT/REF2_AMT flow to the correct accounts.
+
+## Changes Applied (2026-05-11, Tier Expiry)
+
+- **`tier_expires: i64` added to `UserState`** — new field after `registered_at`; shifts all subsequent binary offsets by +8. `register_user.rs` sets it to 0; `process_payment.rs` sets it to `clock.unix_timestamp + SUBSCRIPTION_DURATION` on payment.
+- **`SUBSCRIPTION_DURATION = 30 * 24 * 60 * 60`** — 30-day subscription period in seconds, declared in `process_payment.rs`.
+- **Expired referrer → vault** — `process_payment.rs` reads ref1 and ref2 `UserState` from `ctx.remaining_accounts` and checks `clock.unix_timestamp <= referrer.tier_expires`. Active → transfer, expired → vault (not burn), absent → burn.
+- **Tier downgrade allowed on expiry** — if `clock.unix_timestamp > user_state.tier_expires`, any tier is accepted; otherwise `tier >= current_tier` enforced.
+- **Binary layout updated everywhere** — `decodeUserState()` in tests, `decodeTier()` in listener, `readOnChainArweaveUrl()` in site-gen all updated to use `base + 9` offset for `tier_expires` and `base + 25` for `arweave_url`.
+- **IDL updated** — `tier_expires: i64` field added to `UserState` in both `app/src/idl/code_eternal_router.ts` and `app/site-gen/idl/code_eternal_router.json`.
+- **`/api/referrals/income` `?expires=` param** — accepts `expires=<unix_ts>`, splits `referral_payments` into earned (created_at ≤ expires) and locked (created_at > expires). Returns `{ l1, l2, l3, total, locked, recent }`.
+- **Cabinet expiry UI** — reads `tier_expires` from on-chain `UserState` at load time; shows red expiry banner, "Xd left"/"Expired" badge on tier card, locked income ghost block, and blocks site creation when expired.
+- **DB wiped** — all rows deleted from `users`, `site_generation_jobs`, `referral_payments`, `burn_events` to clear old on-chain account data incompatible with the new `UserState` layout.
 
 ## Changes Applied (2026-05-11, Security)
 
