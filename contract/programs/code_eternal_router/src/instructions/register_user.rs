@@ -37,6 +37,7 @@ pub fn handler(
     user_state.referrer = referrer;
     user_state.tier = 0; // tier is set during process_payment based on amount paid
     user_state.registered_at = clock.unix_timestamp;
+    user_state.tier_expires = 0; // set on first payment
     user_state.memory_score = 0;
     user_state.arweave_url = [0u8; 64];
     user_state.site_status = 0; // pending

@@ -87,6 +87,7 @@ export const IDL: Idl = {
           { name: "referrer", type: { option: "pubkey" } },
           { name: "tier", type: "u8" },
           { name: "registered_at", type: "i64" },
+          { name: "tier_expires", type: "i64" },
           { name: "memory_score", type: "u64" },
           { name: "arweave_url", type: { array: ["u8", 64] } },
           { name: "site_status", type: "u8" },
@@ -115,6 +116,7 @@ export type UserState = {
   referrer: string | null;
   tier: number;
   registered_at: number;
+  tier_expires: number;
   memory_score: number;
   arweave_url: number[];
   site_status: number;

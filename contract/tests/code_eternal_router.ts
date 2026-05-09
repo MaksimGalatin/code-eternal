@@ -56,13 +56,14 @@ async function confirm(conn: Connection, sig: string) {
  *   [8..40]  owner Pubkey
  *   [40]     referrer Option flag (0=None, 1=Some)
  *   [41..73] referrer Pubkey (only if flag=1)
- *   [base+0] tier u8
- *   [base+1..base+9]  registered_at i64
- *   [base+9..base+17] memory_score u64
- *   [base+17..base+81] arweave_url [u8;64]
- *   [base+81] site_status u8
- *   [base+82..base+90] last_site_update i64
- *   [base+90] bump u8
+ *   [base+0]        tier u8
+ *   [base+1..+9]    registered_at i64
+ *   [base+9..+17]   tier_expires i64
+ *   [base+17..+25]  memory_score u64
+ *   [base+25..+89]  arweave_url [u8;64]
+ *   [base+89]       site_status u8
+ *   [base+90..+98]  last_site_update i64
+ *   [base+98]       bump u8
  */
 function decodeUserState(data: Buffer) {
   const hasReferrer = data[40] === 1;
@@ -71,11 +72,12 @@ function decodeUserState(data: Buffer) {
     owner:          new PublicKey(data.slice(8, 40)),
     referrer:       hasReferrer ? new PublicKey(data.slice(41, 73)) : null,
     tier:           data[base],
-    memoryScore:    data.readBigUInt64LE(base + 9),
-    arweaveUrl:     data.slice(base + 17, base + 81),
-    siteStatus:     data[base + 81],
-    lastSiteUpdate: data.readBigInt64LE(base + 82),
-    bump:           data[base + 90],
+    tierExpires:    data.readBigInt64LE(base + 9),
+    memoryScore:    data.readBigUInt64LE(base + 17),
+    arweaveUrl:     data.slice(base + 25, base + 89),
+    siteStatus:     data[base + 89],
+    lastSiteUpdate: data.readBigInt64LE(base + 90),
+    bump:           data[base + 98],
   };
 }
 
@@ -232,6 +234,7 @@ describe("code_eternal_router", () => {
 
     const state = await fetchUserState(conn, payerStatePda);
     expect(state.tier).to.equal(1);
+    expect(state.tierExpires).to.be.greaterThan(0n); // should be ~now + 30 days
   });
 
   it("process_payment Tier1, 3 referrals: vault=65%, ref1=15%, ref2=7%, ref3=3%, burn=5%", async () => {

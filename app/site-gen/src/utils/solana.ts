@@ -73,13 +73,15 @@ export async function readOnChainArweaveUrl(walletAddress: string): Promise<stri
   // [8..39]  owner Pubkey (32)
   // [40]     referrer Option flag
   // [41..72] referrer Pubkey (32, only if flag=1)
-  // [41|73]  tier (u8)
-  // [42|74]  registered_at (i64, 8)
-  // [50|82]  memory_score (u64, 8)
-  // [58|90]  arweave_url ([u8; 64])
+  // [base+0]       tier (u8)
+  // [base+1..+9]   registered_at (i64, 8)
+  // [base+9..+17]  tier_expires (i64, 8)
+  // [base+17..+25] memory_score (u64, 8)
+  // [base+25..+89] arweave_url ([u8; 64])
   const data = accountInfo.data;
   const hasReferrer = data[40] === 1;
-  const urlOffset = hasReferrer ? 90 : 58;
+  const base = hasReferrer ? 73 : 41;
+  const urlOffset = base + 25;
   const urlBytes = data.slice(urlOffset, urlOffset + 64);
   if (urlBytes[0] === 0) return null;
 

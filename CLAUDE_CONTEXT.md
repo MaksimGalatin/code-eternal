@@ -254,6 +254,7 @@ pub struct UserState {
     pub referrer: Option<Pubkey>, // who referred them
     pub tier: u8,                // 0=unregistered, 1=Starter, 2=Pro, 3=Elite
     pub registered_at: i64,      // unix timestamp
+    pub tier_expires: i64,       // unix timestamp when subscription expires (0 = never paid); 30-day subscription
     pub memory_score: u64,       // Think-to-Earn points
     pub arweave_url: [u8; 64],   // Arweave TX ID (43 chars, zero-padded)
     pub site_status: u8,         // 0=pending, 1=ready, 2=error
@@ -263,18 +264,19 @@ pub struct UserState {
 // Seeds: ["user", wallet_pubkey]
 // Size: 8 (discriminator) + UserState::INIT_SPACE
 
-// Binary layout for manual decoding (no referrer case, base=41):
+// Binary layout for manual decoding (base=41 no referrer, base=73 with referrer):
 // [0..8]   discriminator
 // [8..40]  owner Pubkey
 // [40]     referrer flag (0=None, 1=Some)
 // [41..73] referrer Pubkey (only if flag=1)
-// [base+0]       tier u8
-// [base+1..+9]   registered_at i64
-// [base+9..+17]  memory_score u64
-// [base+17..+81] arweave_url [u8;64]
-// [base+81]      site_status u8
-// [base+82..+90] last_site_update i64
-// [base+90]      bump u8
+// [base+0]        tier u8
+// [base+1..+9]    registered_at i64
+// [base+9..+17]   tier_expires i64
+// [base+17..+25]  memory_score u64
+// [base+25..+89]  arweave_url [u8;64]
+// [base+89]       site_status u8
+// [base+90..+98]  last_site_update i64
+// [base+98]       bump u8
 ```
 
 ---

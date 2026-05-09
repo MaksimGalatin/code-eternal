@@ -20,6 +20,9 @@ pub struct UserState {
     /// Unix timestamp of registration
     pub registered_at: i64,
 
+    /// Unix timestamp when the current tier subscription expires (0 = never paid)
+    pub tier_expires: i64,
+
     /// Think-to-Earn points (Proof-of-Memory)
     pub memory_score: u64,
 

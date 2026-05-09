@@ -89,6 +89,9 @@ pub struct ProcessPayment<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// 30-day subscription period in seconds
+pub const SUBSCRIPTION_DURATION: i64 = 30 * 24 * 60 * 60;
+
 pub fn handler(
     ctx: Context<ProcessPayment>,
     amount_usdc: u64,
@@ -97,6 +100,8 @@ pub fn handler(
     ref2: Option<Pubkey>,
     ref3: Option<Pubkey>,
 ) -> Result<()> {
+    let clock = Clock::get()?;
+
     // 1. Validate tier and amount
     let expected_amount = match tier {
         1 => TIER_1_AMOUNT,
@@ -112,8 +117,11 @@ pub fn handler(
         CodeEternalError::InsufficientFunds
     );
 
-    // 2a. Prevent tier downgrade
-    require!(tier >= ctx.accounts.user_state.tier, CodeEternalError::TierDowngrade);
+    // 2a. Prevent tier downgrade unless subscription has expired
+    let subscription_active = clock.unix_timestamp <= ctx.accounts.user_state.tier_expires;
+    if subscription_active {
+        require!(tier >= ctx.accounts.user_state.tier, CodeEternalError::TierDowngrade);
+    }
 
     // 2b. Validate referral chain against on-chain stored referrers.
     // ref1 must match the payer's stored referrer; ref2/ref3 are validated by
@@ -258,12 +266,12 @@ pub fn handler(
         burn_amount,
     )?;
 
-    // 10. Update tier in UserState
+    // 10. Update tier and expiry in UserState
     let user_state = &mut ctx.accounts.user_state;
     user_state.tier = tier;
+    user_state.tier_expires = clock.unix_timestamp + SUBSCRIPTION_DURATION;
 
     // 11. Emit event — listener picks this up and triggers site generation
-    let clock = Clock::get()?;
     emit!(PaymentProcessed {
         wallet: ctx.accounts.payer.key(),
         tier,
