@@ -949,14 +949,14 @@ export default function CabinetPage() {
                   <div className="glass-panel" style={{ flex: "1 1 480px", padding: "28px" }}>
                     {/* Username */}
                     <div style={{ marginBottom: "20px" }}>
-                      <label style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                      <label htmlFor="site-username" style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
                         <span>👤</span> Username <span style={{ color: "#ef4444" }}>*</span>
                       </label>
                       <div style={{ display: "flex", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)", borderRadius: "10px", overflow: "hidden" }}>
-                        <input value={siteUsername} onChange={e => setSiteUsername(e.target.value.replace(/[^a-z0-9_-]/gi,"").toLowerCase())}
+                        <input id="site-username" type="text" value={siteUsername} onChange={e => setSiteUsername(e.target.value.replace(/[^a-z0-9_-]/g,"").toLowerCase())}
                           placeholder="yourname"
-                          style={{ flex: 1, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
-                        <span style={{ padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.aifa.digital</span>
+                          style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
+                        <span style={{ flexShrink: 0, padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.aifa.digital</span>
                       </div>
                     </div>
 
