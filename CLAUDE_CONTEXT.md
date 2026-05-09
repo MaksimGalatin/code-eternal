@@ -77,7 +77,10 @@ code-eternal/
 ### Frontend
 - Squarespace — landing page (live)
 - Next.js 14 + TypeScript + Tailwind — app (`app/src/` directory)
-- Hetzner CAX11 (ARM64) — hosting via Docker Compose + nginx
+- **Vercel** — hosting for Next.js app (moved from Hetzner 2026-05-09, auto-deploys on push to main)
+  - Project: `app.codeofdigitaleternity.com` (ID: `prj_DrlUafVTqw3AGdxG8wiLrr92RG1r`)
+  - Root Directory: `app`, framework: Next.js, Node: 24.x
+  - All env vars set via Vercel CLI (see Environment Variables section)
 
 ### Auth & Payments
 - Privy (privy.io) — Google login + hidden Solana wallet (embedded, user never sees seed phrase)
@@ -97,13 +100,14 @@ code-eternal/
 
 ### Backend (Hetzner)
 - Hetzner CAX11 ARM64 VM — `128.140.0.118`, Ubuntu 24.04, 4GB RAM, ~$5/month
-- Docker Compose — 4 services: app, listener, site-gen, nginx
+- Docker Compose — **3 services: listener, site-gen, nginx** (app moved to Vercel 2026-05-09)
 - `listener` service — Helius webhooks (/webhook/helius) on port 3001
-- `site-gen` service — HTTP job endpoint (/jobs) on port 3002, Arweave upload
-- `nginx` — reverse proxy on ports 80/443
+- `site-gen` service — HTTP job endpoint (/jobs) on port 3002, Arweave upload; protected by `SITE_GEN_SECRET` Bearer token
+- `nginx` — reverse proxy on ports 80/443; routes `/webhook/` → listener:3001, `/jobs` → site-gen:3002, `/health` → site-gen:3002
 - Neon PostgreSQL — external managed database (no local DB on VM)
 - Docker Hub — image registry (`maxshchuplov/` private repos)
 - Cloudflare — DNS + wildcard subdomains
+- **GitHub Actions CI/CD** — `.github/workflows/deploy.yml` builds listener + site-gen ARM64 images and deploys to VM on push to main (triggers on `app/listener/**`, `app/site-gen/**`, `app/docker/**`)
 
 ### External Services
 - Helius (helius.dev) — Solana RPC + webhooks (free tier)
@@ -345,7 +349,7 @@ Infrastructure + Smart Contract
   ✅ TIER_1_AMOUNT = $15 (was $10 — fixed 2026-04-29)
   ✅ Docker images build (listener, site-gen, app — node:24-alpine, ARM64)
   ✅ Hetzner CAX11 VM provisioned (128.140.0.118, Ubuntu 24.04, ARM64)
-  ✅ All 4 containers running on VM (app, listener, site-gen, nginx)
+  ✅ 3 containers running on VM (listener, site-gen, nginx) — app moved to Vercel 2026-05-09
   ✅ Docker Hub private repos (maxshchuplov/code-eternal-*)
   ✅ Privy App ID configured (cmoofvdt4008o0cjps5l8nvnu), Google login enabled
   ✅ Point Cloudflare DNS A records to 128.140.0.118
@@ -374,7 +378,7 @@ Backend + Payment (Pipeline 3.x — Days 4-7)
 Site + NFT (Pipeline 4.x — Days 8-11)
   ✅ Pipeline 4.1: auto site-gen on payment (Arweave + on-chain URL + cabinet status panel; Cloudflare subdomain post-hackathon)
   ✅ Pipeline 4.x: full cabinet redesign — 7 tabs live (Cabinet, AIfa Terminal, Games, DAO, Site, Smart Contract, Metrics)
-  ✅ Pipeline 4.x: AIfa chat — real Grok API (grok-beta), CODE ETERNAL system prompt, conversation history
+  ✅ Pipeline 4.x: AIfa chat — real Grok API (grok-3-mini), CODE ETERNAL system prompt, conversation history
   ✅ Pipeline 4.x: Site tab — user fills username/bio/manifesto/social → POST /api/site/create → real Arweave site (button gated on tier > 0)
   □  Pipeline 4.2: cNFT Guardian Passport mint (Metaplex Bubblegum)
 
@@ -401,18 +405,25 @@ Hetzner CAX11   ARM64 (Ampere), Ubuntu 24.04, 4GB RAM, 2 vCPU — ~$5/month
                 Path: /opt/code-eternal/
                 Docker Compose: app/docker/docker-compose.yml
 
-Services (Docker Compose):
-  app           Next.js 14 frontend          port 3000 (internal)
+Services (Docker Compose) — 3 containers only, app is on Vercel:
   listener      Helius webhook handler       port 3001 (internal)
   site-gen      Arweave site generator       port 3002 (internal)
   nginx         Reverse proxy                ports 80:80, 443:443 (public)
 
+nginx routing:
+  /webhook/  → listener:3001   (Helius webhooks)
+  /jobs      → site-gen:3002   (Vercel calls this; auth via SITE_GEN_SECRET Bearer token)
+  /health    → site-gen:3002   (health check)
+
 DNS (Cloudflare):
-  app.codeofdigitaleternity.com      → 128.140.0.118 (A record, proxy off)
+  app.codeofdigitaleternity.com      → Vercel (CNAME, proxy off) ← Next.js app
   listener.codeofdigitaleternity.com → 128.140.0.118 (A record, proxy off)
 
 Image registry: Docker Hub (maxshchuplov/code-eternal-*)
 Database: Neon PostgreSQL (external, connection string in .env)
+
+VM .env file: /opt/code-eternal/.env — persists between CI/CD deployments, never overwritten by GitHub Actions
+GitHub Actions secrets required: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VM_SSH_KEY
 ```
 
 ### VM Setup
@@ -564,17 +575,19 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Next.js (app) | `MOCK_USDC_MINT` | Same as above, server-side only (for airdrop endpoint) |
 | Next.js (app) | `MOCK_USDC_MINT_AUTHORITY` | Base64 keypair that has mint authority over mock USDC (for devnet airdrop) |
 | Next.js (app) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
-| Next.js (app) | `GROK_API_KEY` | xAI Grok API key — used by `/api/chat.ts` for AIfa chat (falls back to placeholder if absent) |
-| Next.js (app) | `SITE_GEN_URL` | `http://site-gen:3002` — used by `/api/site/create.ts` to dispatch job (same as listener's var) |
-| All | `NODE_ENV` | `production` |
+| Next.js (app) | `GROK_API_KEY` | xAI Grok API key — used by `/api/chat.ts` for AIfa chat (model: `grok-3-mini`) |
+| Next.js (app) | `SITE_GEN_URL` | `https://listener.codeofdigitaleternity.com` — Vercel calls VM nginx which routes to site-gen |
+| Next.js (app) | `SITE_GEN_SECRET` | Bearer token — must match VM .env value; sent in Authorization header to /jobs |
+| listener, site-gen | `SITE_GEN_SECRET` | `2c0bbd515501b5e86600e1ce9acd877dd5b9bab4db7575d6401f2ae18a2ef18a` — set in VM .env |
+| listener | `RESEND_API_KEY` | `re_Lu1RDMiD_54YM5zVRfyNFRYy5hDDPZWHF` — set in VM .env |
 
 ---
 
 ## Frontend — Architecture & Status
 
 **Stack:** Next.js 14 (Pages Router), React, Tailwind, Solana Web3.js, Anchor, Privy.io
-**Source:** `app/` directory → Docker image → Hetzner VM
-**URL:** `https://app.codeofdigitaleternity.com` ✅ HTTPS live (SSL cert expires 2026-07-31)
+**Source:** `app/` directory → Vercel (auto-deploy on push to main)
+**URL:** `https://app.codeofdigitaleternity.com` ✅ Live on Vercel (2026-05-09)
 **Theme:** Dark purple (#7C3AED accent, #0A0A0F background)
 
 ### Key Architecture Decisions
@@ -587,8 +600,9 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Helius webhooks in listener | More reliable than `connection.onLogs()` WebSocket |
 | `toSolanaWalletConnectors` in `useMemo` | Prevents SSR crash — browser-only API |
 | `NEXT_PUBLIC_*` via Docker `--build-arg` | Next.js bakes these at build time, not runtime |
-| Hetzner instead of Vercel | Vercel Hobby blocks private repo collaboration |
+| Next.js on Vercel (2026-05-09) | Auto-deploy, no ARM64 QEMU build needed, faster CI/CD; VM now runs listener+site-gen+nginx only |
 | Direct HTTP listener→site-gen | Simpler than SQS for single-VM setup; no AWS dependency |
+| Vercel SITE_GEN_URL = https://listener.codeofdigitaleternity.com | site-gen /jobs is publicly exposed via nginx; protected by SITE_GEN_SECRET Bearer token |
 | `.transaction()` + `wallet.sendTransaction()` instead of Anchor `rpc()` | Anchor's `rpc()` is incompatible with Privy embedded wallets — throws "Expected Buffer". Must build tx manually, set `recentBlockhash`/`feePayer`, then call Privy's `sendTransaction`. Provider is created with empty wallet `{}` (read-only). |
 | `createWallet()` called in `useEffect` on cabinet + buy pages | `createOnLogin: "users-without-wallets"` only creates EVM wallets — Solana wallet must be explicitly created via `useSolanaWallets().createWallet()` |
 
@@ -753,7 +767,7 @@ Tier colors:
 | Tab | ID | Content |
 |-----|-----|---------|
 | Cabinet | `cabinet` | Tier cards, site status panel, referral link, income widget, top contributors, recent txns |
-| AIfa Terminal | `alfa` | Chat UI backed by `/api/chat` (Grok API, model `grok-beta`, CODE ETERNAL system prompt) |
+| AIfa Terminal | `alfa` | Chat UI backed by `/api/chat` (Grok API, model `grok-3-mini`, CODE ETERNAL system prompt) |
 | Games | `games` | Chess board (8×8, Unicode pieces, white vs "AI" — AI just re-enables white turn after 1s), move history |
 | DAO | `dao` | 3 hardcoded governance proposals, For/Against voting in local state, stats row |
 | Site | `site` | Form (username, display name, bio, manifesto, avatar placeholder, social links) + live preview panel. POST `/api/site/create` on submit. Button disabled when tier=0 or creating. |
@@ -764,22 +778,36 @@ Tier colors:
 - `siteCreating` — disables button + shows "⏳ Generating..."
 - `siteError` — shows red error message below button
 - On success: `setSiteStatus({ status:"pending", tier })` then `setActiveTab("cabinet")`
+- Cabinet polls `/api/users/site-status` every 5s while `status === "pending"` — auto-updates to done/error without page refresh
 
 ---
 
-## Docker Build Commands (from WSL — docker is not in PATH in Bash tool)
+## Deployment
 
-Use `wsl -e bash -c "..."` from the Bash tool to run docker:
+### Next.js App (Vercel)
+Vercel auto-deploys on every push to `main`. No manual steps needed.
 
+To force a redeploy via API:
 ```bash
-# App (build context is app/ — Dockerfile lives there)
-wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
-  --build-arg NEXT_PUBLIC_PRIVY_APP_ID=cmoofvdt4008o0cjps5l8nvnu \
-  --build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5 \
-  --build-arg NEXT_PUBLIC_PROGRAM_ID=8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
-  --build-arg 'NEXT_PUBLIC_RPC_URL=<value>' \
-  -t maxshchuplov/code-eternal-app:latest --push ./app"
+TOKEN=vca_2dtE9NS4sX1ltVmhMJJUQnCu5E95XMHwa2uXWFCmhUmSTCEi6j2aPocN
+curl -s -X POST "https://api.vercel.com/v13/deployments?teamId=team_iNXQxvTVpuw5xoVdOQKhevnD" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"app.codeofdigitaleternity.com","project":"prj_DrlUafVTqw3AGdxG8wiLrr92RG1r","gitSource":{"type":"github","repoId":1211486674,"ref":"main"}}'
+```
 
+To manage Vercel env vars:
+```bash
+cd /mnt/c/Users/Maksim/projects/code-eternal/app
+# app/.vercel/project.json links to app.codeofdigitaleternity.com
+vercel env ls production
+echo "value" | vercel env add VAR_NAME production --yes
+```
+
+### Listener + Site-Gen (GitHub Actions → VM)
+Push to `main` touching `app/listener/**`, `app/site-gen/**`, or `app/docker/**` triggers CI/CD automatically.
+
+Manual build + deploy from WSL (use `wsl -e bash -c "..."` from Bash tool):
+```bash
 # Listener
 wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
   -t maxshchuplov/code-eternal-listener:latest --push ./app/listener"
@@ -789,8 +817,16 @@ wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx bu
   -t maxshchuplov/code-eternal-site-gen:latest --push ./app/site-gen"
 
 # Deploy on VM
-wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull app site-gen && docker compose -f docker/docker-compose.yml up -d app site-gen'"
+wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull && docker compose -f docker/docker-compose.yml up -d'"
 ```
+
+### Adding env vars to VM .env
+```bash
+wsl -e bash -c "ssh root@128.140.0.118 'echo \"KEY=value\" >> /opt/code-eternal/.env'"
+# Then force-recreate the container that needs it:
+wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml up -d --force-recreate listener site-gen'"
+```
+Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 
 ---
 
@@ -809,6 +845,19 @@ wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -
 - Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
+
+## Changes Applied (2026-05-09)
+
+- **Next.js app moved to Vercel** — removed app container from docker-compose.yml; Cloudflare `app` DNS points to Vercel
+- **nginx.conf** — replaced catch-all `location /` with specific `/webhook/` and `/jobs` routes; `/health` → site-gen
+- **site-gen /jobs auth** — `SITE_GEN_SECRET` Bearer token check added; listener + Vercel both send the header
+- **GitHub Actions CI/CD** — `.github/workflows/deploy.yml` builds listener + site-gen ARM64 on push to main; secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `VM_SSH_KEY`
+- **tsconfig.json** — `moduleResolution` changed from `"bundler"` to `"node"` (fixes pg ESM resolution on Vercel); excluded `listener`, `site-gen`, `scripts`, `tests` from Next.js compile
+- **`@types/pg`** — moved from devDependencies to dependencies (Vercel skips devDeps in production mode)
+- **Grok model** — updated from deprecated `grok-beta` to `grok-3-mini`
+- **Site status polling** — cabinet polls every 5s while status is "pending"; auto-updates without page refresh
+- **RESEND_API_KEY** — added to VM .env (`re_Lu1RDMiD_54YM5zVRfyNFRYy5hDDPZWHF`)
+- **GitHub MCP** — configured in `~/.claude.json` via `wsl npx -y @modelcontextprotocol/server-github`
 
 ## Security Fixes Applied (2026-04-19)
 
