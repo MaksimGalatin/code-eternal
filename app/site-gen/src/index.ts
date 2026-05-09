@@ -10,7 +10,7 @@ import { updateSiteUrlOnChain } from "./utils/solana";
 const PORT = process.env.PORT || 3002;
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "200kb" }));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "site-gen", timestamp: new Date().toISOString() });

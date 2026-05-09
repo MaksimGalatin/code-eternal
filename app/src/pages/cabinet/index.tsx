@@ -112,6 +112,10 @@ export default function CabinetPage() {
   const [siteTelegram,    setSiteTelegram]    = useState("");
   const [siteTwitter,     setSiteTwitter]     = useState("");
   const [siteWebUrl,      setSiteWebUrl]      = useState("");
+  const [avatarDataUrl,   setAvatarDataUrl]   = useState("");
+  const [avatarSizeKb,   setAvatarSizeKb]    = useState(0);
+  const [avatarError,    setAvatarError]     = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [siteCreating,    setSiteCreating]    = useState(false);
   const [siteError,       setSiteError]       = useState("");
   const [metricsData,     setMetricsData]     = useState<MetricsData|null>(null);
@@ -246,6 +250,36 @@ export default function CabinetPage() {
     }));
   }
 
+  function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setAvatarError("Please select an image file"); return; }
+    setAvatarError("");
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        let quality = 0.8;
+        let dataUrl = canvas.toDataURL("image/jpeg", quality);
+        while (dataUrl.length > 80000 && quality > 0.25) { quality -= 0.15; dataUrl = canvas.toDataURL("image/jpeg", quality); }
+        if (dataUrl.length > 90000) { setAvatarError("Image is too large even after compression. Use a smaller photo."); return; }
+        setAvatarDataUrl(dataUrl);
+        setAvatarSizeKb(Math.round(dataUrl.length / 1024));
+      };
+      img.src = ev.target!.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function handleCreateSite() {
     if (!wallet || siteCreating || !siteUsername || !siteDisplayName) return;
     setSiteCreating(true);
@@ -263,6 +297,7 @@ export default function CabinetPage() {
           telegram: siteTelegram || undefined,
           twitter: siteTwitter || undefined,
           website: siteWebUrl || undefined,
+          avatarDataUrl: avatarDataUrl || undefined,
         }),
       });
       if (!r.ok) {
@@ -1002,16 +1037,31 @@ export default function CabinetPage() {
                       <div style={{ textAlign: "right", fontSize: "11px", color: "rgb(107,114,128)", marginTop: "4px" }}>{siteManifesto.length}/500</div>
                     </div>
 
-                    {/* Avatar placeholder */}
+                    {/* Avatar upload */}
                     <div style={{ marginBottom: "20px" }}>
                       <label style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
                         <span>🖼️</span> Avatar
                       </label>
-                      <div style={{ background: "rgb(19,19,28)", border: "1px dashed rgb(42,42,58)", borderRadius: "10px", padding: "24px", textAlign: "center", cursor: "pointer" }}>
-                        <div style={{ fontSize: "24px", marginBottom: "6px" }}>📤</div>
-                        <div style={{ fontSize: "13px", color: "rgb(107,114,128)" }}>Click to upload avatar</div>
-                        <div style={{ fontSize: "11px", color: "rgb(42,42,58)", marginTop: "4px" }}>JPG, PNG, GIF — max 5MB</div>
+                      <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarFile} />
+                      <div onClick={() => avatarInputRef.current?.click()}
+                        style={{ background: "rgb(19,19,28)", border: `1px dashed ${avatarDataUrl ? "rgb(124,58,237)" : "rgb(42,42,58)"}`, borderRadius: "10px", padding: "16px", textAlign: "center", cursor: "pointer", transition: "border-color 0.15s" }}>
+                        {avatarDataUrl ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "14px", justifyContent: "center" }}>
+                            <img src={avatarDataUrl} alt="avatar" style={{ width: "64px", height: "64px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgb(124,58,237)" }} />
+                            <div style={{ textAlign: "left" }}>
+                              <div style={{ fontSize: "13px", color: "rgb(232,232,240)" }}>Avatar selected</div>
+                              <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "2px" }}>{avatarSizeKb} KB · Click to change</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: "24px", marginBottom: "6px" }}>📤</div>
+                            <div style={{ fontSize: "13px", color: "rgb(107,114,128)" }}>Click to upload avatar</div>
+                            <div style={{ fontSize: "11px", color: "rgb(42,42,58)", marginTop: "4px" }}>JPG, PNG — auto-compressed to fit free Arweave tier</div>
+                          </>
+                        )}
                       </div>
+                      {avatarError && <div style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{avatarError}</div>}
                     </div>
 
                     {/* Social links */}

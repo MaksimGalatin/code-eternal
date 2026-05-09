@@ -76,6 +76,15 @@
       border: 1px solid {{tierColor}}22;
     }
 
+    .avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid {{tierColor}}66;
+      margin-bottom: 24px;
+    }
+
     .name {
       font-size: clamp(28px, 5vw, 44px);
       font-weight: 700;
@@ -224,7 +233,11 @@
   </header>
 
   <main class="hero">
+    {{#if avatarDataUrl}}
+    <img src="{{avatarDataUrl}}" class="avatar" alt="Avatar" />
+    {{else}}
     <div class="sigil">&#9670;</div>
+    {{/if}}
 
     <h1 class="name">{{name}}</h1>
     {{#if username}}

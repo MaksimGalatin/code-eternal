@@ -12,6 +12,8 @@ const TIER_META: Record<number, { name: string; color: string }> = {
   3: { name: "Digital DNA", color: "#10B981" },
 };
 
+const MAX_HTML_BYTES = 95000;
+
 export async function generateAndDeploy(job: {
   wallet: string;
   tier: number;
@@ -24,6 +26,7 @@ export async function generateAndDeploy(job: {
   telegram?: string;
   twitter?: string;
   website?: string;
+  avatarDataUrl?: string;
 }): Promise<string> {
   const templateSource = fs.readFileSync(TEMPLATE_PATH, "utf-8");
   const template = Handlebars.compile(templateSource);
@@ -51,7 +54,14 @@ export async function generateAndDeploy(job: {
     twitter: job.twitter || null,
     website: job.website || null,
     hasSocial: !!(job.telegram || job.twitter || job.website),
+    avatarDataUrl: job.avatarDataUrl || null,
   });
+
+  const size = Buffer.byteLength(html, "utf-8");
+  logger.info(`Site size: ${size} bytes`);
+  if (size > MAX_HTML_BYTES) {
+    throw new Error(`Site HTML too large: ${size} bytes (max ${MAX_HTML_BYTES}). Reduce avatar or text content.`);
+  }
 
   // 2. Upload to Arweave via Irys
   const irys = new Irys({
@@ -62,10 +72,6 @@ export async function generateAndDeploy(job: {
       providerUrl: process.env.HELIUS_RPC_URL!,
     },
   });
-
-  // Files under ~100KB upload for free on Irys
-  const size = Buffer.byteLength(html, "utf-8");
-  logger.info(`Site size: ${size} bytes`);
 
   const receipt = await irys.upload(html, {
     tags: [

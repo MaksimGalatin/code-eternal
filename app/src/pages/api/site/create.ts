@@ -2,13 +2,15 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { db } from "@/lib/db";
 import { PublicKey } from "@solana/web3.js";
 
+export const config = { api: { bodyParser: { sizeLimit: "200kb" } } };
+
 const SITE_GEN_URL = process.env.SITE_GEN_URL || "http://site-gen:3002";
 const SITE_GEN_SECRET = process.env.SITE_GEN_SECRET;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
-  const { wallet, displayName, username, bio, manifesto, telegram, twitter, website } = req.body as {
+  const { wallet, displayName, username, bio, manifesto, telegram, twitter, website, avatarDataUrl } = req.body as {
     wallet?: string;
     displayName?: string;
     username?: string;
@@ -17,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     telegram?: string;
     twitter?: string;
     website?: string;
+    avatarDataUrl?: string;
   };
 
   if (!wallet) return res.status(400).json({ error: "wallet required" });
@@ -83,6 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         telegram: telegram || undefined,
         twitter: twitter || undefined,
         website: website || undefined,
+        avatarDataUrl: avatarDataUrl || undefined,
       }),
     }).catch(err => console.error("site-gen dispatch error:", err));
 
