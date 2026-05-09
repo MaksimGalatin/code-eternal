@@ -882,6 +882,24 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
+- **Tier downgrade constraint vs. subscription renewal**: `process_payment.rs` currently requires `tier >= user_state.tier` (prevents downgrade). This is correct while tiers are permanent on-chain. If subscription expiry is added in the future (requiring `tier_expires` field in `UserState`), the constraint must change to: allow any tier if `clock.unix_timestamp > tier_expires`, otherwise require `tier >= current_tier`. The DB has `tier_expires` but the smart contract has no on-chain expiry concept yet.
+- **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
+- **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
+
+## Changes Applied (2026-05-11, Security)
+
+- **`/api/site/create` auth** — added Privy JWT verification via `@privy-io/server-auth`; server resolves the authenticated user's linked Solana wallet and rejects any request where the `wallet` body field doesn't match. Requires `PRIVY_APP_SECRET` env var (set in Vercel). Frontend sends `Authorization: Bearer <privy_token>` from `getAccessToken()`.
+- **`/api/site/create` rate limit** — 5 requests per 10 min per IP added at handler entry.
+- **HTML injection in email** — `displayName` is now HTML-escaped before embedding in the Resend confirmation email (`onPaymentProcessed.ts`).
+- **`getIp()` IP spoofing** — `rateLimit.ts` now prefers `x-real-ip` (set by Vercel/nginx, not spoofable by the client) over `x-forwarded-for`.
+- **HTTPS-only website URL** — `WEBSITE_RE` in `site/create/route.ts` changed from `https?://` to `https://`.
+- **GIF removed from avatar types** — `AVATAR_RE` now allows only `jpeg`, `png`, `webp`.
+- **`IRYS_BASE_URL` env var** — `readOnChainArweaveUrl()` in `site-gen/utils/solana.ts` now reads `IRYS_BASE_URL` env var (defaults to `https://devnet.irys.xyz`); set to `https://node2.irys.xyz` for mainnet.
+- **On-chain tier downgrade prevention** — `process_payment.rs` now requires `tier >= user_state.tier`. See Known Issues for the subscription-renewal caveat.
+- **On-chain referral chain enforcement** — `process_payment.rs` validates the full 3-level referral chain against on-chain `UserState` data: `ref1 == user_state.referrer`, `ref2 == ref1.referrer`, `ref3 == ref2.referrer`. Referrer UserState PDAs are passed as `ctx.remaining_accounts` (readonly, no IDL account change needed).
+- **`register_user` now stores ref1 on-chain** — `buy/page.tsx` passes the actual `ref1` pubkey to `registerUser()` instead of `null`, so the on-chain referral chain is established at registration time.
+- **`TierDowngrade` and `InvalidReferral` errors** — added to `errors.rs` and both IDL files.
+- **Tests updated** — 3-referrals test now registers ref1/ref2/ref3 with proper chain (ref3←ref2←ref1←payer2) and passes `ref1Pda`/`ref2Pda` as `remainingAccounts`.
 
 ## Changes Applied (2026-05-11)
 
