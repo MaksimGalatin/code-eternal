@@ -16,8 +16,13 @@ const WEBSITE_RE = /^https:\/\/[^\s]{1,200}$/;
 
 export async function POST(req: Request) {
   // Rate limit: 20 site creates per 10 minutes per IP
-  if (!rateLimit(getIp(req), 20, 10 * 60 * 1000)) {
-    return NextResponse.json({ error: "too many requests" }, { status: 429 });
+  const retryAfter = rateLimit(getIp(req), 20, 10 * 60 * 1000);
+  if (retryAfter !== null) {
+    const mins = Math.ceil(retryAfter / 60);
+    return NextResponse.json(
+      { error: `Too many requests. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } }
+    );
   }
 
   // Verify Privy auth token — ensures caller owns the wallet they claim
