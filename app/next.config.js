@@ -27,6 +27,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
+  eslint: {
+    dirs: ["src"],
+  },
   async headers() {
     return [
       {
