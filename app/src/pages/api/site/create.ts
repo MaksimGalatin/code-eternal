@@ -39,9 +39,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: `bio max ${MAX.bio} chars` });
   if (manifesto && manifesto.length > MAX.manifesto)
     return res.status(400).json({ error: `manifesto max ${MAX.manifesto} chars` });
-  if (telegram && !TELEGRAM_RE.test(telegram))
+  const telegramClean = telegram?.replace(/^@/, "");
+  if (telegramClean && !TELEGRAM_RE.test(telegramClean))
     return res.status(400).json({ error: "invalid telegram handle" });
-  if (twitter && !TWITTER_RE.test(twitter))
+  const twitterClean = twitter?.replace(/^@/, "");
+  if (twitterClean && !TWITTER_RE.test(twitterClean))
     return res.status(400).json({ error: "invalid twitter handle" });
   if (website && !WEBSITE_RE.test(website))
     return res.status(400).json({ error: "invalid website URL" });
@@ -104,8 +106,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       username: username || undefined,
       bio: bio || undefined,
       manifesto: manifesto || undefined,
-      telegram: telegram || undefined,
-      twitter: twitter || undefined,
+      telegram: telegramClean || undefined,
+      twitter: twitterClean || undefined,
       website: website || undefined,
       avatarDataUrl: avatarDataUrl || undefined,
     });
