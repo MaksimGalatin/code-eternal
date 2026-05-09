@@ -54,3 +54,35 @@ export async function updateSiteUrlOnChain(
 
   logger.info(`On-chain URL updated for ${walletAddress}: ${arweaveUrl}`);
 }
+
+/** Read the arweave_url already stored on-chain for this wallet. Returns null if not set. */
+export async function readOnChainArweaveUrl(walletAddress: string): Promise<string | null> {
+  const connection = new Connection(RPC_URL, "confirmed");
+  const userWallet = new PublicKey(walletAddress);
+  const [userStatePda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("user"), userWallet.toBuffer()],
+    PROGRAM_ID
+  );
+
+  const accountInfo = await connection.getAccountInfo(userStatePda);
+  if (!accountInfo) return null;
+
+  // UserState binary layout:
+  // [0..7]   discriminator
+  // [8..39]  owner Pubkey (32)
+  // [40]     referrer Option flag
+  // [41..72] referrer Pubkey (32, only if flag=1)
+  // [41|73]  tier (u8)
+  // [42|74]  registered_at (i64, 8)
+  // [50|82]  memory_score (u64, 8)
+  // [58|90]  arweave_url ([u8; 64])
+  const data = accountInfo.data;
+  const hasReferrer = data[40] === 1;
+  const urlOffset = hasReferrer ? 90 : 58;
+  const urlBytes = data.slice(urlOffset, urlOffset + 64);
+  if (urlBytes[0] === 0) return null;
+
+  const end = urlBytes.indexOf(0);
+  const txId = Buffer.from(end === -1 ? urlBytes : urlBytes.slice(0, end)).toString("utf8");
+  return txId ? `https://devnet.irys.xyz/${txId}` : null;
+}

@@ -5,7 +5,7 @@ import express from "express";
 import { logger } from "./utils/logger";
 import { generateAndDeploy } from "./utils/arweave";
 import { db } from "./utils/db";
-import { updateSiteUrlOnChain } from "./utils/solana";
+import { updateSiteUrlOnChain, readOnChainArweaveUrl } from "./utils/solana";
 
 const PORT = process.env.PORT || 3002;
 
@@ -67,27 +67,23 @@ async function processJob(job: any) {
   } catch (err) {
     logger.error(`Generation error for job ${job.jobId}:`, err);
 
-    // If on-chain update failed (e.g. cooldown), check if another job for the same
-    // wallet already succeeded — if so, mark this job done with that URL.
+    // If on-chain update failed (e.g. cooldown from a concurrent job), read the
+    // on-chain state directly — if Arweave URL is already set, site is deployed.
     try {
-      const sibling = await db.query(
-        `SELECT arweave_url FROM site_generation_jobs
-         WHERE wallet = $1 AND status = 'done' AND arweave_url IS NOT NULL
-         ORDER BY completed_at DESC LIMIT 1`,
-        [job.wallet]
-      );
-      if (sibling.rows[0]?.arweave_url) {
+      await new Promise(r => setTimeout(r, 3000)); // wait for concurrent job to settle
+      const onChainUrl = await readOnChainArweaveUrl(job.wallet);
+      if (onChainUrl) {
         await db.query(
           `UPDATE site_generation_jobs
            SET status = 'done', arweave_url = $1, completed_at = NOW(), error_message = NULL
            WHERE id = $2`,
-          [sibling.rows[0].arweave_url, job.jobId]
+          [onChainUrl, job.jobId]
         );
-        logger.info(`Job ${job.jobId} marked done via sibling job URL: ${sibling.rows[0].arweave_url}`);
+        logger.info(`Job ${job.jobId} marked done via on-chain URL: ${onChainUrl}`);
         return;
       }
-    } catch (siblingErr) {
-      logger.error(`Failed to check sibling job for ${job.wallet}:`, siblingErr);
+    } catch (onChainErr) {
+      logger.error(`Failed to read on-chain state for ${job.wallet}:`, onChainErr);
     }
 
     await db.query(
