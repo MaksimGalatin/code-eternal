@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { db } from "@/lib/db";
 import { privyServer } from "@/lib/privy";
 import { rateLimit, getIp } from "@/lib/rateLimit";
@@ -135,7 +136,9 @@ export async function POST(req: Request) {
       avatarDataUrl: avatarDataUrl || undefined,
     });
 
-    (async () => {
+    // waitUntil keeps the Vercel function alive until site-gen dispatch completes,
+    // preventing the "stuck pending" bug where fire-and-forget was killed on response.
+    waitUntil((async () => {
       const MAX_RETRIES = 3;
       for (let i = 0; i < MAX_RETRIES; i++) {
         if (i > 0) await new Promise(r => setTimeout(r, i * 2000));
@@ -147,10 +150,9 @@ export async function POST(req: Request) {
           console.error(`site-gen dispatch attempt ${i + 1} error:`, err);
         }
       }
-      const pool = (await import("@/lib/db")).db;
-      await pool.query("UPDATE site_generation_jobs SET status='error', error_message=$1 WHERE id=$2",
+      await db.query("UPDATE site_generation_jobs SET status='error', error_message=$1 WHERE id=$2",
         ["site-gen unreachable", jobId]);
-    })().catch(err => console.error("site-gen dispatch fatal:", err));
+    })());
 
     return NextResponse.json({ jobId });
   } catch (err) {
