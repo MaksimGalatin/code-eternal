@@ -155,6 +155,18 @@ export default function CabinetPage() {
       .then(r => r.json()).then(setIncome).catch(() => {});
   }, [wallet, user]);
 
+  // Poll site status every 5s while pending
+  useEffect(() => {
+    if (!wallet || siteStatus?.status !== "pending") return;
+    const id = setInterval(() => {
+      fetch(`/api/users/site-status?wallet=${wallet.address}`)
+        .then(r => r.json())
+        .then(data => { setSiteStatus(data); if (data.status !== "pending") clearInterval(id); })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(id);
+  }, [wallet, siteStatus?.status]);
+
   useEffect(() => {
     if (!wallet || !USDC_MINT_STR) return;
     (async () => {
