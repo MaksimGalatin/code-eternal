@@ -197,11 +197,11 @@ export default function CabinetPage() {
         );
         const userStateInfo = await connection.getAccountInfo(userStatePda);
         if (userStateInfo) {
-          const bytes = new Uint8Array(userStateInfo.data as ArrayBuffer);
-          const view = new DataView(bytes.buffer);
-          const hasRef = bytes[40] === 1;
+          const d = userStateInfo.data; // Buffer extends Uint8Array
+          const view = new DataView(d.buffer, d.byteOffset, d.byteLength);
+          const hasRef = d[40] === 1;
           const base = hasRef ? 73 : 41;
-          expires = Number(view.getBigInt64(base + 9, true)); // true = little-endian
+          expires = Number(view.getBigInt64(base + 9, true)); // little-endian
           setTierExpires(expires);
         }
       } catch (e) { console.error("tier_expires decode failed:", e); }
