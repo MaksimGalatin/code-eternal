@@ -123,9 +123,11 @@ pub fn handler(
         require!(tier >= ctx.accounts.user_state.tier, CodeEternalError::TierDowngrade);
     }
 
-    // 2b. Validate referral chain against on-chain stored referrers.
-    // ref1 must match the payer's stored referrer; ref2/ref3 are validated by
-    // reading the referrer's own UserState from ctx.remaining_accounts (readonly).
+    // 2b. Validate referral chain + check subscription activity.
+    // Expired referrer → their share goes to vault (not burned, not paid).
+    // ref3 expiry is not enforced on-chain (no remaining_account for ref3 UserState).
+    let mut ref1_active = false;
+    let mut ref2_active = false;
     require!(ref1 == ctx.accounts.user_state.referrer, CodeEternalError::InvalidReferral);
     if let Some(ref1_key) = ref1 {
         let ref1_info = ctx.remaining_accounts
@@ -135,12 +137,15 @@ pub fn handler(
             *ref1_info.owner == crate::ID,
             CodeEternalError::InvalidReferral
         );
-        let ref1_data = ref1_info.try_borrow_data()?;
-        let mut ref1_slice: &[u8] = &ref1_data;
-        let ref1_state = UserState::try_deserialize(&mut ref1_slice)
-            .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
-        require!(ref1_state.owner == ref1_key, CodeEternalError::InvalidReferral);
-        require!(ref2 == ref1_state.referrer, CodeEternalError::InvalidReferral);
+        {
+            let ref1_data = ref1_info.try_borrow_data()?;
+            let mut ref1_slice: &[u8] = &ref1_data;
+            let ref1_state = UserState::try_deserialize(&mut ref1_slice)
+                .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
+            require!(ref1_state.owner == ref1_key, CodeEternalError::InvalidReferral);
+            require!(ref2 == ref1_state.referrer, CodeEternalError::InvalidReferral);
+            ref1_active = clock.unix_timestamp <= ref1_state.tier_expires;
+        }
 
         if let Some(ref2_key) = ref2 {
             let ref2_info = ctx.remaining_accounts
@@ -150,12 +155,15 @@ pub fn handler(
                 *ref2_info.owner == crate::ID,
                 CodeEternalError::InvalidReferral
             );
-            let ref2_data = ref2_info.try_borrow_data()?;
-            let mut ref2_slice: &[u8] = &ref2_data;
-            let ref2_state = UserState::try_deserialize(&mut ref2_slice)
-                .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
-            require!(ref2_state.owner == ref2_key, CodeEternalError::InvalidReferral);
-            require!(ref3 == ref2_state.referrer, CodeEternalError::InvalidReferral);
+            {
+                let ref2_data = ref2_info.try_borrow_data()?;
+                let mut ref2_slice: &[u8] = &ref2_data;
+                let ref2_state = UserState::try_deserialize(&mut ref2_slice)
+                    .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
+                require!(ref2_state.owner == ref2_key, CodeEternalError::InvalidReferral);
+                require!(ref3 == ref2_state.referrer, CodeEternalError::InvalidReferral);
+                ref2_active = clock.unix_timestamp <= ref2_state.tier_expires;
+            }
         }
     }
 
@@ -164,7 +172,7 @@ pub fn handler(
     let ref1_amount   = calc_bps(amount_usdc, REF1_BPS)?;
     let ref2_amount   = calc_bps(amount_usdc, REF2_BPS)?;
     let ref3_amount   = calc_bps(amount_usdc, REF3_BPS)?;
-    let vault_amount  = calc_bps(amount_usdc, VAULT_BPS)?;
+    let mut vault_amount  = calc_bps(amount_usdc, VAULT_BPS)?;
 
     // 5% base burn + shares from unfilled referral levels
     let mut burn_amount = calc_bps(amount_usdc, BASE_BURN_BPS)?;
@@ -203,31 +211,39 @@ pub fn handler(
         ecosystem_fund_amount,
     )?;
 
-    // 5. Referral L1 (15%) or burn
-    // Check the Option<Pubkey> arg — not the account key — to avoid passing SystemProgram
-    // as a writable account (Solana runtime rejects executable accounts as writable)
+    // 5. Referral L1 (15%): active → transfer, expired → vault, absent → burn
     if ref1.is_some() {
-        transfer_usdc(
-            payer_ai.clone(),
-            ctx.accounts.ref1_token_account.to_account_info(),
-            payer_auth.clone(),
-            token_prog.clone(),
-            ref1_amount,
-        )?;
+        if ref1_active {
+            transfer_usdc(
+                payer_ai.clone(),
+                ctx.accounts.ref1_token_account.to_account_info(),
+                payer_auth.clone(),
+                token_prog.clone(),
+                ref1_amount,
+            )?;
+        } else {
+            vault_amount = vault_amount.checked_add(ref1_amount)
+                .ok_or(CodeEternalError::Overflow)?;
+        }
     } else {
         burn_amount = burn_amount.checked_add(ref1_amount)
             .ok_or(CodeEternalError::Overflow)?;
     }
 
-    // 6. Referral L2 (7%) or burn
+    // 6. Referral L2 (7%): active → transfer, expired → vault, absent → burn
     if ref2.is_some() {
-        transfer_usdc(
-            payer_ai.clone(),
-            ctx.accounts.ref2_token_account.to_account_info(),
-            payer_auth.clone(),
-            token_prog.clone(),
-            ref2_amount,
-        )?;
+        if ref2_active {
+            transfer_usdc(
+                payer_ai.clone(),
+                ctx.accounts.ref2_token_account.to_account_info(),
+                payer_auth.clone(),
+                token_prog.clone(),
+                ref2_amount,
+            )?;
+        } else {
+            vault_amount = vault_amount.checked_add(ref2_amount)
+                .ok_or(CodeEternalError::Overflow)?;
+        }
     } else {
         burn_amount = burn_amount.checked_add(ref2_amount)
             .ok_or(CodeEternalError::Overflow)?;

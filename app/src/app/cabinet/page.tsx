@@ -8,6 +8,7 @@ import { getAssociatedTokenAddress } from "@solana/spl-token";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
 const USDC_MINT_STR = process.env.NEXT_PUBLIC_USDC_MINT;
+const PROGRAM_ID_STR = process.env.NEXT_PUBLIC_PROGRAM_ID!
 
 const TIERS = [
   { id: 1, name: "Spark",           price: 15,   color: "#7C3AED", rgb: "124,58,237",  icon: "⚡" },
@@ -18,7 +19,7 @@ const TIER_COLOR: Record<number, string> = { 1: "#7C3AED", 2: "#D4A24C", 3: "#10
 const TIER_NAME: Record<number, string>  = { 1: "Spark", 2: "Family Archives", 3: "Digital DNA" };
 
 type SiteStatus  = { status: "none"|"pending"|"done"|"error"; arweaveUrl?: string|null; tier: number };
-type Income      = { l1: number; l2: number; l3: number; total: number; recent: any[] };
+type Income      = { l1: number; l2: number; l3: number; total: number; locked: number; recent: any[] };
 type Overview    = { burnedUsdc: number; burnTxs: number; activeMembers: number; sitesCreated: number };
 type Contributor = { rank: number; wallet: string; displayName: string|null; tier: number; tierName: string; amountUsdc: number };
 type RecentTxn   = { wallet: string; tier: number; tierName: string; amount: number; txSig: string; status: string; createdAt: string };
@@ -101,6 +102,7 @@ export default function CabinetPage() {
   const [income,       setIncome]       = useState<Income|null>(null);
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [usdcBalance,  setUsdcBalance]  = useState<number|null>(null);
+  const [tierExpires,  setTierExpires]  = useState<number>(0); // unix ts; 0 = not loaded yet
   const [alfaInput,    setAlfaInput]    = useState("");
   const [recentTxns,   setRecentTxns]   = useState<RecentTxn[]>([]);
   const [nftFlipped,      setNftFlipped]      = useState(false);
@@ -156,8 +158,6 @@ export default function CabinetPage() {
     fetch(`/api/users/site-status?wallet=${wallet.address}`)
       .then(r => r.json()).then(setSiteStatus).catch(() => {});
 
-    fetch(`/api/referrals/income?wallet=${wallet.address}`)
-      .then(r => r.json()).then(setIncome).catch(() => {});
   }, [wallet, user]);
 
   // Poll site status every 5s while pending
@@ -173,18 +173,44 @@ export default function CabinetPage() {
   }, [wallet, siteStatus?.status]);
 
   useEffect(() => {
-    if (!wallet || !USDC_MINT_STR) return;
+    if (!wallet) return;
     (async () => {
+      const connection = new Connection(RPC_URL, "confirmed");
+      const payer = new PublicKey(wallet.address);
+
+      // USDC balance
+      if (USDC_MINT_STR) {
+        try {
+          const mint = new PublicKey(USDC_MINT_STR);
+          const ata = await getAssociatedTokenAddress(mint, payer);
+          const info = await connection.getTokenAccountBalance(ata);
+          setUsdcBalance(info.value.uiAmount ?? 0);
+        } catch { setUsdcBalance(0); }
+      }
+
+      // On-chain UserState — extract tier_expires
+      let expires = 0;
       try {
-        const connection = new Connection(RPC_URL, "confirmed");
-        const payer = new PublicKey(wallet.address);
-        const mint = new PublicKey(USDC_MINT_STR);
-        const ata = await getAssociatedTokenAddress(mint, payer);
-        const info = await connection.getTokenAccountBalance(ata);
-        setUsdcBalance(info.value.uiAmount ?? 0);
-      } catch { setUsdcBalance(0); }
+        const [userStatePda] = PublicKey.findProgramAddressSync(
+          [Buffer.from("user"), payer.toBuffer()],
+          new PublicKey(PROGRAM_ID_STR)
+        );
+        const userStateInfo = await connection.getAccountInfo(userStatePda);
+        if (userStateInfo) {
+          const d = Buffer.from(userStateInfo.data);
+          const hasRef = d[40] === 1;
+          const base = hasRef ? 73 : 41;
+          expires = Number(d.readBigInt64LE(base + 9));
+          setTierExpires(expires);
+        }
+      } catch {}
+
+      // Income — depends on tier_expires for earned/locked split
+      const expiresParam = expires > 0 ? `&expires=${expires}` : "";
+      fetch(`/api/referrals/income?wallet=${wallet.address}${expiresParam}`)
+        .then(r => r.json()).then(setIncome).catch(() => {});
     })();
-  }, [wallet]);
+  }, [wallet?.address]);
 
   useEffect(() => {
     fetch("/api/stats/overview").then(r => r.json()).then(setOverview).catch(() => {});
@@ -281,7 +307,7 @@ export default function CabinetPage() {
   }
 
   async function handleCreateSite() {
-    if (!wallet || siteCreating || !siteUsername || !siteDisplayName) return;
+    if (!wallet || siteCreating || !siteUsername || !siteDisplayName || isExpired) return;
     setSiteCreating(true);
     setSiteError("");
     try {
@@ -321,6 +347,10 @@ export default function CabinetPage() {
   const email = user?.email?.address ?? user?.google?.email ?? "";
   const currentTier = siteStatus?.tier ?? 0;
   const tierObj = TIERS.find(t => t.id === currentTier);
+  const now = Math.floor(Date.now() / 1000);
+  const isExpired = tierExpires > 0 && now > tierExpires;
+  const daysLeft = tierExpires > 0 && !isExpired ? Math.ceil((tierExpires - now) / 86400) : 0;
+  const expiryDate = tierExpires > 0 ? new Date(tierExpires * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
 
   if (!ready || !authenticated) {
     return <div style={{ background: "#0A0A0F", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontFamily: "Inter,sans-serif" }}>Loading...</div>;
@@ -384,6 +414,24 @@ export default function CabinetPage() {
             </button>
           </div>
         </header>
+
+        {/* ── Expiry banner ─────────────────────────────────────────────── */}
+        {isExpired && (
+          <div style={{ background: "rgba(248,81,73,0.08)", borderBottom: "1px solid rgba(248,81,73,0.25)", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "16px" }}>⚠️</span>
+              <div>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#f85149" }}>Subscription expired</span>
+                <span style={{ fontSize: "12px", color: "rgb(139,139,158)", marginLeft: "8px" }}>Site editing is locked. Renew to unlock all features.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push(`/cabinet/buy?tier=${currentTier || 1}`)}
+              style={{ padding: "6px 16px", borderRadius: "8px", background: "linear-gradient(135deg,#f85149,#c0392b)", border: "none", color: "white", fontSize: "12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+              Renew Now →
+            </button>
+          </div>
+        )}
 
         {/* ── Tab bar ────────────────────────────────────────────────────── */}
         <div style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as any, background: "transparent", position: "relative", zIndex: 10 }}>
@@ -459,7 +507,20 @@ export default function CabinetPage() {
                   <div style={{ fontSize: "36px", fontWeight: 900, color: "rgb(232,232,240)", letterSpacing: "-1px", marginBottom: "4px" }}>
                     ${income ? fmtUsd(income.total) : "0.00"}
                   </div>
-                  <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginBottom: "24px" }}>total earned from referrals</div>
+                  <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginBottom: income?.locked ? "12px" : "24px" }}>total earned from referrals</div>
+                  {(income?.locked ?? 0) > 0 && (
+                    <div style={{ marginBottom: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(248,81,73,0.06)", border: "1px solid rgba(248,81,73,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#f85149" }}>🔒 ${fmtUsd(income!.locked)} locked</div>
+                        <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "2px" }}>You would have earned this with an active subscription</div>
+                      </div>
+                      <button
+                        onClick={() => router.push(`/cabinet/buy?tier=${currentTier || 1}`)}
+                        style={{ padding: "5px 12px", borderRadius: "8px", background: "rgba(248,81,73,0.15)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149", fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                        Renew →
+                      </button>
+                    </div>
+                  )}
 
                   <div style={{ display: "flex", gap: "24px", marginBottom: "24px" }}>
                     {[
@@ -500,9 +561,17 @@ export default function CabinetPage() {
                             <span style={{ fontSize: "28px" }}>{ct.icon}</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: "17px", fontWeight: 800, color: ct.color }}>{ct.name}</div>
-                              <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "2px" }}>Active</div>
+                              <div style={{ fontSize: "11px", color: isExpired ? "#f85149" : "rgb(107,114,128)", marginTop: "2px" }}>
+                                {isExpired ? `Expired ${expiryDate}` : expiryDate ? `Active until ${expiryDate}` : "Active"}
+                              </div>
                             </div>
-                            <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>✓ Active</span>
+                            {isExpired ? (
+                              <span style={{ fontSize: "11px", background: "rgba(248,81,73,0.15)", color: "#f85149", padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>✕ Expired</span>
+                            ) : daysLeft > 0 ? (
+                              <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>{daysLeft}d left</span>
+                            ) : (
+                              <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>✓ Active</span>
+                            )}
                           </div>
                         </div>
                         {upgrades.length > 0 && (
@@ -520,9 +589,23 @@ export default function CabinetPage() {
                             ))}
                           </>
                         )}
-                        {upgrades.length === 0 && (
+                        {upgrades.length === 0 && !isExpired && (
                           <div style={{ textAlign: "center", color: "rgb(107,114,128)", fontSize: "12px", padding: "12px 0" }}>
                             You are at the highest tier 🧬
+                          </div>
+                        )}
+                        {isExpired && (
+                          <div
+                            className="tier-row"
+                            onClick={() => router.push(`/cabinet/buy?tier=${currentTier}`)}
+                            style={{ borderColor: "rgba(248,81,73,0.3)", background: "rgba(248,81,73,0.05)" }}>
+                            <span style={{ fontSize: "20px" }}>🔄</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: "14px", fontWeight: 700, color: "#f85149" }}>Renew {ct.name}</div>
+                              <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>Restore access for 30 days</div>
+                            </div>
+                            <div style={{ fontSize: "17px", fontWeight: 900, color: "#f85149" }}>${ct.price.toLocaleString()}</div>
+                            <div style={{ color: "rgb(42,42,58)", fontSize: "18px" }}>›</div>
                           </div>
                         )}
                       </>
@@ -943,11 +1026,11 @@ export default function CabinetPage() {
                     </div>
 
                     <button
-                      disabled={!siteUsername || !siteDisplayName || siteCreating || currentTier === 0}
+                      disabled={!siteUsername || !siteDisplayName || siteCreating || currentTier === 0 || isExpired}
                       onClick={handleCreateSite}
-                      style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: "white", transition: "all 0.15s", opacity: siteCreating ? 0.7 : 1 }}
+                      style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0 && !isExpired) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: isExpired ? "rgb(42,42,58)" : (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: isExpired ? "#f85149" : "white", transition: "all 0.15s", opacity: siteCreating ? 0.7 : 1 }}
                     >
-                      {siteCreating ? "⏳ Generating..." : "🌐 Create Eternal Site"}
+                      {isExpired ? "🔒 Subscription expired — Renew to edit site" : siteCreating ? "⏳ Generating..." : "🌐 Create Eternal Site"}
                     </button>
                     {siteError && (
                       <div style={{ marginTop: "8px", fontSize: "12px", color: "#ef4444", textAlign: "center" }}>{siteError}</div>
