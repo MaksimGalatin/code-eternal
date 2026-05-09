@@ -197,13 +197,14 @@ export default function CabinetPage() {
         );
         const userStateInfo = await connection.getAccountInfo(userStatePda);
         if (userStateInfo) {
-          const d = Buffer.from(userStateInfo.data);
-          const hasRef = d[40] === 1;
+          const bytes = new Uint8Array(userStateInfo.data as ArrayBuffer);
+          const view = new DataView(bytes.buffer);
+          const hasRef = bytes[40] === 1;
           const base = hasRef ? 73 : 41;
-          expires = Number(d.readBigInt64LE(base + 9));
+          expires = Number(view.getBigInt64(base + 9, true)); // true = little-endian
           setTierExpires(expires);
         }
-      } catch {}
+      } catch (e) { console.error("tier_expires decode failed:", e); }
 
       // Income — depends on tier_expires for earned/locked split
       const expiresParam = expires > 0 ? `&expires=${expires}` : "";
