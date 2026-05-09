@@ -5,7 +5,7 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: "CODE ETERNAL — Your Memory Lives Forever",
   description: "Web3 AI immortality ecosystem on Solana.",
-  icons: { icon: "/favicon.ico" },
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
