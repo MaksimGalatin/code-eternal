@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)] // Anchor 0.30.1 emits cfg(anchor-debug) which Rust 1.89 flags
 use anchor_lang::prelude::*;
 
 pub mod errors;

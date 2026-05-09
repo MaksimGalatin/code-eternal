@@ -27,7 +27,7 @@ pub struct UpdateSiteUrl<'info> {
 }
 
 /// Public key of the authorized backend service (generated 2026-04-19)
-/// Private key stored in AWS Secrets Manager as BACKEND_PRIVATE_KEY (base64)
+/// Private key stored in secrets/credentials.env as BACKEND_PRIVATE_KEY (base64)
 pub const BACKEND_AUTHORITY: Pubkey = pubkey!("96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4");
 
 pub fn handler(
