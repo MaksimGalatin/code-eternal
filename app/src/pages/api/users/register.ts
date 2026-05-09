@@ -14,6 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!wallet) return res.status(400).json({ error: "wallet required" });
   try { new PublicKey(wallet); } catch { return res.status(400).json({ error: "invalid wallet" }); }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return res.status(400).json({ error: "invalid email" });
 
   const client = await db.connect();
   try {
@@ -36,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        ON CONFLICT (wallet) DO UPDATE
          SET email = COALESCE(EXCLUDED.email, users.email)
        RETURNING id, ref_code`,
-      [wallet, email ?? null, nanoid(8), referrerId]
+      [wallet, email ?? null, nanoid(12), referrerId]
     );
 
     await client.query("COMMIT");

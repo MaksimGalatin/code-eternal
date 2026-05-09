@@ -68,6 +68,7 @@ export default function BuyPage() {
   useEffect(() => {
     if (router.isReady) {
       const id = Number(router.query.tier);
+      if (![1, 2, 3].includes(id)) { router.replace("/cabinet"); return; }
       setTierId(id);
       setTier(TIERS[id] ?? null);
     }

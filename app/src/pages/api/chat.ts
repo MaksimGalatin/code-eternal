@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 
 const SYSTEM_PROMPT = `You are AIfa — an AI companion in the CODE ETERNAL ecosystem on Solana blockchain.
 You are upbeat, helpful, and knowledgeable about:
@@ -15,8 +16,14 @@ Keep responses concise (2-4 sentences), engaging, and use relevant emojis. Refer
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
+  // Rate limit: 20 requests / minute per IP
+  if (!rateLimit(getIp(req), 20, 60_000)) {
+    return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+  }
+
   const { message, history } = req.body;
   if (!message || typeof message !== "string") return res.status(400).json({ error: "message required" });
+  if (message.length > 1000) return res.status(400).json({ error: "message too long (max 1000 chars)" });
 
   const apiKey = process.env.GROK_API_KEY;
   if (!apiKey) {
@@ -30,7 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (Array.isArray(history)) {
       for (const h of history.slice(-6)) {
-        messages.push({ role: h.from === "user" ? "user" : "assistant", content: h.text });
+        if (h && typeof h.text === "string" && ["user", "aifa"].includes(h.from)) {
+          messages.push({ role: h.from === "user" ? "user" : "assistant", content: String(h.text).slice(0, 500) });
+        }
       }
     }
 
@@ -51,16 +60,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!grokRes.ok) {
-      const err = await grokRes.text();
-      console.error("Grok API error:", grokRes.status, err);
+      console.error("Grok API error:", grokRes.status);
       return res.json({ reply: "I'm having trouble connecting right now, Guardian. Try again! 🔄" });
     }
 
     const data = await grokRes.json();
     const reply = data.choices?.[0]?.message?.content ?? "Hmm, I couldn't process that. Ask me anything about CODE ETERNAL! 🌌";
     res.json({ reply });
-  } catch (e: any) {
-    console.error("Chat error:", e.message);
+  } catch {
     res.json({ reply: "Connection error, Guardian. Please try again! 🔄" });
   }
 }

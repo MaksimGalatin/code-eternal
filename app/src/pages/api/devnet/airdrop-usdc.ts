@@ -1,9 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import { getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
+
+  // Rate limit: 5 airdrops / minute per IP
+  if (!rateLimit(getIp(req), 5, 60_000)) {
+    return res.status(429).json({ error: "Too many requests" });
+  }
 
   // Guard: devnet only
   const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? "";
@@ -70,6 +76,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.json({ success: true, amount: 1100 });
   } catch (err: any) {
     console.error("airdrop-usdc error:", err);
-    res.status(500).json({ error: err.message ?? "internal error" });
+    res.status(500).json({ error: "airdrop failed" });
   }
 }

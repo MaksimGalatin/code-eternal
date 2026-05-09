@@ -5,14 +5,17 @@ import { logger } from "./logger";
 const PROGRAM_ID = new PublicKey(process.env.PROGRAM_ID!);
 const RPC_URL = process.env.HELIUS_RPC_URL!;
 
+const IRYS_URL_RE = /^https:\/\/(devnet\.)?irys\.xyz\/[A-Za-z0-9_-]{30,64}$/;
+
 export async function updateSiteUrlOnChain(
   walletAddress: string,
   arweaveUrl: string
 ): Promise<void> {
+  if (!IRYS_URL_RE.test(arweaveUrl)) {
+    throw new Error(`Invalid Arweave URL format: ${arweaveUrl}`);
+  }
   if (arweaveUrl.length > 64) {
-    // Irys URL format: https://arweave.net/<43-char-id> = ~67 chars
-    // Store only the transaction ID (43 chars) — reconstruct URL on frontend
-    arweaveUrl = arweaveUrl.replace("https://arweave.net/", "");
+    arweaveUrl = arweaveUrl.replace("https://arweave.net/", "").replace("https://devnet.irys.xyz/", "");
   }
 
   // Convert URL to [u8; 64]

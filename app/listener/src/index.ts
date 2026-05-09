@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { timingSafeEqual } from "crypto";
 import { Connection, PublicKey } from "@solana/web3.js";
 import express from "express";
 import { logger } from "./utils/logger";
@@ -22,9 +23,19 @@ app.get("/health", (_req, res) => {
 const HELIUS_WEBHOOK_SECRET = process.env.HELIUS_WEBHOOK_SECRET;
 
 app.post("/webhook/helius", async (req, res) => {
-  const authHeader = req.headers["authorization"];
-  if (!HELIUS_WEBHOOK_SECRET || authHeader !== HELIUS_WEBHOOK_SECRET) {
-    logger.warn("Rejected unauthorized webhook request");
+  const authHeader = req.headers["authorization"] ?? "";
+  if (!HELIUS_WEBHOOK_SECRET) {
+    logger.error("HELIUS_WEBHOOK_SECRET not configured — rejecting all webhook requests");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    const a = Buffer.from(authHeader);
+    const b = Buffer.from(HELIUS_WEBHOOK_SECRET);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      logger.warn("Rejected unauthorized webhook request");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  } catch {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

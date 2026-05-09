@@ -7,6 +7,13 @@ export const config = { api: { bodyParser: { sizeLimit: "200kb" } } };
 const SITE_GEN_URL = process.env.SITE_GEN_URL || "http://site-gen:3002";
 const SITE_GEN_SECRET = process.env.SITE_GEN_SECRET;
 
+const MAX = { displayName: 60, bio: 2000, manifesto: 500, telegram: 32, twitter: 15, website: 256 };
+const AVATAR_MAX_LEN = 120_000; // ~90 KB base64
+const AVATAR_RE = /^data:image\/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$/;
+const TWITTER_RE = /^[A-Za-z0-9_]{1,15}$/;
+const TELEGRAM_RE = /^[A-Za-z0-9_]{5,32}$/;
+const WEBSITE_RE = /^https?:\/\/[^\s]{1,200}$/;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -24,6 +31,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!wallet) return res.status(400).json({ error: "wallet required" });
   try { new PublicKey(wallet); } catch { return res.status(400).json({ error: "invalid wallet" }); }
+
+  // Input length limits
+  if (displayName && displayName.length > MAX.displayName)
+    return res.status(400).json({ error: `displayName max ${MAX.displayName} chars` });
+  if (bio && bio.length > MAX.bio)
+    return res.status(400).json({ error: `bio max ${MAX.bio} chars` });
+  if (manifesto && manifesto.length > MAX.manifesto)
+    return res.status(400).json({ error: `manifesto max ${MAX.manifesto} chars` });
+  if (telegram && !TELEGRAM_RE.test(telegram))
+    return res.status(400).json({ error: "invalid telegram handle" });
+  if (twitter && !TWITTER_RE.test(twitter))
+    return res.status(400).json({ error: "invalid twitter handle" });
+  if (website && !WEBSITE_RE.test(website))
+    return res.status(400).json({ error: "invalid website URL" });
+  if (avatarDataUrl) {
+    if (!AVATAR_RE.test(avatarDataUrl))
+      return res.status(400).json({ error: "invalid avatar: must be jpeg/png/gif/webp data URL" });
+    if (avatarDataUrl.length > AVATAR_MAX_LEN)
+      return res.status(400).json({ error: "avatar too large (max ~90 KB)" });
+  }
 
   const client = await db.connect();
   try {
