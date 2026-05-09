@@ -80,3 +80,8 @@ target
 
 # Reference workspace (temporary, not part of project)
 workspace-fdd78127-560d-44c2-99d0-3c5dd7b4fc58/
+
+# CI log dumps
+ci-logs/
+ci-logs-extracted/
+ci-logs*.zip
