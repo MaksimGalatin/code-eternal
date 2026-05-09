@@ -221,6 +221,7 @@ describe("code_eternal_router", () => {
       .signers([payer])
       .rpc();
 
+    await new Promise(r => setTimeout(r, 1000));
     const vaultDelta = (await getAccount(conn, vaultTokenAccount)).amount - vaultBefore;
     const ecoDelta   = (await getAccount(conn, ecosystemFundTokenAccount)).amount - ecoBefore;
     const payerDelta = payerBefore - (await getAccount(conn, payerTokenAccount)).amount;
