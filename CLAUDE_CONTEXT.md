@@ -300,9 +300,9 @@ Program ID: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` (deployed 2026-04-19,
 
 ### Compiler Warnings
 
-Both known warnings resolved (2026-05-12):
-- `ambiguous_glob_reexports` — fixed by replacing `pub use X::*` with explicit struct re-exports in `instructions/mod.rs`
-- `unexpected_cfgs` — suppressed with `#![allow(unexpected_cfgs)]` in `lib.rs` (Anchor 0.30.1 + Rust 1.89 issue from macro expansion)
+Both known warnings suppressed (2026-05-12):
+- `ambiguous_glob_reexports` — `#![allow(ambiguous_glob_reexports)]` added to `instructions/mod.rs`. Glob re-exports cannot be replaced with explicit re-exports — Anchor's `#[program]` macro requires the `__client_accounts_*` generated types to be visible via `pub use X::*`.
+- `unexpected_cfgs` — `#![allow(unexpected_cfgs)]` added to `lib.rs` (Anchor 0.30.1 + Rust 1.89 issue from macro expansion)
 
 ---
 
@@ -893,7 +893,7 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 
 ## Changes Applied (2026-05-12)
 
-- **Compiler warnings resolved** — `instructions/mod.rs`: replaced `pub use X::*` with explicit `pub use X::StructName` for the four Accounts structs, eliminating `ambiguous_glob_reexports` on `handler`. `lib.rs`: added `#![allow(unexpected_cfgs)]` to suppress Anchor 0.30.1 + Rust 1.89 macro-generated `cfg(anchor-debug)` warning.
+- **Compiler warnings suppressed** — `instructions/mod.rs`: added `#![allow(ambiguous_glob_reexports)]` — glob re-exports are required because Anchor's `#[program]` macro generates `__client_accounts_*` types that must be in scope via `pub use X::*`; removing globs causes E0432. `lib.rs`: added `#![allow(unexpected_cfgs)]` to suppress Anchor 0.30.1 + Rust 1.89 macro-generated `cfg(anchor-debug)` warning.
 - **3-referrals CI test fix** — newly registered referrers have `tier_expires=0` which the new expiry check treated as inactive. Fix: ref2 and ref1 each buy tier 1 (as setup) before the main payer2 payment, making `ref1_active=true` and `ref2_active=true` so REF1_AMT/REF2_AMT flow to the correct accounts.
 
 ## Changes Applied (2026-05-11, Tier Expiry)
