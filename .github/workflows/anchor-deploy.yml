@@ -10,7 +10,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('app/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('contract/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Cache Solana toolchain
@@ -36,9 +36,25 @@ jobs:
           bash /tmp/sol.sh
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
+      - name: Generate test keypair
+        run: solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json --force
+
       - name: Build smart contract
         working-directory: contract
         run: cargo-build-sbf 2>&1
+
+      - name: Install test dependencies
+        working-directory: contract
+        run: npm install
+
+      - name: Start local validator and run tests
+        working-directory: contract
+        run: |
+          solana-test-validator --reset --quiet &
+          VALIDATOR_PID=$!
+          sleep 5
+          npm test
+          kill $VALIDATOR_PID
 
       - name: Deploy to Devnet
         working-directory: contract

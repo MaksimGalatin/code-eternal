@@ -15,7 +15,7 @@ import * as path from "path";
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const IDL = JSON.parse(fs.readFileSync(path.join(__dirname, "../site-gen/idl/code_eternal_router.json"), "utf8"));
+const IDL = JSON.parse(fs.readFileSync(path.join(__dirname, "../../app/site-gen/idl/code_eternal_router.json"), "utf8"));
 const PROGRAM_ID = new PublicKey("8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep");
 const ECOSYSTEM_FUND_WALLET = new PublicKey("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
 
@@ -33,7 +33,7 @@ const REF3_AMT  = BigInt(450_000);    // 3%
 
 function loadBackendKeypair(): Keypair {
   const env = fs.readFileSync(
-    path.join(__dirname, "../secrets/credentials.env"),
+    path.join(__dirname, "../../secrets/credentials.env"),
     "utf8"
   );
   const m = env.match(/^BACKEND_PRIVATE_KEY=(.+)$/m);
@@ -58,19 +58,21 @@ async function confirm(conn: Connection, sig: string) {
  *   [base+9..base+17] memory_score u64
  *   [base+17..base+81] arweave_url [u8;64]
  *   [base+81] site_status u8
- *   [base+82] bump u8
+ *   [base+82..base+90] last_site_update i64
+ *   [base+90] bump u8
  */
 function decodeUserState(data: Buffer) {
   const hasReferrer = data[40] === 1;
   const base = hasReferrer ? 73 : 41;
   return {
-    owner:       new PublicKey(data.slice(8, 40)),
-    referrer:    hasReferrer ? new PublicKey(data.slice(41, 73)) : null,
-    tier:        data[base],
-    memoryScore: data.readBigUInt64LE(base + 9),
-    arweaveUrl:  data.slice(base + 17, base + 81),
-    siteStatus:  data[base + 81],
-    bump:        data[base + 82],
+    owner:          new PublicKey(data.slice(8, 40)),
+    referrer:       hasReferrer ? new PublicKey(data.slice(41, 73)) : null,
+    tier:           data[base],
+    memoryScore:    data.readBigUInt64LE(base + 9),
+    arweaveUrl:     data.slice(base + 17, base + 81),
+    siteStatus:     data[base + 81],
+    lastSiteUpdate: data.readBigInt64LE(base + 82),
+    bump:           data[base + 90],
   };
 }
 
