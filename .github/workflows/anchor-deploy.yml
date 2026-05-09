@@ -1,0 +1,57 @@
+name: Build and Deploy Smart Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/programs/**'
+      - 'app/Anchor.toml'
+      - 'app/Cargo.toml'
+      - 'app/Cargo.lock'
+  workflow_dispatch: # manual trigger from GitHub UI
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('app/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Cache Solana toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/solana
+          key: ${{ runner.os }}-solana-stable
+
+      - name: Install Solana CLI
+        run: |
+          curl -sSfL https://release.anza.xyz/stable/install -o /tmp/sol.sh
+          bash /tmp/sol.sh
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Build smart contract
+        working-directory: app
+        run: cargo-build-sbf 2>&1
+
+      - name: Deploy to Devnet
+        working-directory: app
+        env:
+          DEPLOY_KEYPAIR: ${{ secrets.DEPLOY_KEYPAIR }}
+        run: |
+          echo "$DEPLOY_KEYPAIR" > /tmp/deploy-key.json
+          solana config set --url devnet
+          solana program deploy \
+            --program-id 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
+            --keypair /tmp/deploy-key.json \
+            target/deploy/code_eternal_router.so
+          rm -f /tmp/deploy-key.json
