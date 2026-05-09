@@ -15,8 +15,8 @@ const TELEGRAM_RE = /^[A-Za-z0-9_]{5,32}$/;
 const WEBSITE_RE = /^https:\/\/[^\s]{1,200}$/;
 
 export async function POST(req: Request) {
-  // Rate limit: 5 site creates per 10 minutes per IP
-  if (!rateLimit(getIp(req), 5, 10 * 60 * 1000)) {
+  // Rate limit: 20 site creates per 10 minutes per IP
+  if (!rateLimit(getIp(req), 20, 10 * 60 * 1000)) {
     return NextResponse.json({ error: "too many requests" }, { status: 429 });
   }
 
