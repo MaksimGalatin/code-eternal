@@ -52,9 +52,13 @@ jobs:
         env:
           BACKEND_PRIVATE_KEY: ${{ secrets.BACKEND_PRIVATE_KEY }}
         run: |
-          solana-test-validator --reset --quiet &
+          solana-test-validator --reset --quiet \
+            --bpf-program 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
+              target/deploy/code_eternal_router.so &
           VALIDATOR_PID=$!
-          sleep 5
+          sleep 8
+          solana config set --url http://127.0.0.1:8899
+          solana airdrop 10 ~/.config/solana/id.json --url http://127.0.0.1:8899
           npm test
           kill $VALIDATOR_PID
 
