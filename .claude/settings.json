@@ -20,7 +20,11 @@
       "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH\" && cd ~/code-eternal && anchor build 2>&1')",
       "Bash(wsl -d Ubuntu-22.04 -- bash -lc 'export PATH=\"$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH\" && cd ~/code-eternal/programs/code_eternal_router && cargo-build-sbf 2>&1 | head -30')",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(git stash *)",
+      "Bash(grep -v \"^commit\\\\|^Author\\\\|^Date\\\\|^$\\\\|^    \")",
+      "Bash(git ls-tree *)",
+      "Bash(git mv *)"
     ]
   }
 }
