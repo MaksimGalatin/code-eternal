@@ -67,6 +67,29 @@ async function processJob(job: any) {
   } catch (err) {
     logger.error(`Generation error for job ${job.jobId}:`, err);
 
+    // If on-chain update failed (e.g. cooldown), check if another job for the same
+    // wallet already succeeded — if so, mark this job done with that URL.
+    try {
+      const sibling = await db.query(
+        `SELECT arweave_url FROM site_generation_jobs
+         WHERE wallet = $1 AND status = 'done' AND arweave_url IS NOT NULL
+         ORDER BY completed_at DESC LIMIT 1`,
+        [job.wallet]
+      );
+      if (sibling.rows[0]?.arweave_url) {
+        await db.query(
+          `UPDATE site_generation_jobs
+           SET status = 'done', arweave_url = $1, completed_at = NOW(), error_message = NULL
+           WHERE id = $2`,
+          [sibling.rows[0].arweave_url, job.jobId]
+        );
+        logger.info(`Job ${job.jobId} marked done via sibling job URL: ${sibling.rows[0].arweave_url}`);
+        return;
+      }
+    } catch (siblingErr) {
+      logger.error(`Failed to check sibling job for ${job.wallet}:`, siblingErr);
+    }
+
     await db.query(
       `UPDATE site_generation_jobs
        SET status = 'error', error_message = $1
