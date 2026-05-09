@@ -49,11 +49,34 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 
 ---
 
+## Repo Structure
+
+```
+code-eternal/
+├── app/                    ← app.codeofdigitaleternity.com (full stack)
+│   ├── src/                  Next.js 14 Pages Router frontend
+│   ├── programs/             Rust/Anchor smart contract
+│   ├── docker/               Docker Compose + nginx for Hetzner VM
+│   ├── listener/             Helius webhook handler (Express)
+│   ├── site-gen/             Arweave site generator (Express)
+│   ├── scripts/              DB migration + ops scripts
+│   ├── tests/                Anchor test suite
+│   ├── Anchor.toml           Anchor workspace config
+│   ├── Cargo.toml            Rust workspace (members = ["programs/*"])
+│   └── Dockerfile            Next.js app Docker build
+└── web/                    ← www.codeofdigitaleternity.com (Vercel)
+    └── src/app/              Next.js 16 App Router (Galatin's landing site)
+```
+
+**Anchor/Cargo builds must run from `app/`** — `Cargo.toml` and `Anchor.toml` are now there.
+
+---
+
 ## Tech Stack
 
 ### Frontend
 - Squarespace — landing page (live)
-- Next.js 14 + TypeScript + Tailwind — app (`app/` directory)
+- Next.js 14 + TypeScript + Tailwind — app (`app/src/` directory)
 - Hetzner CAX11 (ARM64) — hosting via Docker Compose + nginx
 
 ### Auth & Payments
@@ -121,7 +144,7 @@ Listener:
   → HTTP POST to site-gen:3002/jobs (direct, no SQS; deduplication: skips if job row already exists)
 
 site-gen (Docker, /jobs endpoint):
-  → compile HTML from template using user data (Handlebars, site-gen/src/templates/site.html)
+  → compile HTML from template using user data (Handlebars, app/site-gen/src/templates/site.html)
     Supports optional fields: username, bio, manifesto, telegram, twitter, website
   → upload to Arweave via Irys SDK (free <100KB, base58 IRYS_PRIVATE_KEY, node: devnet.irys.xyz)
   → call update_site_url() on-chain with backend keypair (sets arweave_url + site_status=1 in UserState)
@@ -175,7 +198,7 @@ Indexes: `users(wallet)`, `users(ref_code)`, `referral_payments(referrer_wallet)
 ## Smart Contract — File Structure
 
 ```
-programs/code_eternal_router/src/
+app/programs/code_eternal_router/src/
 ├── lib.rs                    # entry point, declare_id!, 4 instructions
 ├── errors.rs                 # CodeEternalError enum
 ├── state/
@@ -232,15 +255,15 @@ pub struct UserState {
 
 | Constant | File | Value |
 |----------|------|-------|
-| `BACKEND_AUTHORITY` | `instructions/update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
-| `ECOSYSTEM_FUND_WALLET` | `instructions/process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
-| Program ID | `lib.rs` + `Anchor.toml` | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
+| `BACKEND_AUTHORITY` | `app/programs/.../update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
+| `ECOSYSTEM_FUND_WALLET` | `app/programs/.../process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
+| Program ID | `app/programs/.../lib.rs` + `app/Anchor.toml` | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
 
 ---
 
 ## Build Status
 
-**Compiles and deployed to Devnet.** `target/deploy/code_eternal_router.so` produced.
+**Compiles and deployed to Devnet.** `app/target/deploy/code_eternal_router.so` produced.
 Program ID: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` (deployed 2026-04-19)
 
 ### Compiler Warnings (non-blocking, known issues)
@@ -294,18 +317,19 @@ solana --version                # solana-cli 3.1.x
 
 ```bash
 export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH"
-cd ~/code-eternal   # or wherever the repo is cloned
+cd ~/code-eternal/app   # Cargo.toml and Anchor.toml are now inside app/
 cargo-build-sbf --sbf-sdk ~/sbf-sdk --skip-tools-install
 ```
 
-Output: `target/deploy/code_eternal_router.so`
+Output: `app/target/deploy/code_eternal_router.so`
 
 ### After replacing placeholder pubkeys — deploy to Devnet
 
 ```bash
+cd ~/code-eternal/app
 solana config set --url devnet
 anchor deploy --provider.cluster devnet
-# Copy the deployed Program ID back into lib.rs declare_id!() and Anchor.toml
+# Copy the deployed Program ID back into app/programs/.../lib.rs and app/Anchor.toml
 ```
 
 ---
@@ -339,7 +363,7 @@ Frontend (Pipeline 2.x — Days 2-3)
   ✅ Next.js 14 app/ created (Pages Router, Tailwind, Privy, purple theme)
   ✅ Pipeline 2.1: Login page — "Enter the Family" → Google → /cabinet
   ✅ Pipeline 2.2: /cabinet — three tier cards ($15/$100/$1000) with auth guard
-  ✅ Create Neon DB tables (users, referral_payments, burn_events, site_generation_jobs, applications_1000) — run scripts/migrate.sql via scripts/run-migration.js
+  ✅ Create Neon DB tables (users, referral_payments, burn_events, site_generation_jobs, applications_1000) — run app/scripts/migrate.sql via app/scripts/run-migration.js
   ✅ Confirm login flow works end-to-end in browser (Google login → /cabinet, HTTPS)
 
 Backend + Payment (Pipeline 3.x — Days 4-7)
@@ -375,7 +399,7 @@ Final (Days 14-15)
 Hetzner CAX11   ARM64 (Ampere), Ubuntu 24.04, 4GB RAM, 2 vCPU — ~$5/month
                 IP: 128.140.0.118
                 Path: /opt/code-eternal/
-                Docker Compose: docker/docker-compose.yml
+                Docker Compose: app/docker/docker-compose.yml
 
 Services (Docker Compose):
   app           Next.js 14 frontend          port 3000 (internal)
@@ -394,13 +418,13 @@ Database: Neon PostgreSQL (external, connection string in .env)
 ### VM Setup
 
 ```bash
-# Run scripts/setup-vm.sh on fresh Ubuntu 24.04 as root (installs Docker + certbot)
-scp scripts/setup-vm.sh root@128.140.0.118:/tmp/
+# Run app/scripts/setup-vm.sh on fresh Ubuntu 24.04 as root (installs Docker + certbot)
+scp app/scripts/setup-vm.sh root@128.140.0.118:/tmp/
 ssh root@128.140.0.118 bash /tmp/setup-vm.sh
 
 # Copy files
 scp secrets/credentials.env root@128.140.0.118:/opt/code-eternal/.env
-scp docker/docker-compose.yml docker/nginx.conf root@128.140.0.118:/opt/code-eternal/docker/
+scp app/docker/docker-compose.yml app/docker/nginx.conf root@128.140.0.118:/opt/code-eternal/docker/
 
 # Start
 ssh root@128.140.0.118 'cd /opt/code-eternal && docker login -u maxshchuplov && docker compose -f docker/docker-compose.yml up -d'
@@ -436,12 +460,12 @@ ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-
 ```bash
 # Listener
 docker buildx build --platform linux/arm64 --no-cache \
-  -t maxshchuplov/code-eternal-listener:latest --push ./listener
+  -t maxshchuplov/code-eternal-listener:latest --push ./app/listener
 ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull listener && docker compose -f docker/docker-compose.yml up -d listener'
 
 # Site-gen
 docker buildx build --platform linux/arm64 --no-cache \
-  -t maxshchuplov/code-eternal-site-gen:latest --push ./site-gen
+  -t maxshchuplov/code-eternal-site-gen:latest --push ./app/site-gen
 ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull site-gen && docker compose -f docker/docker-compose.yml up -d site-gen'
 ```
 
@@ -453,7 +477,7 @@ Before the buy flow works, run this once from WSL to create the mock USDC token:
 
 ```bash
 cd /mnt/c/Users/Maksim/projects/code-eternal/app
-node ../scripts/setup-devnet.js
+node scripts/setup-devnet.js
 ```
 
 This creates:
@@ -473,7 +497,7 @@ Docker images rebuilt with `--build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDn
 To re-run (only needed if Devnet resets or mint is lost):
 ```bash
 # Run from WSL Linux filesystem (not /mnt/c — npm permissions issue)
-mkdir -p ~/devnet-setup && cp /mnt/c/Users/Maksim/projects/code-eternal/scripts/setup-devnet.js ~/devnet-setup/
+mkdir -p ~/devnet-setup && cp /mnt/c/Users/Maksim/projects/code-eternal/app/scripts/setup-devnet.js ~/devnet-setup/
 cd ~/devnet-setup && npm install @solana/web3.js @solana/spl-token && node setup-devnet.js
 ```
 
@@ -483,9 +507,9 @@ cd ~/devnet-setup && npm install @solana/web3.js @solana/spl-token && node setup
 
 To run migration (if tables are lost or DB is reset):
 ```bash
-cd /mnt/c/Users/Maksim/projects/code-eternal/scripts
+cd /mnt/c/Users/Maksim/projects/code-eternal/app/scripts
 npm install pg   # one-time
-node run-migration.js   # runs scripts/migrate.sql against Neon
+node run-migration.js   # runs app/scripts/migrate.sql against Neon
 ```
 
 ---
@@ -616,8 +640,8 @@ app/src/
 
 ## Listener — Architecture & File Structure
 
-**Service:** `listener/` → Docker image `maxshchuplov/code-eternal-listener` → port 3001
-**Entry:** `listener/src/index.ts` — Express app, single POST `/webhook/helius`
+**Service:** `app/listener/` → Docker image `maxshchuplov/code-eternal-listener` → port 3001
+**Entry:** `app/listener/src/index.ts` — Express app, single POST `/webhook/helius`
 
 ### Helius Webhook Format (Enhanced Transactions)
 
@@ -652,7 +676,7 @@ function decodeTier(data: Buffer): number {
 ### Listener File Structure
 
 ```
-listener/src/
+app/listener/src/
 ├── index.ts              # Express app, /webhook/helius route, auth check
 ├── handlers/
 │   └── onPaymentProcessed.ts  # Main handler: DB writes, email, site-gen dispatch
@@ -674,8 +698,8 @@ listener/src/
 
 ## Site-Gen — Architecture & File Structure
 
-**Service:** `site-gen/` → Docker image `maxshchuplov/code-eternal-site-gen` → port 3002
-**Entry:** `site-gen/src/index.ts` — Express app, single POST `/jobs`
+**Service:** `app/site-gen/` → Docker image `maxshchuplov/code-eternal-site-gen` → port 3002
+**Entry:** `app/site-gen/src/index.ts` — Express app, single POST `/jobs`
 
 **Irys node:** `https://devnet.irys.xyz` (matches Solana devnet) — mainnet will use `https://node2.irys.xyz`
 **Irys wallet:** `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X` — must have devnet SOL to connect
@@ -684,7 +708,7 @@ listener/src/
 ### Site-Gen File Structure
 
 ```
-site-gen/
+app/site-gen/
 ├── src/
 │   ├── index.ts              # Express /jobs endpoint — reads job from DB, calls generateAndDeploy
 │   ├── templates/
@@ -748,7 +772,7 @@ Tier colors:
 Use `wsl -e bash -c "..."` from the Bash tool to run docker:
 
 ```bash
-# App
+# App (build context is app/ — Dockerfile lives there)
 wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
   --build-arg NEXT_PUBLIC_PRIVY_APP_ID=cmoofvdt4008o0cjps5l8nvnu \
   --build-arg NEXT_PUBLIC_USDC_MINT=5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5 \
@@ -756,9 +780,13 @@ wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx bu
   --build-arg 'NEXT_PUBLIC_RPC_URL=<value>' \
   -t maxshchuplov/code-eternal-app:latest --push ./app"
 
+# Listener
+wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
+  -t maxshchuplov/code-eternal-listener:latest --push ./app/listener"
+
 # Site-gen
 wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal && docker buildx build --platform linux/arm64 --no-cache \
-  -t maxshchuplov/code-eternal-site-gen:latest --push ./site-gen"
+  -t maxshchuplov/code-eternal-site-gen:latest --push ./app/site-gen"
 
 # Deploy on VM
 wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -f docker/docker-compose.yml pull app site-gen && docker compose -f docker/docker-compose.yml up -d app site-gen'"
@@ -818,12 +846,12 @@ wsl -e bash -c "ssh root@128.140.0.118 'cd /opt/code-eternal && docker compose -
 - `Could not determine tier for 96JwAJL2...` — listener fires on `update_site_url` txs from site-gen (same program ID), tries to process as payment, fails silently. No impact.
 - `duplicate key value violates unique constraint "site_generation_jobs_tx_signature_key"` — Helius retries webhooks 3-5x per transaction. Deduplication on tx_signature works correctly, only first insert succeeds.
 
-## Admin / Ops Scripts (scripts/)
+## Admin / Ops Scripts (app/scripts/)
 
-- `scripts/reset-user.js <wallet>` — resets users.tier=0 + deletes site_generation_jobs for wallet (DB only, on-chain not touched)
-- `scripts/wipe-users.js` — deletes all rows from users, site_generation_jobs, referral_payments, burn_events
-- `scripts/retry-site-url.js` — manually calls update_site_url on-chain + marks job done in DB (edit WALLET/ARWEAVE_TX_ID/JOB_ID before running)
-- `scripts/check-jobs.js` — prints site_generation_jobs rows for test wallet
+- `app/scripts/reset-user.js <wallet>` — resets users.tier=0 + deletes site_generation_jobs for wallet (DB only, on-chain not touched)
+- `app/scripts/wipe-users.js` — deletes all rows from users, site_generation_jobs, referral_payments, burn_events
+- `app/scripts/retry-site-url.js` — manually calls update_site_url on-chain + marks job done in DB (edit WALLET/ARWEAVE_TX_ID/JOB_ID before running)
+- `app/scripts/check-jobs.js` — prints site_generation_jobs rows for test wallet
 
 ## Devnet Wallet Balances (as of 2026-05-07)
 
