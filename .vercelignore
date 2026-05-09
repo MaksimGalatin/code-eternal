@@ -1,7 +1,3 @@
-# VM app stack (Next.js 14, smart contract, Docker, listener, site-gen, scripts)
-# Leading / required — without it, pattern also matches web/src/app/
-/app/
-
 # Skills (not needed on Vercel)
 skills/
 

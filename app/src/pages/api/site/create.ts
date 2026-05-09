@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { PublicKey } from "@solana/web3.js";
 
 const SITE_GEN_URL = process.env.SITE_GEN_URL || "http://site-gen:3002";
+const SITE_GEN_SECRET = process.env.SITE_GEN_SECRET;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).end();
@@ -65,7 +66,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Dispatch to site-gen (fire-and-forget — site-gen acks immediately)
     fetch(`${SITE_GEN_URL}/jobs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(SITE_GEN_SECRET ? { "Authorization": `Bearer ${SITE_GEN_SECRET}` } : {}),
+      },
       body: JSON.stringify({
         jobId,
         wallet,

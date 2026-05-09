@@ -16,13 +16,6 @@ services:
     environment:
       NODE_ENV: production
 
-  app:
-    image: maxshchuplov/code-eternal-app:latest
-    restart: unless-stopped
-    env_file: ../.env
-    environment:
-      NODE_ENV: production
-
   nginx:
     image: nginx:alpine
     restart: unless-stopped
@@ -33,5 +26,5 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      - app
       - listener
+      - site-gen

@@ -230,10 +230,14 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
 
   // Dispatch to site-gen
   const siteGenUrl = process.env.SITE_GEN_URL || "http://site-gen:3002";
+  const siteGenSecret = process.env.SITE_GEN_SECRET;
   try {
     const res = await fetch(`${siteGenUrl}/jobs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(siteGenSecret ? { "Authorization": `Bearer ${siteGenSecret}` } : {}),
+      },
       body: JSON.stringify({
         jobId,
         wallet: payerWallet,

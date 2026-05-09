@@ -18,6 +18,11 @@ app.get("/health", (_req, res) => {
 
 // Job queue — listener POSTs here instead of SQS
 app.post("/jobs", async (req, res) => {
+  const secret = process.env.SITE_GEN_SECRET;
+  if (secret && req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   const job = req.body;
 
   if (!job?.jobId || !job?.wallet || !job?.tier) {
