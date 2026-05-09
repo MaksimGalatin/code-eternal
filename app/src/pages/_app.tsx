@@ -21,7 +21,7 @@ export default function App({ Component, pageProps }: AppProps) {
         appearance: {
           theme: "dark",
           accentColor: "#7C3AED",
-          logo: "https://codeofdigitaleternity.com/logo.png",
+          logo: "https://app.codeofdigitaleternity.com/logo.png",
         },
         loginMethods: ["google"],
         embeddedWallets: {
