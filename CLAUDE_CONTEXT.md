@@ -54,7 +54,7 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 ```
 code-eternal/
 ├── app/                    ← app.codeofdigitaleternity.com (full stack)
-│   ├── src/                  Next.js 14 Pages Router frontend
+│   ├── src/                  Next.js 16 App Router frontend
 │   ├── docker/               Docker Compose + nginx for Hetzner VM
 │   ├── listener/             Helius webhook handler (Express)
 │   ├── site-gen/             Arweave site generator (Express)
@@ -618,7 +618,7 @@ No AWS Secrets Manager (AWS infrastructure removed).
 
 ## Frontend — Architecture & Status
 
-**Stack:** Next.js 14 (Pages Router), React, Tailwind, Solana Web3.js, Anchor, Privy.io
+**Stack:** Next.js 16 (App Router), React 19, Tailwind, Solana Web3.js, Anchor, Privy.io
 **Source:** `app/` directory → Vercel (auto-deploy on push to main)
 **URL:** `https://app.codeofdigitaleternity.com` ✅ Live on Vercel (2026-05-09)
 **Theme:** Dark purple (#7C3AED accent, #0A0A0F background)
@@ -627,12 +627,13 @@ No AWS Secrets Manager (AWS infrastructure removed).
 
 | Decision | Reason |
 |----------|--------|
-| Pages Router (not App Router) | Existing codebase; avoids migration cost |
+| App Router (migrated 2026-05-11) | Next.js 16 default; all pages use `'use client'` + `useRouter` from `next/navigation` |
+| `turbopack: {}` in next.config.js | Next.js 16 uses Turbopack by default; `turbopack: {}` silences webpack/turbopack conflict warning |
 | Neon PostgreSQL everywhere | Same pg Pool used by listener and Next.js API routes |
 | MoonPay via Privy `useFundWallet` | No Stripe; card → USDC directly to embedded wallet |
 | Helius webhooks in listener | More reliable than `connection.onLogs()` WebSocket |
 | `toSolanaWalletConnectors` in `useMemo` | Prevents SSR crash — browser-only API |
-| `NEXT_PUBLIC_*` via Docker `--build-arg` | Next.js bakes these at build time, not runtime |
+| `NEXT_PUBLIC_*` from Vercel env | Next.js bakes these at build time; set via `vercel env add` |
 | Next.js on Vercel (2026-05-09) | Auto-deploy, no ARM64 QEMU build needed, faster CI/CD; VM now runs listener+site-gen+nginx only |
 | Direct HTTP listener→site-gen | Simpler than SQS for single-VM setup; no AWS dependency |
 | Vercel SITE_GEN_URL = https://listener.codeofdigitaleternity.com | site-gen /jobs is publicly exposed via nginx; protected by SITE_GEN_SECRET Bearer token |
@@ -643,31 +644,31 @@ No AWS Secrets Manager (AWS infrastructure removed).
 
 ```
 app/src/
-├── pages/
-│   ├── _app.tsx              # PrivyProvider (Google only, embedded wallets, HTTPS) ✅
-│   ├── index.tsx             # Login page → redirects to /cabinet ✅
+├── app/
+│   ├── layout.tsx            # Root layout — PrivyProvider (Google only, embedded wallets) ✅
+│   ├── page.tsx              # Login page → redirects to /cabinet ✅
+│   ├── globals.css           # Dark base (#0A0A0F), neutral sans-serif
 │   ├── cabinet/
-│   │   ├── index.tsx         # Tier cards + site status panel (pending/ready/link) ✅
-│   │   ├── buy.tsx           # Single-click: auto-airdrop if needed → register_user → process_payment ✅
-│   │   └── apply-1000.tsx    # $1000 application form (Pipeline 5.3) □
+│   │   └── page.tsx          # Full cabinet: 7 tabs (Cabinet/AIfa/Games/DAO/Site/Contract/Metrics) ✅
 │   └── api/
-│       ├── users/register.ts          # POST — upsert user, generate ref_code ✅
-│       ├── users/site-status.ts       # GET — site job status + arweave URL from DB ✅
-│       ├── referrals/chain.ts         # GET — return ref1/ref2/ref3 wallets ✅
-│       ├── devnet/airdrop-usdc.ts     # POST — mint 1100 test USDC to wallet ✅
-│       ├── site/create.ts             # POST — UI-triggered site gen (checks tier, dispatches to site-gen) ✅
-│       ├── chat.ts                    # POST — Grok API proxy for AIfa chat ✅
-│       ├── stats/metrics.ts           # GET — burn count, tx count, wallets, treasury, history ✅
-│       ├── referrals/income.ts        # GET — earnings + payment history (Pipeline 5.1) □
-│       ├── stats/burned.ts            # GET — total burn_events sum (Pipeline 5.2) □
-│       ├── applications/1000.ts       # POST — save + email architect (Pipeline 5.3) □
-│       └── telegram/link-token.ts     # POST — generate tg_link_token (Pipeline 5.4) □
+│       ├── users/register/route.ts          # POST — upsert user, generate ref_code ✅
+│       ├── users/site-status/route.ts       # GET — site job status + arweave URL from DB ✅
+│       ├── referrals/chain/route.ts         # GET — return ref1/ref2/ref3 wallets ✅
+│       ├── referrals/income/route.ts        # GET — earnings + payment history (Pipeline 5.1) □
+│       ├── devnet/airdrop-usdc/route.ts     # POST — mint 1100 test USDC to wallet ✅
+│       ├── site/create/route.ts             # POST — UI-triggered site gen (checks tier, dispatches to site-gen) ✅
+│       ├── chat/route.ts                    # POST — Grok API proxy for AIfa chat ✅
+│       ├── stats/metrics/route.ts           # GET — burn count, tx count, wallets, treasury, history ✅
+│       ├── stats/overview/route.ts          # GET — burnedUsdc, burnTxs, activeMembers, sitesCreated ✅
+│       ├── stats/top-contributors/route.ts  # GET — top wallets by referral income ✅
+│       ├── stats/recent-txns/route.ts       # GET — recent payment txs (excludes ui-regen jobs) ✅
+│       ├── stats/burned/route.ts            # GET — total burn_events sum (Pipeline 5.2) □
+│       └── webhooks/privy/route.ts          # POST — Privy webhook handler ✅
 ├── lib/
 │   └── db.ts                 # Neon pg Pool with hot-reload guard ✅
 ├── idl/
 │   └── code_eternal_router.ts  # Typed IDL for @coral-xyz/anchor ✅
-└── styles/
-    └── globals.css           # Dark base (#0A0A0F), neutral sans-serif
+└── (styles in app/globals.css)
 ```
 
 ### npm Dependencies (app/package.json)
@@ -680,7 +681,9 @@ app/src/
 "nanoid": "^5.0.7"
 "pg": "^8.13.0"
 "resend": "^4.0.0"
-"next": "14.2.29"
+"next": "^16.1.1"
+"react": "^19.0.0"
+"react-dom": "^19.0.0"
 ```
 
 ---
@@ -880,13 +883,22 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
 
+## Changes Applied (2026-05-11)
+
+- **Next.js Pages Router → App Router migration** — deleted `app/src/pages/`; all routes now live under `app/src/app/` using App Router conventions (`layout.tsx`, `page.tsx`, `route.ts`). All page components marked `'use client'`; `useRouter` imported from `next/navigation`.
+- **Next.js 16 upgrade** — `next` bumped to `^16.1.1`, `react`/`react-dom` to `^19.0.0`. `JSX.Element` → `React.ReactElement` (global JSX namespace removed in React 19).
+- **`turbopack: {}`** — added to `next.config.js` to silence Turbopack/webpack conflict error on Vercel (Next.js 16 enables Turbopack by default).
+- **`eslint: { dirs: ["src"] }`** — added to `next.config.js` so `next lint` finds the source directory correctly on Vercel.
+- **Node.js engine pin** — `package.json` `engines.node` changed from `">=24"` to `"24.x"` to prevent Vercel from auto-upgrading to future major versions.
+- **Recent transactions fix** — `api/stats/recent-txns/route.ts` now filters `WHERE tx_signature NOT LIKE 'ui-regen-%'` so UI-triggered site regenerations don't appear as payment transactions in the cabinet feed.
+
 ## Changes Applied (2026-05-10, Session 2)
 
 - **Smart contract moved to `contract/`** — Anchor.toml, Cargo.toml, Cargo.lock, programs/, tests/ now in repo root `contract/` directory (best practice separation from app code)
 - **GitHub Actions CI/CD for smart contract** — `.github/workflows/anchor-deploy.yml`: build with `cargo-build-sbf`, run 6 tests on localnet (`solana-test-validator --bpf-program` to preload compiled SO), deploy to devnet. Triggers on `contract/**` push. GitHub secrets: `BACKEND_PRIVATE_KEY`, `DEPLOY_KEYPAIR`
 - **Anchor test suite** — `contract/tests/code_eternal_router.ts`: 6 tests covering register_user (success + self-referral), process_payment (no referrals + 3 referrals split verification), update_site_url (success + unauthorized). All 6 green in CI.
 - **Listener: skip non-payment txs** — `app/listener/src/index.ts` now checks `event.tokenTransfers.length > 0` before calling `handlePaymentProcessed`. Skips `register_user` and `update_site_url` txs that were causing ghost Error jobs.
-- **Telegram handle `@` strip** — `app/src/pages/api/site/create.ts` strips leading `@` from telegram/twitter before validation (was rejecting `@handle` format)
+- **Telegram handle `@` strip** — `app/src/app/api/site/create/route.ts` strips leading `@` from telegram/twitter before validation (was rejecting `@handle` format)
 - **Site-gen race condition fix** — `app/site-gen/src/index.ts`: if `updateSiteUrlOnChain` fails, waits 3s then reads on-chain state via `readOnChainArweaveUrl(walletAddress)`. If arweave URL already set (winner of concurrent jobs), marks job done without error
 - **`readOnChainArweaveUrl()`** — new function in `app/site-gen/src/utils/solana.ts`: reads UserState PDA binary, decodes arweave_url field, returns full URL or null
 
@@ -928,9 +940,9 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - `site-gen/idl/code_eternal_router.json` — added all instruction discriminators (was missing them, caused `Expected Buffer` error in `new Program(idl, provider)`)
 - `site-gen/src/utils/arweave.ts` — Arweave URL changed from `https://arweave.net/` to `https://devnet.irys.xyz/` (devnet Irys files are not on Arweave mainnet, caused 404)
 - `site-gen/src/utils/arweave.ts` — tag value guard: `job.txSignature ?? ""` to prevent `undefined` tag crashing Irys upload
-- `app/src/pages/_app.tsx` — `createOnLogin: "off"` (was `"users-without-wallets"` which auto-created Ethereum wallet, conflicting with explicit Solana `createWallet()` call)
-- `app/src/pages/api/devnet/airdrop-usdc.ts` — SOL airdrop reduced from 0.1 to 0.005 (10 000x more than needed per tx); threshold check lowered from 0.05 to 0.005 SOL
-- `app/src/pages/cabinet/buy.tsx` — SOL check threshold lowered to match airdrop amount (0.005); added step progress bar (Funding wallet → Registering → Payment); fixed "loading" button state text
+- `app/src/app/layout.tsx` — `createOnLogin: "off"` (was `"users-without-wallets"` which auto-created Ethereum wallet, conflicting with explicit Solana `createWallet()` call)
+- `app/src/app/api/devnet/airdrop-usdc/route.ts` — SOL airdrop reduced from 0.1 to 0.005 (10 000x more than needed per tx); threshold check lowered from 0.05 to 0.005 SOL
+- `app/src/app/cabinet/page.tsx` (buy flow) — SOL check threshold lowered to match airdrop amount (0.005); added step progress bar (Funding wallet → Registering → Payment); fixed "loading" button state text
 
 ## Buy Flow — Expected UX Behavior
 
