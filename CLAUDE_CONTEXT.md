@@ -55,20 +55,22 @@ Works with the hackathon mock token (we control mint authority). Does NOT work w
 code-eternal/
 ├── app/                    ← app.codeofdigitaleternity.com (full stack)
 │   ├── src/                  Next.js 14 Pages Router frontend
-│   ├── programs/             Rust/Anchor smart contract
 │   ├── docker/               Docker Compose + nginx for Hetzner VM
 │   ├── listener/             Helius webhook handler (Express)
 │   ├── site-gen/             Arweave site generator (Express)
 │   ├── scripts/              DB migration + ops scripts
-│   ├── tests/                Anchor test suite
+│   └── Dockerfile            Next.js app Docker build
+├── contract/               ← Solana smart contract (moved 2026-05-09)
+│   ├── programs/             Rust/Anchor source
+│   ├── tests/                Anchor TypeScript test suite (6 tests, all green)
 │   ├── Anchor.toml           Anchor workspace config
 │   ├── Cargo.toml            Rust workspace (members = ["programs/*"])
-│   └── Dockerfile            Next.js app Docker build
+│   └── Cargo.lock
 └── web/                    ← www.codeofdigitaleternity.com (Vercel)
     └── src/app/              Next.js 16 App Router (Galatin's landing site)
 ```
 
-**Anchor/Cargo builds must run from `app/`** — `Cargo.toml` and `Anchor.toml` are now there.
+**Anchor/Cargo builds must run from `contract/`** — `Cargo.toml` and `Anchor.toml` are there.
 
 ---
 
@@ -107,7 +109,9 @@ code-eternal/
 - Neon PostgreSQL — external managed database (no local DB on VM)
 - Docker Hub — image registry (`maxshchuplov/` private repos)
 - Cloudflare — DNS + wildcard subdomains
-- **GitHub Actions CI/CD** — `.github/workflows/deploy.yml` builds listener + site-gen ARM64 images and deploys to VM on push to main (triggers on `app/listener/**`, `app/site-gen/**`, `app/docker/**`)
+- **GitHub Actions CI/CD** — two workflows:
+  - `.github/workflows/deploy.yml` — builds listener + site-gen ARM64 images, deploys to VM (triggers on `app/listener/**`, `app/site-gen/**`, `app/docker/**`)
+  - `.github/workflows/anchor-deploy.yml` — builds contract, runs 6 tests on localnet, deploys to devnet (triggers on `contract/**`)
 
 ### External Services
 - Helius (helius.dev) — Solana RPC + webhooks (free tier)
@@ -202,18 +206,24 @@ Indexes: `users(wallet)`, `users(ref_code)`, `referral_payments(referrer_wallet)
 ## Smart Contract — File Structure
 
 ```
-app/programs/code_eternal_router/src/
-├── lib.rs                    # entry point, declare_id!, 4 instructions
-├── errors.rs                 # CodeEternalError enum
-├── state/
-│   ├── mod.rs
-│   └── user_state.rs         # UserState struct + SITE_STATUS_* constants
-└── instructions/
-    ├── mod.rs
-    ├── register_user.rs      # init UserState PDA, tier always starts at 0
-    ├── process_payment.rs    # distribute 5/5/15/7/3/65, on-chain burn
-    ├── update_site_url.rs    # backend writes Arweave URL after generation
-    └── award_memory.rs       # oracle adds memory_score (Think-to-Earn)
+contract/
+├── programs/code_eternal_router/src/
+│   ├── lib.rs                    # entry point, declare_id!, 4 instructions
+│   ├── errors.rs                 # CodeEternalError enum
+│   ├── state/
+│   │   ├── mod.rs
+│   │   └── user_state.rs         # UserState struct + SITE_STATUS_* constants
+│   └── instructions/
+│       ├── mod.rs
+│       ├── register_user.rs      # init UserState PDA, tier always starts at 0
+│       ├── process_payment.rs    # distribute 5/5/15/7/3/65, on-chain burn
+│       ├── update_site_url.rs    # backend writes Arweave URL + cooldown 60s
+│       └── award_memory.rs       # oracle adds memory_score (Think-to-Earn)
+├── tests/
+│   └── code_eternal_router.ts    # 6 tests: register/payment/update_site_url
+├── Anchor.toml
+├── Cargo.toml
+└── Cargo.lock
 ```
 
 ### Instructions Summary
@@ -247,10 +257,24 @@ pub struct UserState {
     pub memory_score: u64,       // Think-to-Earn points
     pub arweave_url: [u8; 64],   // Arweave TX ID (43 chars, zero-padded)
     pub site_status: u8,         // 0=pending, 1=ready, 2=error
+    pub last_site_update: i64,   // unix timestamp of last update_site_url call (cooldown 60s)
     pub bump: u8,                // PDA bump seed
 }
 // Seeds: ["user", wallet_pubkey]
 // Size: 8 (discriminator) + UserState::INIT_SPACE
+
+// Binary layout for manual decoding (no referrer case, base=41):
+// [0..8]   discriminator
+// [8..40]  owner Pubkey
+// [40]     referrer flag (0=None, 1=Some)
+// [41..73] referrer Pubkey (only if flag=1)
+// [base+0]       tier u8
+// [base+1..+9]   registered_at i64
+// [base+9..+17]  memory_score u64
+// [base+17..+81] arweave_url [u8;64]
+// [base+81]      site_status u8
+// [base+82..+90] last_site_update i64
+// [base+90]      bump u8
 ```
 
 ---
@@ -259,16 +283,16 @@ pub struct UserState {
 
 | Constant | File | Value |
 |----------|------|-------|
-| `BACKEND_AUTHORITY` | `app/programs/.../update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
-| `ECOSYSTEM_FUND_WALLET` | `app/programs/.../process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
-| Program ID | `app/programs/.../lib.rs` + `app/Anchor.toml` | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
+| `BACKEND_AUTHORITY` | `contract/programs/.../update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
+| `ECOSYSTEM_FUND_WALLET` | `contract/programs/.../process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
+| Program ID | `contract/programs/.../lib.rs` + `contract/Anchor.toml` | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
 
 ---
 
 ## Build Status
 
-**Compiles and deployed to Devnet.** `app/target/deploy/code_eternal_router.so` produced.
-Program ID: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` (deployed 2026-04-19)
+**Compiles, tested, and deployed to Devnet via GitHub Actions CI/CD.** `contract/target/deploy/code_eternal_router.so` produced.
+Program ID: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` (deployed 2026-04-19, CI/CD auto-redeploys on `contract/**` push)
 
 ### Compiler Warnings (non-blocking, known issues)
 
@@ -321,20 +345,24 @@ solana --version                # solana-cli 3.1.x
 
 ```bash
 export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH"
-cd ~/code-eternal/app   # Cargo.toml and Anchor.toml are now inside app/
+cd ~/code-eternal/contract   # Cargo.toml and Anchor.toml are inside contract/
 cargo-build-sbf --sbf-sdk ~/sbf-sdk --skip-tools-install
 ```
 
-Output: `app/target/deploy/code_eternal_router.so`
+Output: `contract/target/deploy/code_eternal_router.so`
 
-### After replacing placeholder pubkeys — deploy to Devnet
+### Deploy to Devnet (manual)
 
 ```bash
-cd ~/code-eternal/app
+cd ~/code-eternal/contract
 solana config set --url devnet
-anchor deploy --provider.cluster devnet
-# Copy the deployed Program ID back into app/programs/.../lib.rs and app/Anchor.toml
+solana program deploy \
+  --program-id 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep \
+  --keypair ~/.config/solana/id.json \
+  target/deploy/code_eternal_router.so
 ```
+
+**CI/CD auto-deploys:** push to `contract/**` on main → GitHub Actions builds, tests on localnet, deploys to devnet.
 
 ---
 
@@ -358,10 +386,11 @@ Infrastructure + Smart Contract
   ✅ Helius webhook configured (HELIUS_WEBHOOK_SECRET set in dashboard + credentials.env, 2026-05-06)
 
 Smart Contract Tests
-  □  process_payment test with mock USDC (verify 5/5/15/7/3/65 split)
-  □  register_user + process_payment E2E on Devnet
-  □  update_site_url called by backend keypair
-  □  All anchor test green
+  ✅ All 6 Anchor tests green (localnet CI):
+       register_user: success + rejects self-referral
+       process_payment: no referrals (vault/eco/burn split) + 3 referrals
+       update_site_url: backend sets URL + rejects unauthorized signer
+  ✅ GitHub Actions CI/CD: anchor-deploy.yml builds → tests → deploys to devnet
 
 Frontend (Pipeline 2.x — Days 2-3)
   ✅ Next.js 14 app/ created (Pages Router, Tailwind, Privy, purple theme)
@@ -582,6 +611,8 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Next.js (app) | `SITE_GEN_SECRET` | Bearer token — must match VM .env value; sent in Authorization header to /jobs |
 | listener, site-gen | `SITE_GEN_SECRET` | `2c0bbd515501b5e86600e1ce9acd877dd5b9bab4db7575d6401f2ae18a2ef18a` — set in VM .env |
 | listener | `RESEND_API_KEY` | `re_Lu1RDMiD_54YM5zVRfyNFRYy5hDDPZWHF` — set in VM .env |
+| GitHub Actions (anchor-deploy.yml) | `BACKEND_PRIVATE_KEY` | Base64 private key of `96JwAJL2...` — for test runner to sign update_site_url txs |
+| GitHub Actions (anchor-deploy.yml) | `DEPLOY_KEYPAIR` | JSON array of upgrade authority keypair (`7GJm1GVk...`) — for `solana program deploy` |
 
 ---
 
@@ -849,7 +880,17 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
 
-## Changes Applied (2026-05-10)
+## Changes Applied (2026-05-10, Session 2)
+
+- **Smart contract moved to `contract/`** — Anchor.toml, Cargo.toml, Cargo.lock, programs/, tests/ now in repo root `contract/` directory (best practice separation from app code)
+- **GitHub Actions CI/CD for smart contract** — `.github/workflows/anchor-deploy.yml`: build with `cargo-build-sbf`, run 6 tests on localnet (`solana-test-validator --bpf-program` to preload compiled SO), deploy to devnet. Triggers on `contract/**` push. GitHub secrets: `BACKEND_PRIVATE_KEY`, `DEPLOY_KEYPAIR`
+- **Anchor test suite** — `contract/tests/code_eternal_router.ts`: 6 tests covering register_user (success + self-referral), process_payment (no referrals + 3 referrals split verification), update_site_url (success + unauthorized). All 6 green in CI.
+- **Listener: skip non-payment txs** — `app/listener/src/index.ts` now checks `event.tokenTransfers.length > 0` before calling `handlePaymentProcessed`. Skips `register_user` and `update_site_url` txs that were causing ghost Error jobs.
+- **Telegram handle `@` strip** — `app/src/pages/api/site/create.ts` strips leading `@` from telegram/twitter before validation (was rejecting `@handle` format)
+- **Site-gen race condition fix** — `app/site-gen/src/index.ts`: if `updateSiteUrlOnChain` fails, waits 3s then reads on-chain state via `readOnChainArweaveUrl(walletAddress)`. If arweave URL already set (winner of concurrent jobs), marks job done without error
+- **`readOnChainArweaveUrl()`** — new function in `app/site-gen/src/utils/solana.ts`: reads UserState PDA binary, decodes arweave_url field, returns full URL or null
+
+## Changes Applied (2026-05-10, Session 1)
 
 - **Privy login logo** — copied `web/public/images/code-logo.png` → `app/public/logo.png`; `_app.tsx` `appearance.logo` now points to `https://app.codeofdigitaleternity.com/logo.png`
 - **Username field fix (Site tab)** — added `minWidth: 0` on input + `flexShrink: 0` on `.aifa.digital` span (flex collapse bug); added `htmlFor`/`id` link; red error message appears when user types non-Latin characters (Cyrillic silently stripped by regex — now surfaced as "Latin characters only: a–z, 0–9, _ and –")
@@ -904,7 +945,7 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - Only **one Privy dialog** (process_payment), registration already done
 
 **Expected noise in listener logs (not bugs):**
-- `Could not determine tier for 96JwAJL2...` — listener fires on `update_site_url` txs from site-gen (same program ID), tries to process as payment, fails silently. No impact.
+- `Skipping non-payment tx (no token transfers): <sig>` — listener skips `register_user` and `update_site_url` txs (they have no token transfers). This is the correct behavior after the 2026-05-10 fix.
 - `duplicate key value violates unique constraint "site_generation_jobs_tx_signature_key"` — Helius retries webhooks 3-5x per transaction. Deduplication on tx_signature works correctly, only first insert succeeds.
 
 ## Admin / Ops Scripts (app/scripts/)
