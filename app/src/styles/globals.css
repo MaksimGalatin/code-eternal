@@ -146,7 +146,7 @@ body {
 .alfa-input::placeholder { color: rgb(107,114,128); }
 
 @media (max-width: 900px) {
-  .main-cols { flex-direction: column !important; }
+  .main-cols { grid-template-columns: 1fr !important; }
   .contributor-card { flex: 0 0 100%; }
 }
 
