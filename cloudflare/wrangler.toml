@@ -1,3 +1,4 @@
 name = "code-eternal-passport"
 main = "worker-passport.js"
 compatibility_date = "2024-09-23"
+# Transparent proxy: username.codeofdigitaleternity.com → Irys-hosted passport
