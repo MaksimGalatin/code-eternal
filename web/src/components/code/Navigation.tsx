@@ -165,8 +165,16 @@ export default function Navigation() {
               </div>
             </div>
 
-            {/* Right side: Theme + Lang switcher + Mobile toggle */}
+            {/* Right side: Launch App + Theme + Lang switcher + Mobile toggle */}
             <div className="flex items-center gap-2">
+              {/* Launch App */}
+              <a
+                href="https://app.codeofdigitaleternity.com"
+                className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold tracking-wide transition-colors"
+              >
+                Launch App →
+              </a>
+
               {/* Theme toggle */}
               <ThemeToggle />
 

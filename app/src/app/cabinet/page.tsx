@@ -378,10 +378,10 @@ export default function CabinetPage() {
         }}>
           {/* Left: logo + tier badge */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+            <a href="https://www.codeofdigitaleternity.com" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
               <span style={{ color: "rgb(124,58,237)" }}><IFlame /></span>
               <span style={{ fontWeight: 700, fontSize: "18px", color: "rgb(124,58,237)" }}>CODE ETERNAL</span>
-            </div>
+            </a>
             {tierObj ? (
               <span style={{ fontSize: "12px", padding: "2px 10px", borderRadius: "99px", background: `rgba(${tierObj.rgb},0.12)`, color: tierObj.color, border: `1px solid rgba(${tierObj.rgb},0.3)` }}>
                 {tierObj.icon} {tierObj.name}
