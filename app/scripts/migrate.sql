@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   wallet        VARCHAR(44)  NOT NULL UNIQUE,
   email         VARCHAR(255),
   display_name  VARCHAR(100),
+  username      VARCHAR(32) UNIQUE,
   referrer_id   INTEGER REFERENCES users(id),
   ref_code      VARCHAR(20)  UNIQUE,
   tier          SMALLINT     NOT NULL DEFAULT 0,
@@ -54,6 +55,7 @@ CREATE TABLE IF NOT EXISTS applications_1000 (
 
 CREATE INDEX IF NOT EXISTS idx_users_wallet          ON users(wallet);
 CREATE INDEX IF NOT EXISTS idx_users_ref_code        ON users(ref_code);
+CREATE INDEX IF NOT EXISTS idx_users_username        ON users(username);
 CREATE INDEX IF NOT EXISTS idx_ref_payments_referrer ON referral_payments(referrer_wallet);
 CREATE INDEX IF NOT EXISTS idx_ref_payments_payer    ON referral_payments(payer_wallet);
 CREATE INDEX IF NOT EXISTS idx_site_jobs_wallet      ON site_generation_jobs(wallet);

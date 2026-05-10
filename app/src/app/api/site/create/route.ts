@@ -114,6 +114,9 @@ export async function POST(req: Request) {
     if (displayName) {
       await client.query("UPDATE users SET display_name = $1 WHERE wallet = $2", [displayName, wallet]);
     }
+    if (username) {
+      await client.query("UPDATE users SET username = $1 WHERE wallet = $2", [username.toLowerCase(), wallet]);
+    }
 
     const jobRow = await client.query(
       "SELECT tx_signature FROM site_generation_jobs WHERE wallet = $1 ORDER BY created_at DESC LIMIT 1",
