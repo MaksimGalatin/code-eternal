@@ -708,6 +708,7 @@ export default function CabinetPage() {
                   <div style={{ fontSize: "13px", fontWeight: 600, color: "rgb(232,232,240)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
                     🔥 Top Guardians of Eternity
                   </div>
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
                   {contributors.length === 0 ? (
                     <div className="glass-panel" style={{ padding: "32px", textAlign: "center", color: "rgb(107,114,128)", fontSize: "13px", flex: 1 }}>
                       No guardians yet — be the first!
@@ -715,7 +716,7 @@ export default function CabinetPage() {
                   ) : (
                     <>
                       {/* Medal podium */}
-                      <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
+                      <div style={{ display: "flex", gap: "10px" }}>
                         {contributors.slice(0, 3).map((c, i) => {
                           const tColor = TIER_COLOR[c.tier] ?? "#7C3AED";
                           const tRgb   = c.tier === 1 ? "124,58,237" : c.tier === 2 ? "212,162,76" : "16,185,129";
@@ -758,6 +759,7 @@ export default function CabinetPage() {
                       )}
                     </>
                   )}
+                  </div>
                 </div>
               </div>
 
