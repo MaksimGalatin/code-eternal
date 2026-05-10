@@ -12,17 +12,19 @@ import {
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import { IDL } from "@/idl/code_eternal_router";
+import { useLang, t, type TranslationKey } from "@/lib/i18n";
+import LangSwitcher from "@/components/LangSwitcher";
 
-const TIERS: Record<number, { name: string; price: number; amount: number; color: string; rgb: string }> = {
-  1: { name: "Spark",           price: 15,   amount: 15_000_000,    color: "#7C3AED", rgb: "124,58,237" },
-  2: { name: "Family Archives", price: 100,  amount: 100_000_000,   color: "#D4A24C", rgb: "212,162,76" },
-  3: { name: "Digital DNA",     price: 1000, amount: 1_000_000_000, color: "#10B981", rgb: "16,185,129" },
+const TIERS: Record<number, { nameKey: TranslationKey; price: number; amount: number; color: string; rgb: string }> = {
+  1: { nameKey: "tier.spark",    price: 15,   amount: 15_000_000,    color: "#7C3AED", rgb: "124,58,237" },
+  2: { nameKey: "tier.archives", price: 100,  amount: 100_000_000,   color: "#D4A24C", rgb: "212,162,76" },
+  3: { nameKey: "tier.dna",      price: 1000, amount: 1_000_000_000, color: "#10B981", rgb: "16,185,129" },
 };
 
-const TIER_BENEFITS: Record<number, string[]> = {
-  1: ["PDF guide", "Personal referral link", "AIfa chat (30 days)"],
-  2: ["Everything from Spark", "Eternal site on Arweave", "cNFT Passport", "AIfa chat (90 days)"],
-  3: ["Everything from Archives", "Voice clone", "3D avatar", "AIfa chat (365 days)", "VIP in DAO"],
+const TIER_BENEFIT_KEYS: Record<number, TranslationKey[]> = {
+  1: ["buy.benefit.pdf", "buy.benefit.referral", "buy.benefit.aifa30"],
+  2: ["buy.benefit.fromSpark", "buy.benefit.arweave", "buy.benefit.cnft", "buy.benefit.aifa90"],
+  3: ["buy.benefit.fromArchives", "buy.benefit.voice", "buy.benefit.avatar3d", "buy.benefit.aifa365", "buy.benefit.vip"],
 };
 
 const DIST = [
@@ -41,8 +43,8 @@ const ECOSYSTEM_FUND_WALLET = new PublicKey("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA
 
 type Step = "loading" | "ready" | "airdropping" | "registering" | "paying" | "success" | "error";
 
-const STEP_LABELS: string[] = ["Funding wallet", "Registering", "Payment"];
-const STEP_IDS: Step[]      = ["airdropping", "registering", "paying"];
+const STEP_LABEL_KEYS: TranslationKey[] = ["buy.step.funding", "buy.step.registering", "buy.step.payment"];
+const STEP_IDS: Step[]                  = ["airdropping", "registering", "paying"];
 
 function shortAddr(a: string) { return `${a.slice(0, 4)}...${a.slice(-4)}`; }
 
@@ -52,6 +54,7 @@ function BuyPageInner() {
   const { authenticated, ready } = usePrivy();
   const { wallets, createWallet } = useSolanaWallets();
   const wallet = wallets[0];
+  const { lang } = useLang();
 
   useEffect(() => {
     if (ready && authenticated && wallets.length === 0) createWallet().catch(() => {});
@@ -220,26 +223,29 @@ function BuyPageInner() {
   const currentStepIdx = STEP_IDS.indexOf(step);
   const progressPct    = step === "airdropping" ? 15 : step === "registering" ? 50 : step === "paying" ? 85 : 0;
 
-  const btnLabel = !walletReady         ? "Preparing wallet..."
-                 : step === "loading"   ? "Loading balance..."
-                 : step === "airdropping" ? "Funding wallet..."
-                 : step === "registering" ? "Registering on-chain..."
-                 : step === "paying"    ? "Processing payment..."
-                 : `Confirm payment — $${tier?.price}`;
+  const btnLabel = !walletReady           ? t("buy.preparing", lang)
+                 : step === "loading"     ? t("buy.loadingBalance", lang)
+                 : step === "airdropping" ? t("buy.funding", lang)
+                 : step === "registering" ? t("buy.registering", lang)
+                 : step === "paying"      ? t("buy.processing", lang)
+                 : `${t("buy.confirm", lang)}${tier?.price}`;
 
   if (!ready || !authenticated) return null;
   if (!tier) return (
-    <div style={S.page}><p style={{ color: "#6B6B7E" }}>Loading...</p></div>
+    <div style={S.page}><p style={{ color: "#6B6B7E" }}>{t("buy.loadingBalance", lang)}</p></div>
   );
 
   return (
     <>
       <div style={S.page}>
+        <div style={{ position: "absolute", top: "20px", right: "20px" }}>
+          <LangSwitcher />
+        </div>
 
         {/* Back link */}
         <div style={{ width: "100%", maxWidth: "480px", marginBottom: "16px" }}>
           <button onClick={() => router.push("/cabinet")} style={S.backLink}>
-            ← Back to cabinet
+            {t("buy.back", lang)}
           </button>
         </div>
 
@@ -249,13 +255,13 @@ function BuyPageInner() {
             <div style={S.cardHeader}>
               <span style={{ fontSize: "28px" }}>✅</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: "16px" }}>Payment Confirmed!</div>
-                <div style={{ fontSize: "12px", opacity: 0.7 }}>Your site is being generated on Arweave</div>
+                <div style={{ fontWeight: 700, fontSize: "16px" }}>{t("buy.success.title", lang)}</div>
+                <div style={{ fontSize: "12px", opacity: 0.7 }}>{t("buy.success.sub", lang)}</div>
               </div>
             </div>
             <div style={{ padding: "28px 24px" }}>
-              <div style={{ fontSize: "48px", fontWeight: 900, color: tier.color, marginBottom: "4px" }}>{tier.name}</div>
-              <div style={{ color: "#8B8B9E", fontSize: "14px", marginBottom: "24px" }}>Access activated</div>
+              <div style={{ fontSize: "48px", fontWeight: 900, color: tier.color, marginBottom: "4px" }}>{t(tier.nameKey, lang)}</div>
+              <div style={{ color: "#8B8B9E", fontSize: "14px", marginBottom: "24px" }}>{t("buy.success.access", lang)}</div>
               {txSig && (
                 <div style={{ background: "rgba(10,10,20,0.5)", border: "1px solid rgba(42,42,58,0.6)", borderRadius: "8px", padding: "12px", marginBottom: "20px", textAlign: "left" }}>
                   <div style={{ fontSize: "10px", color: "#6B6B7E", marginBottom: "4px" }}>TRANSACTION</div>
@@ -263,7 +269,7 @@ function BuyPageInner() {
                 </div>
               )}
               <button onClick={() => router.push("/cabinet")} style={{ ...S.confirmBtn, background: "#10B981", boxShadow: "0 0 24px rgba(16,185,129,0.3)" }}>
-                Go to Cabinet
+                {t("buy.success.cabinet", lang)}
               </button>
             </div>
           </div>
@@ -275,8 +281,8 @@ function BuyPageInner() {
             <div style={S.cardHeader}>
               <span style={{ fontSize: "24px" }}>💎</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: "16px" }}>Payment Confirmation</div>
-                <div style={{ fontSize: "12px", opacity: 0.7 }}>Review details before payment</div>
+                <div style={{ fontWeight: 700, fontSize: "16px" }}>{t("buy.title", lang)}</div>
+                <div style={{ fontSize: "12px", opacity: 0.7 }}>{t("buy.subtitle", lang)}</div>
               </div>
             </div>
 
@@ -290,7 +296,7 @@ function BuyPageInner() {
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: "rgb(232,232,240)" }}>{tier.name}</div>
+                <div style={{ fontSize: "24px", fontWeight: 800, color: "rgb(232,232,240)" }}>{t(tier.nameKey, lang)}</div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: "32px", fontWeight: 900, color: tier.color, lineHeight: 1 }}>${tier.price}</div>
                   <div style={{ fontSize: "11px", color: "#6B6B7E", marginTop: "2px" }}>USDC on Solana</div>
@@ -299,10 +305,10 @@ function BuyPageInner() {
 
               {/* Benefits */}
               <div style={{ marginBottom: "20px" }}>
-                {TIER_BENEFITS[tierId]?.map(b => (
-                  <div key={b} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                {TIER_BENEFIT_KEYS[tierId]?.map(key => (
+                  <div key={key} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
                     <span style={{ color: tier.color, fontWeight: 700, fontSize: "14px" }}>✓</span>
-                    <span style={{ fontSize: "13px", color: "rgb(200,200,215)" }}>{b}</span>
+                    <span style={{ fontSize: "13px", color: "rgb(200,200,215)" }}>{t(key, lang)}</span>
                   </div>
                 ))}
               </div>
@@ -310,7 +316,7 @@ function BuyPageInner() {
               {/* Fund distribution */}
               <div style={{ marginBottom: "20px" }}>
                 <div style={{ fontSize: "10px", color: "#6B6B7E", letterSpacing: "1px", fontWeight: 600, marginBottom: "8px" }}>
-                  FUND DISTRIBUTION
+                  {t("buy.distribution", lang).toUpperCase()}
                 </div>
                 <div style={{ display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", gap: "2px", marginBottom: "8px" }}>
                   {DIST.map(d => (
@@ -333,11 +339,11 @@ function BuyPageInner() {
               {wallet && (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(10,10,20,0.4)", border: "1px solid rgba(42,42,58,0.5)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px" }}>
                   <div>
-                    <div style={{ fontSize: "10px", color: "#6B6B7E", marginBottom: "2px" }}>Wallet</div>
+                    <div style={{ fontSize: "10px", color: "#6B6B7E", marginBottom: "2px" }}>{t("buy.wallet", lang)}</div>
                     <div style={{ fontSize: "12px", fontFamily: "monospace", color: "#06B6D4" }}>{shortAddr(wallet.address)}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "10px", color: "#6B6B7E", marginBottom: "2px" }}>Balance</div>
+                    <div style={{ fontSize: "10px", color: "#6B6B7E", marginBottom: "2px" }}>{t("buy.balance", lang)}</div>
                     <div style={{ fontSize: "16px", fontWeight: 700, color: step === "loading" ? "#6B6B7E" : balance >= tier.price ? "#10B981" : "#EF4444" }}>
                       {step === "loading" ? "···" : `$${balance.toFixed(2)}`}
                     </div>
@@ -364,7 +370,7 @@ function BuyPageInner() {
                           <div style={{ width: "26px", height: "26px", borderRadius: "50%", margin: "0 auto 4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 700, transition: "all 0.3s", background: done ? "#10B981" : active ? tier.color : "rgba(42,42,58,0.8)", boxShadow: active ? `0 0 10px rgba(${tier.rgb},0.5)` : "none", color: done || active ? "#fff" : "#4a4a5e" }}>
                             {done ? "✓" : i + 1}
                           </div>
-                          <div style={{ fontSize: "10px", color: active ? "#E8E8F0" : "#4a4a5e", fontWeight: active ? 600 : 400 }}>{STEP_LABELS[i]}</div>
+                          <div style={{ fontSize: "10px", color: active ? "#E8E8F0" : "#4a4a5e", fontWeight: active ? 600 : 400 }}>{t(STEP_LABEL_KEYS[i], lang)}</div>
                         </div>
                       );
                     })}
@@ -380,7 +386,7 @@ function BuyPageInner() {
                 <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "8px", padding: "10px 14px", marginBottom: "14px", color: "#EF4444", fontSize: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span>{errorMsg}</span>
                   <button onClick={() => { setStep("ready"); setErrorMsg(""); }} style={{ background: "none", border: "none", color: "#8B8B9E", cursor: "pointer", fontSize: "12px", textDecoration: "underline", marginLeft: "8px" }}>
-                    Try again
+                    {t("buy.tryAgain", lang)}
                   </button>
                 </div>
               )}
@@ -395,7 +401,7 @@ function BuyPageInner() {
               </button>
 
               <p style={{ textAlign: "center", fontSize: "11px", color: "#3a3a50", marginTop: "14px" }}>
-                Solana devnet · mock USDC · no real funds
+                {t("buy.devnet", lang)}
               </p>
             </div>
           </div>
@@ -407,7 +413,7 @@ function BuyPageInner() {
           style={S.alfaBtn}
         >
           <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981", marginRight: "8px" }} />
-          Open AIfa Terminal
+          {t("buy.openAifa", lang)}
         </button>
 
       </div>
@@ -490,7 +496,7 @@ const S = {
 
 export default function BuyPage() {
   return (
-    <Suspense fallback={<div style={{ background: "#0A0A0F", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6B7E", fontFamily: "Inter,sans-serif" }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ background: "#0A0A0F", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6B7E", fontFamily: "Inter,sans-serif" }}>...</div>}>
       <BuyPageInner />
     </Suspense>
   );

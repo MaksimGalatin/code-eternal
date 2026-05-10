@@ -5,18 +5,19 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useSolanaWallets } from "@privy-io/react-auth/solana";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { useLang, t } from "@/lib/i18n";
+import LangSwitcher from "@/components/LangSwitcher";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
 const USDC_MINT_STR = process.env.NEXT_PUBLIC_USDC_MINT;
 const PROGRAM_ID_STR = process.env.NEXT_PUBLIC_PROGRAM_ID!
 
 const TIERS = [
-  { id: 1, name: "Spark",           price: 15,   color: "#7C3AED", rgb: "124,58,237",  icon: "⚡" },
-  { id: 2, name: "Family Archives", price: 100,  color: "#D4A24C", rgb: "212,162,76",  icon: "🏛️" },
-  { id: 3, name: "Digital DNA",     price: 1000, color: "#10B981", rgb: "16,185,129",  icon: "🧬" },
+  { id: 1, nameKey: "tier.spark" as const,    price: 15,   color: "#7C3AED", rgb: "124,58,237",  icon: "⚡" },
+  { id: 2, nameKey: "tier.archives" as const, price: 100,  color: "#D4A24C", rgb: "212,162,76",  icon: "🏛️" },
+  { id: 3, nameKey: "tier.dna" as const,      price: 1000, color: "#10B981", rgb: "16,185,129",  icon: "🧬" },
 ];
 const TIER_COLOR: Record<number, string> = { 1: "#7C3AED", 2: "#D4A24C", 3: "#10B981" };
-const TIER_NAME: Record<number, string>  = { 1: "Spark", 2: "Family Archives", 3: "Digital DNA" };
 
 type SiteStatus  = { status: "none"|"pending"|"done"|"error"; arweaveUrl?: string|null; tier: number; regenCount?: number; regenLimit?: number };
 type Income      = { l1: number; l2: number; l3: number; total: number; locked: number; recent: any[] };
@@ -50,14 +51,14 @@ const ISend = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
 const IUser = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 const ICopy = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
 
-const TABS: { id: Tab; label: string; icon: React.ReactElement }[] = [
-  { id: "cabinet",  label: "Cabinet",        icon: <IWallet /> },
-  { id: "alfa",     label: "AIfa Terminal",  icon: <IBrain /> },
-  { id: "games",    label: "Games",          icon: <IGamepad /> },
-  { id: "dao",      label: "DAO",            icon: <IVote /> },
-  { id: "site",     label: "Site",           icon: <IGlobe /> },
-  { id: "contract", label: "Smart Contract", icon: <IFileCode /> },
-  { id: "metrics",  label: "Metrics",        icon: <ITrending /> },
+const TABS: { id: Tab; labelKey: string; icon: React.ReactElement }[] = [
+  { id: "cabinet",  labelKey: "tab.cabinet",  icon: <IWallet /> },
+  { id: "alfa",     labelKey: "tab.aifa",     icon: <IBrain /> },
+  { id: "games",    labelKey: "tab.games",    icon: <IGamepad /> },
+  { id: "dao",      labelKey: "tab.dao",      icon: <IVote /> },
+  { id: "site",     labelKey: "tab.site",     icon: <IGlobe /> },
+  { id: "contract", labelKey: "tab.contract", icon: <IFileCode /> },
+  { id: "metrics",  labelKey: "tab.metrics",  icon: <ITrending /> },
 ];
 
 const INIT_ALFA_MSGS: { from: "bot"|"user"; text: string }[] = [
@@ -93,6 +94,7 @@ export default function CabinetPage() {
   const { user, logout, authenticated, ready, getAccessToken } = usePrivy();
   const { wallets, createWallet } = useSolanaWallets();
   const wallet = wallets[0];
+  const { lang } = useLang();
 
   const [activeTab,    setActiveTab]    = useState<Tab>("cabinet");
   const [myRefCode,    setMyRefCode]    = useState("");
@@ -384,17 +386,18 @@ export default function CabinetPage() {
             </a>
             {tierObj ? (
               <span style={{ fontSize: "12px", padding: "2px 10px", borderRadius: "99px", background: `rgba(${tierObj.rgb},0.12)`, color: tierObj.color, border: `1px solid rgba(${tierObj.rgb},0.3)` }}>
-                {tierObj.icon} {tierObj.name}
+                {tierObj.icon} {t(tierObj.nameKey, lang)}
               </span>
             ) : (
               <span style={{ fontSize: "12px", padding: "2px 10px", borderRadius: "99px", background: "rgba(42,42,58,0.5)", color: "rgb(139,139,158)" }}>
-                No tier
+                {t("tier.none", lang)}
               </span>
             )}
           </div>
 
-          {/* Right: balances, email, wallet, logout */}
+          {/* Right: lang, balances, email, wallet, logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <LangSwitcher />
             <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "8px", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)" }}>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "12px", fontFamily: "monospace", color: "rgb(16,185,129)" }}>
@@ -413,10 +416,10 @@ export default function CabinetPage() {
             )}
             {myRefCode && (
               <button className="copy-btn" onClick={copyRef} style={{ padding: "5px 10px", fontSize: "11px" }}>
-                <ICopy /> {copied ? "Copied!" : `ref:${myRefCode}`}
+                <ICopy /> {copied ? t("cabinet.income.copied", lang) : `ref:${myRefCode}`}
               </button>
             )}
-            <button onClick={logout} style={{ padding: "8px", borderRadius: "8px", background: "rgb(19,19,28)", border: "none", cursor: "pointer", display: "flex", color: "rgb(139,139,158)" }}>
+            <button onClick={logout} title={t("header.logout", lang)} style={{ padding: "8px", borderRadius: "8px", background: "rgb(19,19,28)", border: "none", cursor: "pointer", display: "flex", color: "rgb(139,139,158)" }}>
               <ILogOut />
             </button>
           </div>
@@ -428,14 +431,14 @@ export default function CabinetPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span style={{ fontSize: "16px" }}>⚠️</span>
               <div>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#f85149" }}>Subscription expired</span>
-                <span style={{ fontSize: "12px", color: "rgb(139,139,158)", marginLeft: "8px" }}>Site editing is locked. Renew to unlock all features.</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#f85149" }}>{t("cabinet.expiry.title", lang)}</span>
+                <span style={{ fontSize: "12px", color: "rgb(139,139,158)", marginLeft: "8px" }}>{t("cabinet.expiry.desc", lang)}</span>
               </div>
             </div>
             <button
               onClick={() => router.push(`/cabinet/buy?tier=${currentTier || 1}`)}
               style={{ padding: "6px 16px", borderRadius: "8px", background: "linear-gradient(135deg,#f85149,#c0392b)", border: "none", color: "white", fontSize: "12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-              Renew Now →
+              {t("cabinet.expiry.cta", lang)}
             </button>
           </div>
         )}
@@ -451,7 +454,7 @@ export default function CabinetPage() {
                 onClick={() => !locked && setActiveTab(tab.id)}
               >
                 {tab.icon}
-                {tab.label}
+                {t(tab.labelKey as any, lang)}
               </button>
             );
           })}
@@ -473,9 +476,9 @@ export default function CabinetPage() {
                   background: siteStatus.status === "done" ? "rgba(16,185,129,0.06)" : siteStatus.status === "error" ? "rgba(248,81,73,0.06)" : "rgba(124,58,237,0.06)",
                 }}>
                   <div>
-                    <div style={{ fontSize: "10px", color: "rgb(107,114,128)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "1.2px" }}>Eternal Site</div>
+                    <div style={{ fontSize: "10px", color: "rgb(107,114,128)", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "1.2px" }}>{t("cabinet.site.label", lang)}</div>
                     <div style={{ fontWeight: 700, fontSize: "14px", color: siteStatus.status === "done" ? "#10B981" : siteStatus.status === "error" ? "#f85149" : "#a78bfa" }}>
-                      {siteStatus.status === "done" ? "✓ Live on Arweave" : siteStatus.status === "error" ? "✕ Generation failed" : "⟳ Generating…"}
+                      {siteStatus.status === "done" ? t("cabinet.site.live", lang) : siteStatus.status === "error" ? t("cabinet.site.failed", lang) : t("cabinet.site.generating", lang)}
                     </div>
                   </div>
                   {siteStatus.status === "done" && siteStatus.arweaveUrl && (
@@ -483,12 +486,12 @@ export default function CabinetPage() {
                       {(siteStatus as any).username && (
                         <a href={`https://${(siteStatus as any).username}.codeofdigitaleternity.com`} target="_blank" rel="noopener noreferrer"
                           style={{ background: "linear-gradient(135deg,#7C3AED,#5B21B6)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
-                          Open Passport →
+                          {t("cabinet.site.openPassport", lang)}
                         </a>
                       )}
                       <a href={siteStatus.arweaveUrl} target="_blank" rel="noopener noreferrer"
                         style={{ background: "linear-gradient(135deg,#10B981,#059669)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
-                        View on Arweave →
+                        {t("cabinet.site.viewArweave", lang)}
                       </a>
                     </div>
                   )}
@@ -498,13 +501,13 @@ export default function CabinetPage() {
               {/* Stat cards */}
               <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
                 {[
-                  { label: "Burned $CODE",   val: overview ? fmtNum(Math.round(overview.burnedUsdc)) : "—", color: "#fb923c", borderColor: "rgba(251,146,60,0.25)", icon: "🔥" },
-                  { label: "Active Members", val: overview ? fmtNum(overview.activeMembers) : "—",           color: "#a78bfa", borderColor: "rgba(124,58,237,0.25)", icon: "👥" },
-                  { label: "Sites Created",  val: overview ? fmtNum(overview.sitesCreated) : "—",            color: "#10B981", borderColor: "rgba(16,185,129,0.25)", icon: "🌐" },
+                  { labelKey: "cabinet.stats.burned",  val: overview ? fmtNum(Math.round(overview.burnedUsdc)) : "—", color: "#fb923c", borderColor: "rgba(251,146,60,0.25)", icon: "🔥" },
+                  { labelKey: "cabinet.stats.members", val: overview ? fmtNum(overview.activeMembers) : "—",           color: "#a78bfa", borderColor: "rgba(124,58,237,0.25)", icon: "👥" },
+                  { labelKey: "cabinet.stats.sites",   val: overview ? fmtNum(overview.sitesCreated) : "—",            color: "#10B981", borderColor: "rgba(16,185,129,0.25)", icon: "🌐" },
                 ].map(s => (
-                  <div key={s.label} className="glass-panel" style={{ flex: "1", padding: "20px 24px", borderColor: s.borderColor, minWidth: 0 }}>
+                  <div key={s.labelKey} className="glass-panel" style={{ flex: "1", padding: "20px 24px", borderColor: s.borderColor, minWidth: 0 }}>
                     <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      {s.icon} {s.label}
+                      {s.icon} {t(s.labelKey as any, lang)}
                     </div>
                     <div style={{ fontSize: "30px", fontWeight: 900, color: s.color, letterSpacing: "-0.5px" }}>{s.val}</div>
                   </div>
@@ -517,22 +520,22 @@ export default function CabinetPage() {
                 {/* Income */}
                 <div className="glass-panel" style={{ flex: "1 1 55%", padding: "24px" }}>
                   <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "20px", display: "flex", alignItems: "center", gap: "6px", textTransform: "uppercase", letterSpacing: "0.8px" }}>
-                    💰 My Income
+                    {t("cabinet.income.title", lang)}
                   </div>
                   <div style={{ fontSize: "36px", fontWeight: 900, color: "rgb(232,232,240)", letterSpacing: "-1px", marginBottom: "4px" }}>
                     ${income ? fmtUsd(income.total) : "0.00"}
                   </div>
-                  <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginBottom: income?.locked ? "12px" : "24px" }}>total earned from referrals</div>
+                  <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginBottom: income?.locked ? "12px" : "24px" }}>{t("cabinet.income.earned", lang)}</div>
                   {(income?.locked ?? 0) > 0 && (
                     <div style={{ marginBottom: "16px", padding: "10px 14px", borderRadius: "10px", background: "rgba(248,81,73,0.06)", border: "1px solid rgba(248,81,73,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                       <div>
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#f85149" }}>🔒 ${fmtUsd(income!.locked)} locked</div>
-                        <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "2px" }}>You would have earned this with an active subscription</div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#f85149" }}>🔒 ${fmtUsd(income!.locked)} {t("cabinet.income.locked", lang)}</div>
+                        <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "2px" }}>{t("cabinet.income.lockedHint", lang)}</div>
                       </div>
                       <button
                         onClick={() => router.push(`/cabinet/buy?tier=${currentTier || 1}`)}
                         style={{ padding: "5px 12px", borderRadius: "8px", background: "rgba(248,81,73,0.15)", border: "1px solid rgba(248,81,73,0.3)", color: "#f85149", fontSize: "11px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                        Renew →
+                        {t("cabinet.income.renew", lang)}
                       </button>
                     </div>
                   )}
@@ -557,7 +560,7 @@ export default function CabinetPage() {
                       <input readOnly className="ref-input"
                         value={`${typeof window !== "undefined" ? window.location.origin : ""}/?ref=${myRefCode}`} />
                       <button className="copy-btn" onClick={copyRef}>
-                        <ICopy /> {copied ? "Copied!" : "Copy link"}
+                        <ICopy /> {copied ? t("cabinet.income.copied", lang) : t("cabinet.income.copyLink", lang)}
                       </button>
                     </div>
                   )}
@@ -570,35 +573,35 @@ export default function CabinetPage() {
                     const upgrades = TIERS.filter(t => t.id > currentTier);
                     return (
                       <>
-                        <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.8px" }}>🏆 Your Plan</div>
+                        <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.8px" }}>{t("cabinet.plan.title", lang)}</div>
                         <div style={{ background: `rgba(${ct.rgb},0.08)`, border: `1px solid rgba(${ct.rgb},0.25)`, borderRadius: "12px", padding: "16px", marginBottom: "16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                             <span style={{ fontSize: "28px" }}>{ct.icon}</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: "17px", fontWeight: 800, color: ct.color }}>{ct.name}</div>
+                              <div style={{ fontSize: "17px", fontWeight: 800, color: ct.color }}>{t(ct.nameKey, lang)}</div>
                               <div style={{ fontSize: "11px", color: isExpired ? "#f85149" : "rgb(107,114,128)", marginTop: "2px" }}>
-                                {isExpired ? `Expired ${expiryDate}` : expiryDate ? `Active until ${expiryDate}` : "Active"}
+                                {isExpired ? `${t("cabinet.plan.expiredOn", lang)} ${expiryDate}` : expiryDate ? `${t("cabinet.plan.activeUntil", lang)} ${expiryDate}` : t("cabinet.plan.active", lang)}
                               </div>
                             </div>
                             {isExpired ? (
-                              <span style={{ fontSize: "11px", background: "rgba(248,81,73,0.15)", color: "#f85149", padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>✕ Expired</span>
+                              <span style={{ fontSize: "11px", background: "rgba(248,81,73,0.15)", color: "#f85149", padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>{t("cabinet.plan.expired", lang)}</span>
                             ) : daysLeft > 0 ? (
-                              <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>{daysLeft}d left</span>
+                              <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>{daysLeft}{t("cabinet.plan.daysLeft", lang)}</span>
                             ) : (
-                              <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>✓ Active</span>
+                              <span style={{ fontSize: "11px", background: `rgba(${ct.rgb},0.15)`, color: ct.color, padding: "4px 10px", borderRadius: "20px", fontWeight: 700 }}>{t("cabinet.plan.active", lang)}</span>
                             )}
                           </div>
                         </div>
                         {upgrades.length > 0 && (
                           <>
-                            <div style={{ fontSize: "10px", color: "rgb(107,114,128)", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>Upgrade</div>
-                            {upgrades.map(t => (
-                              <div key={t.id} className="tier-row" onClick={() => router.push(`/cabinet/buy?tier=${t.id}`)}>
-                                <span style={{ fontSize: "20px" }}>{t.icon}</span>
+                            <div style={{ fontSize: "10px", color: "rgb(107,114,128)", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>{t("cabinet.plan.upgrade", lang)}</div>
+                            {upgrades.map(ut => (
+                              <div key={ut.id} className="tier-row" onClick={() => router.push(`/cabinet/buy?tier=${ut.id}`)}>
+                                <span style={{ fontSize: "20px" }}>{ut.icon}</span>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: "14px", fontWeight: 700, color: t.color }}>{t.name}</div>
+                                  <div style={{ fontSize: "14px", fontWeight: 700, color: ut.color }}>{t(ut.nameKey, lang)}</div>
                                 </div>
-                                <div style={{ fontSize: "17px", fontWeight: 900, color: t.color }}>${t.price.toLocaleString()}</div>
+                                <div style={{ fontSize: "17px", fontWeight: 900, color: ut.color }}>${ut.price.toLocaleString()}</div>
                                 <div style={{ color: "rgb(42,42,58)", fontSize: "18px" }}>›</div>
                               </div>
                             ))}
@@ -606,7 +609,7 @@ export default function CabinetPage() {
                         )}
                         {upgrades.length === 0 && !isExpired && (
                           <div style={{ textAlign: "center", color: "rgb(107,114,128)", fontSize: "12px", padding: "12px 0" }}>
-                            You are at the highest tier 🧬
+                            🧬
                           </div>
                         )}
                         {isExpired && (
@@ -616,8 +619,7 @@ export default function CabinetPage() {
                             style={{ borderColor: "rgba(248,81,73,0.3)", background: "rgba(248,81,73,0.05)" }}>
                             <span style={{ fontSize: "20px" }}>🔄</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: "14px", fontWeight: 700, color: "#f85149" }}>Renew {ct.name}</div>
-                              <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>Restore access for 30 days</div>
+                              <div style={{ fontSize: "14px", fontWeight: 700, color: "#f85149" }}>{t("cabinet.income.renew", lang)} {t(ct.nameKey, lang)}</div>
                             </div>
                             <div style={{ fontSize: "17px", fontWeight: 900, color: "#f85149" }}>${ct.price.toLocaleString()}</div>
                             <div style={{ color: "rgb(42,42,58)", fontSize: "18px" }}>›</div>
@@ -627,14 +629,14 @@ export default function CabinetPage() {
                     );
                   })() : (
                     <>
-                      <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "20px", textTransform: "uppercase", letterSpacing: "0.8px" }}>🏆 Choose Access Level</div>
-                      {TIERS.map(t => (
-                        <div key={t.id} className="tier-row" onClick={() => router.push(`/cabinet/buy?tier=${t.id}`)}>
-                          <span style={{ fontSize: "22px" }}>{t.icon}</span>
+                      <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "20px", textTransform: "uppercase", letterSpacing: "0.8px" }}>{t("cabinet.tiers.title", lang)}</div>
+                      {TIERS.map(tier => (
+                        <div key={tier.id} className="tier-row" onClick={() => router.push(`/cabinet/buy?tier=${tier.id}`)}>
+                          <span style={{ fontSize: "22px" }}>{tier.icon}</span>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: "14px", fontWeight: 700, color: t.color }}>{t.name}</div>
+                            <div style={{ fontSize: "14px", fontWeight: 700, color: tier.color }}>{t(tier.nameKey, lang)}</div>
                           </div>
-                          <div style={{ fontSize: "18px", fontWeight: 900, color: t.color }}>${t.price.toLocaleString()}</div>
+                          <div style={{ fontSize: "18px", fontWeight: 900, color: tier.color }}>${tier.price.toLocaleString()}</div>
                           <div style={{ color: "rgb(42,42,58)", fontSize: "18px" }}>›</div>
                         </div>
                       ))}
@@ -646,7 +648,7 @@ export default function CabinetPage() {
               {/* Recent Transactions */}
               <div className="glass-panel" style={{ padding: "24px", marginBottom: "20px" }}>
                 <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.8px", display: "flex", alignItems: "center", gap: "6px" }}>
-                  🛡️ Recent Transactions
+                  🛡️ {t("cabinet.txns.title", lang)}
                 </div>
                 {recentTxns.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "28px", color: "rgb(107,114,128)", fontSize: "13px" }}>
@@ -671,7 +673,7 @@ export default function CabinetPage() {
                             <div style={{ fontSize: "15px", fontWeight: 700, color: "rgb(232,232,240)" }}>${tx.amount}</div>
                           </div>
                           <span style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "20px", background: `rgba(${tRgb},0.1)`, border: `1px solid rgba(${tRgb},0.3)`, color: tColor, whiteSpace: "nowrap" }}>
-                            {tx.status === "done" ? "✅ Confirmed" : tx.status === "error" ? "❌ Error" : "⏳ Pending"}
+                            {tx.status === "done" ? t("cabinet.txns.confirmed", lang) : tx.status === "error" ? t("cabinet.txns.error", lang) : t("cabinet.txns.pending", lang)}
                           </span>
                         </div>
                       </div>
@@ -702,7 +704,7 @@ export default function CabinetPage() {
                         <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "2px", color: "rgb(124,58,237)", marginBottom: "16px" }}>CODE ETERNAL</div>
                         {tierObj && (
                           <div style={{ position: "absolute", top: 0, right: 0, fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: `rgba(${tierObj.rgb},0.15)`, color: tierObj.color, border: `1px solid rgba(${tierObj.rgb},0.3)` }}>
-                            🔗 {tierObj.name}
+                            🔗 {t(tierObj.nameKey, lang)}
                           </div>
                         )}
                         <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
@@ -715,7 +717,7 @@ export default function CabinetPage() {
                           </div>
                         </div>
                         <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-                          🏆 Tier: <span style={{ color: tierObj?.color ?? "rgb(139,139,158)", fontWeight: 600 }}>{tierObj?.name ?? "No tier"}</span>
+                          🏆 Tier: <span style={{ color: tierObj?.color ?? "rgb(139,139,158)", fontWeight: 600 }}>{tierObj ? t(tierObj.nameKey, lang) : t("tier.none", lang)}</span>
                         </div>
                         <div style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px" }}>
                           📅 Joined: <span style={{ color: "rgb(232,232,240)" }}>{new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
@@ -922,13 +924,13 @@ export default function CabinetPage() {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontSize: "20px" }}>✦</span>
-                    <span style={{ fontSize: "20px", fontWeight: 800, color: "rgb(232,232,240)" }}>Create Eternal Site</span>
+                    <span style={{ fontSize: "20px", fontWeight: 800, color: "rgb(232,232,240)" }}>{t("site.title", lang)}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "2px" }}>
-                    {tierObj && <span style={{ fontSize: "12px", color: "rgb(107,114,128)" }}>{tierObj.name} — ${tierObj.price}</span>}
+                    {tierObj && <span style={{ fontSize: "12px", color: "rgb(107,114,128)" }}>{t(tierObj.nameKey, lang)} — ${tierObj.price}</span>}
                     {currentTier > 0 && regenLimit > 0 && (
                       <span style={{ fontSize: "12px", padding: "1px 8px", borderRadius: "99px", background: regenLimitReached ? "rgba(239,68,68,0.1)" : "rgba(124,58,237,0.12)", color: regenLimitReached ? "#ef4444" : "rgb(167,139,250)", border: `1px solid ${regenLimitReached ? "rgba(239,68,68,0.3)" : "rgba(124,58,237,0.3)"}` }}>
-                        {regenCount}/{regenLimit} updates this period
+                        {regenCount}/{regenLimit} {t("site.updatesThisPeriod", lang)}
                       </span>
                     )}
                   </div>
@@ -951,7 +953,7 @@ export default function CabinetPage() {
                     {/* Username */}
                     <div style={{ marginBottom: "20px" }}>
                       <label htmlFor="site-username" style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                        <span>👤</span> Username <span style={{ color: "#ef4444" }}>*</span>
+                        <span>👤</span> {t("site.username", lang)} <span style={{ color: "#ef4444" }}>*</span>
                       </label>
                       <div style={{ display: "flex", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)", borderRadius: "10px", overflow: "hidden" }}>
                         <input id="site-username" type="text" value={siteUsername}
@@ -971,7 +973,7 @@ export default function CabinetPage() {
                     {/* Display name */}
                     <div style={{ marginBottom: "20px" }}>
                       <label style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                        <span>✏️</span> Display Name <span style={{ color: "#ef4444" }}>*</span>
+                        <span>✏️</span> {t("site.displayName", lang)} <span style={{ color: "#ef4444" }}>*</span>
                       </label>
                       <input value={siteDisplayName} onChange={e => setSiteDisplayName(e.target.value)}
                         placeholder="Your name"
@@ -981,7 +983,7 @@ export default function CabinetPage() {
                     {/* Bio */}
                     <div style={{ marginBottom: "20px" }}>
                       <label style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                        <span>📝</span> About Me
+                        <span>📝</span> {t("site.bio", lang)}
                       </label>
                       <textarea value={siteBio} onChange={e => setSiteBio(e.target.value.slice(0,2000))}
                         placeholder="Tell the world about yourself..."
@@ -993,7 +995,7 @@ export default function CabinetPage() {
                     {/* Manifesto */}
                     <div style={{ marginBottom: "20px" }}>
                       <label style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                        <span>⚡</span> Manifesto / Life Motto
+                        <span>⚡</span> {t("site.manifesto", lang)}
                       </label>
                       <textarea value={siteManifesto} onChange={e => setSiteManifesto(e.target.value.slice(0,500))}
                         placeholder="Your life philosophy, your eternal words..."
@@ -1005,7 +1007,7 @@ export default function CabinetPage() {
                     {/* Avatar upload */}
                     <div style={{ marginBottom: "20px" }}>
                       <label style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                        <span>🖼️</span> Avatar
+                        <span>🖼️</span> {t("site.avatar", lang)}
                       </label>
                       <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarFile} />
                       <div onClick={() => avatarInputRef.current?.click()}
@@ -1052,20 +1054,20 @@ export default function CabinetPage() {
                       onClick={handleCreateSite}
                       style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0 && !isExpired && !regenLimitReached) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: isExpired || regenLimitReached ? "rgb(42,42,58)" : (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: isExpired ? "#f85149" : regenLimitReached ? "#ef4444" : "white", transition: "all 0.15s", opacity: siteCreating ? 0.7 : 1 }}
                     >
-                      {isExpired ? "🔒 Subscription expired — Renew to edit site" : regenLimitReached ? `🔒 Update limit reached (${regenCount}/${regenLimit}) — Renew to reset` : siteCreating ? "⏳ Generating..." : "🌐 Create Eternal Site"}
+                      {isExpired ? `🔒 ${t("cabinet.expiry.title", lang)}` : regenLimitReached ? `${t("site.limitReached", lang)} (${regenCount}/${regenLimit})` : siteCreating ? t("site.submitting", lang) : `🌐 ${t("site.submit", lang)}`}
                     </button>
                     {siteError && (
                       <div style={{ marginTop: "8px", fontSize: "12px", color: "#ef4444", textAlign: "center" }}>{siteError}</div>
                     )}
                     <div style={{ marginTop: "10px", fontSize: "11px", color: "rgb(107,114,128)", textAlign: "center" }}>
-                      {currentTier === 0 ? "Purchase a tier to activate site creation" : regenLimitReached ? `${regenCount}/${regenLimit} updates used this subscription period` : `${regenCount}/${regenLimit} updates used · Your site is permanently saved on Arweave`}
+                      {currentTier === 0 ? t("site.noTier", lang) : regenLimitReached ? `${regenCount}/${regenLimit} ${t("site.updatesUsed", lang)}` : `${regenCount}/${regenLimit} ${t("site.updatesUsed", lang)} · ${t("site.permanent", lang)}`}
                     </div>
                   </div>
 
                   {/* Live Preview */}
                   <div className="glass-panel" style={{ flex: "1 1 360px", padding: "20px" }}>
                     <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span>🖥️</span> Live Preview
+                      <span>🖥️</span> {t("site.preview", lang)}
                     </div>
                     <div style={{ background: "rgb(13,13,20)", borderRadius: "12px", overflow: "hidden", border: "1px solid rgb(26,26,40)" }}>
                       {/* Mac dots */}
