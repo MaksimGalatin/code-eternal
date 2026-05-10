@@ -4,7 +4,7 @@ import { getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
 import { rateLimit, getIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
-  if (!rateLimit(getIp(req), 20, 60_000)) {
+  if (rateLimit(getIp(req), 20, 60_000) !== null) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 

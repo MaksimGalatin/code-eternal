@@ -14,7 +14,7 @@ You are upbeat, helpful, and knowledgeable about:
 Keep responses concise (2-4 sentences), engaging, and use relevant emojis. Refer to users as "Guardian". Always respond in English.`;
 
 export async function POST(req: Request) {
-  if (!rateLimit(getIp(req), 20, 60_000)) {
+  if (rateLimit(getIp(req), 20, 60_000) !== null) {
     return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
   }
 
