@@ -380,7 +380,7 @@ export default function CabinetPage() {
         }}>
           {/* Left: logo + tier badge */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <a href="https://www.codeofdigitaleternity.com" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <a href="https://aifa.digital/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
               <span style={{ color: "rgb(124,58,237)" }}><IFlame /></span>
               <span style={{ fontWeight: 700, fontSize: "18px", color: "rgb(124,58,237)" }}>CODE ETERNAL</span>
             </a>
