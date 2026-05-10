@@ -628,7 +628,7 @@ export default function CabinetPage() {
               <div className="main-cols" style={{ display: "grid", gridTemplateColumns: "40fr 55fr", gap: "16px", marginBottom: "20px" }}>
 
                 {/* cNFT Guardian Passport */}
-                <div style={{ display: "grid", gridTemplateRows: "auto 1fr" }}>
+                <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
                   <div style={{ fontSize: "13px", fontWeight: 600, color: "rgb(139,139,158)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
                     🛡️ cNFT Guardian Passport
                   </div>
@@ -704,7 +704,7 @@ export default function CabinetPage() {
                 </div>
 
                 {/* Top Guardians of Eternity */}
-                <div style={{ display: "grid", gridTemplateRows: "auto 1fr" }}>
+                <div style={{ display: "grid", gridTemplateRows: "auto 1fr", height: "100%" }}>
                   <div style={{ fontSize: "13px", fontWeight: 600, color: "rgb(232,232,240)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
                     🔥 Top Guardians of Eternity
                   </div>
