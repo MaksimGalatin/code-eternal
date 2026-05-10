@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     if (Array.isArray(history)) {
       for (const h of history.slice(-6)) {
-        if (h && typeof h.text === "string" && ["user", "aifa"].includes(h.from)) {
+        if (h && typeof h.text === "string" && ["user", "bot"].includes(h.from)) {
           messages.push({ role: h.from === "user" ? "user" : "assistant", content: String(h.text).slice(0, 500) });
         }
       }
