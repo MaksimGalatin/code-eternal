@@ -106,7 +106,7 @@ function BuyPageInner() {
 
       const solBalance = await connection.getBalance(payer);
       const needsUsdc  = balance < tier.price;
-      if (needsUsdc || solBalance < 5_000_000) {
+      if (needsUsdc || solBalance < 50_000) {
         setStep("airdropping");
         const res  = await fetch("/api/devnet/airdrop-usdc", {
           method: "POST",
