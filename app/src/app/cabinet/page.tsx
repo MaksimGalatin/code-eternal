@@ -8,6 +8,8 @@ import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { useLang, t } from "@/lib/i18n";
 import LangSwitcher from "@/components/LangSwitcher";
 import ChessGame from "@/components/ChessGame";
+import DaoTab from "@/components/DaoTab";
+import MetricsTab from "@/components/MetricsTab";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
 const USDC_MINT_STR = process.env.NEXT_PUBLIC_USDC_MINT;
@@ -26,7 +28,6 @@ type Overview    = { burnedUsdc: number; burnTxs: number; activeMembers: number;
 type Contributor = { rank: number; wallet: string; displayName: string|null; tier: number; tierName: string; amountUsdc: number };
 type RecentTxn   = { wallet: string; tier: number; tierName: string; amount: number; txSig: string; status: string; createdAt: string };
 type Tab = "cabinet"|"alfa"|"games"|"dao"|"site"|"contract"|"metrics";
-type MetricsData = { burnedCode: number; burnedCodeTrend: number; totalTransactions: number; txTrend: number; activeWallets: number; walletsTrend: number; treasuryUsdc: number; treasuryTrend: number; avgFee: number; currentSlot: number; burnHistory: { month: string; amount: number }[] };
 
 const TIER_ICON: Record<number, string> = { 1: "⚡", 2: "🏛️", 3: "🧬" };
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
@@ -70,13 +71,6 @@ const INIT_ALFA_MSGS: { from: "bot"|"user"; text: string }[] = [
   { from: "bot",  text: "CODE ETERNAL is your eternal digital citadel on Solana! 🌌 Create an indestructible site on Arweave that cannot be deleted, earn $CODE through Think-to-Earn, and build generational wealth through the referral system. Your first step into eternity awaits! 🚀" },
 ];
 
-// ── DAO Proposals ────────────────────────────────────────────────────────────
-interface Proposal { id:number; title:string; desc:string; status:"active"|"passed"|"failed"; votesFor:number; votesAgainst:number; timeLeft:string; category:string }
-const INIT_PROPOSALS: Proposal[] = [
-  { id:1, title:"Increase Burn % from 5% to 7%", desc:"Proposal to increase the $CODE burn percentage per payment to strengthen the deflationary model.", status:"active", votesFor:1847, votesAgainst:623, timeLeft:"2d 14h", category:"Tokenomics" },
-  { id:2, title:"Add new 'Archive Guardian' tier ($500)", desc:"Create an intermediate tier between Family Archives ($100) and Digital DNA ($1000) at $500.", status:"active", votesFor:1203, votesAgainst:987, timeLeft:"5d 8h", category:"Ecosystem" },
-  { id:3, title:"Lower DAO voting threshold to 50 $CODE", desc:"Reduce the minimum $CODE required to participate in DAO governance from 100 to 50 tokens.", status:"passed", votesFor:3214, votesAgainst:402, timeLeft:"Completed", category:"Governance" },
-];
 
 export default function CabinetPage() {
   const router = useRouter();
@@ -111,12 +105,9 @@ export default function CabinetPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [siteCreating,    setSiteCreating]    = useState(false);
   const [siteError,       setSiteError]       = useState("");
-  const [metricsData,     setMetricsData]     = useState<MetricsData|null>(null);
   // AIfa chat
   const [alfaMsgs,        setAlfaMsgs]        = useState(INIT_ALFA_MSGS);
   const [alfaLoading,     setAlfaLoading]     = useState(false);
-  // DAO
-  const [proposals,       setProposals]       = useState<Proposal[]>(INIT_PROPOSALS);
   // Smart contract
   const [scShowFlow,      setScShowFlow]      = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -210,12 +201,6 @@ export default function CabinetPage() {
       .then(({ txns }) => { if (txns) setRecentTxns(txns); }).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "metrics" && !metricsData) {
-      fetch("/api/stats/metrics").then(r => r.json()).then(setMetricsData).catch(() => {});
-    }
-  }, [activeTab]);
-
   function copyRef() {
     navigator.clipboard.writeText(`${window.location.origin}/?ref=${myRefCode}`);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
@@ -237,13 +222,6 @@ export default function CabinetPage() {
     } finally {
       setAlfaLoading(false);
     }
-  }
-
-  function voteOnProposal(id: number, type: "for"|"against") {
-    setProposals(prev => prev.map(p => {
-      if (p.id !== id || p.status !== "active") return p;
-      return { ...p, votesFor: type==="for" ? p.votesFor+1 : p.votesFor, votesAgainst: type==="against" ? p.votesAgainst+1 : p.votesAgainst };
-    }));
   }
 
   function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1076,283 +1054,13 @@ export default function CabinetPage() {
           )}
 
           {/* ══════════ METRICS TAB ══════════ */}
-          {activeTab === "metrics" && (() => {
-            const M = metricsData;
-            const DIST_PIE = [
-              { label: "Treasury",    pct: 65, color: "#3B82F6", desc: "65% into DAO treasury" },
-              { label: "L1 Referral", pct: 15, color: "#7C3AED", desc: "15% referral L1" },
-              { label: "L2 Referral", pct:  7, color: "#06B6D4", desc: "7% referral L2" },
-              { label: "L3 Referral", pct:  3, color: "#10B981", desc: "3% referral L3" },
-              { label: "Ecosystem",   pct:  5, color: "#D4A24C", desc: "5% ecosystem fund" },
-              { label: "Burn",        pct:  5, color: "#ef4444", desc: "5% burned forever" },
-            ];
-
-            // Build SVG donut
-            const r = 70, cx = 100, cy = 100, sw = 28;
-            const circ = 2 * Math.PI * r;
-            let cumPct = 0;
-            const donutSlices = DIST_PIE.map((seg) => {
-              const dash = (seg.pct / 100) * circ;
-              const gap  = circ - dash;
-              const rot  = (cumPct / 100) * 360 - 90;
-              cumPct += seg.pct;
-              return { ...seg, dash, gap, rot };
-            });
-
-            // Sparkline
-            const hist = M?.burnHistory ?? Array.from({length:12},(_,i)=>({month:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],amount:0}));
-            const maxH = Math.max(...hist.map(h=>h.amount), 1);
-            const W = 600, H = 80;
-            const sparkPts = hist.map((h,i) => {
-              const x = (i/(hist.length-1))*W;
-              const y = H - (h.amount/maxH)*H*0.85 - 4;
-              return `${x},${y}`;
-            }).join(" ");
-            const fillPts = `0,${H} ${sparkPts} ${W},${H}`;
-
-            const STAT_CARDS = [
-              { icon: "🔥", label: "Burned $CODE", val: M ? `${(M.burnedCode/1000000).toFixed(3).replace(/\.?0+$/,"")} M` : "—", trend: M?.burnedCodeTrend, color: "#fb923c", desc: "Permanently removed from circulation" },
-              { icon: "⚡", label: "Total Transactions", val: M ? M.totalTransactions.toString() : "—", trend: M?.txTrend, color: "#818cf8", desc: "On Solana blockchain" },
-              { icon: "👥", label: "Active Wallets (24h)", val: M ? M.activeWallets.toString() : "—", trend: M?.walletsTrend, color: "#06b6d4", desc: "Unique addresses" },
-              { icon: "🏦", label: "Treasury Balance", val: M ? `$${M.treasuryUsdc.toLocaleString()}` : "—", trend: M?.treasuryTrend, color: "#D4A24C", desc: "USDC in DAO treasury" },
-              { icon: "💎", label: "Avg Fee", val: M ? `${M.avgFee}` : "—", trend: undefined, color: "#a78bfa", desc: "SOL per transaction" },
-              { icon: "📡", label: "Current Slot", val: M ? `#${M.currentSlot}` : "—", trend: undefined, color: "#38bdf8", desc: "Epoch 0" },
-            ];
-
-            return (
-              <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-                {/* Page header */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ fontSize: "22px" }}>📊</span>
-                      <span style={{ fontSize: "20px", fontWeight: 800, color: "rgb(232,232,240)" }}>On-chain Metrics</span>
-                    </div>
-                    <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginTop: "4px" }}>Real-time data from Solana blockchain</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 14px", borderRadius: "20px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}>
-                    <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#10B981" }} />
-                    <span style={{ fontSize: "12px", color: "#10B981", fontWeight: 600 }}>Devnet Live</span>
-                  </div>
-                </div>
-
-                {/* Stat cards */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "14px", marginBottom: "24px" }}>
-                  {STAT_CARDS.map(s => (
-                    <div key={s.label} className="glass-panel" style={{ padding: "18px 20px" }}>
-                      <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-                        {s.icon} {s.label}
-                      </div>
-                      <div style={{ fontSize: "26px", fontWeight: 900, color: s.color, letterSpacing: "-0.5px", marginBottom: "6px" }}>{s.val}</div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{s.desc}</div>
-                        {s.trend !== undefined && (
-                          <span style={{ fontSize: "11px", color: "#10B981", fontWeight: 600, whiteSpace: "nowrap" }}>+{s.trend}%</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Charts row */}
-                <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
-                  {/* Burn sparkline */}
-                  <div className="glass-panel" style={{ flex: "1 1 480px", padding: "24px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ color: "#fb923c" }}>🔥</span>
-                        <span style={{ fontSize: "14px", fontWeight: 700, color: "rgb(232,232,240)" }}>$CODE Burning</span>
-                      </div>
-                      <span style={{ fontSize: "11px", color: "rgb(107,114,128)", padding: "3px 10px", borderRadius: "20px", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)" }}>Last 12 months</span>
-                    </div>
-                    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "80px", display: "block" }}>
-                      <defs>
-                        <linearGradient id="burnGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <polygon points={fillPts} fill="url(#burnGrad)" />
-                      <polyline points={sparkPts} fill="none" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
-                      {hist.filter((_,i)=>i%2===0).map(h => (
-                        <span key={h.month} style={{ fontSize: "10px", color: "rgb(107,114,128)" }}>{h.month}</span>
-                      ))}
-                    </div>
-                    <div style={{ marginTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: "12px", color: "rgb(107,114,128)" }}>Total burned this year</span>
-                      <span style={{ fontSize: "15px", fontWeight: 700, color: "#fb923c" }}>
-                        {M ? `${hist.reduce((a,h)=>a+h.amount,0).toLocaleString("en-US",{maximumFractionDigits:0})} $CODE` : "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Distribution donut */}
-                  <div className="glass-panel" style={{ flex: "1 1 360px", padding: "24px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-                      <span style={{ color: "#7C3AED" }}>💫</span>
-                      <span style={{ fontSize: "14px", fontWeight: 700, color: "rgb(232,232,240)" }}>Payment Distribution</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
-                      <svg viewBox="0 0 200 200" style={{ width: "160px", height: "160px", flexShrink: 0 }}>
-                        {donutSlices.map((seg, i) => (
-                          <circle key={i} cx={cx} cy={cy} r={r}
-                            fill="none" stroke={seg.color} strokeWidth={sw}
-                            strokeDasharray={`${seg.dash} ${seg.gap}`}
-                            transform={`rotate(${seg.rot} ${cx} ${cy})`} />
-                        ))}
-                        <text x={cx} y={cy - 8} textAnchor="middle" fill="white" fontSize="15" fontWeight="900" fontFamily="Inter,sans-serif">65%</text>
-                        <text x={cx} y={cy + 8} textAnchor="middle" fill="rgb(107,114,128)" fontSize="9" fontFamily="Inter,sans-serif">Vault</text>
-                      </svg>
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px", minWidth: 0 }}>
-                        {DIST_PIE.map(seg => (
-                          <div key={seg.label} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: seg.color, flexShrink: 0 }} />
-                            <span style={{ fontSize: "12px", color: "rgb(139,139,158)", flex: 1 }}>{seg.label}</span>
-                            <span style={{ fontSize: "12px", fontWeight: 700, color: seg.color }}>{seg.pct}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live events */}
-                <div className="glass-panel" style={{ padding: "24px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "18px" }}>⚡</span>
-                      <span style={{ fontSize: "14px", fontWeight: 700, color: "rgb(232,232,240)" }}>Real-time Events</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 10px", borderRadius: "20px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
-                      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
-                      <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: 600 }}>LIVE</span>
-                    </div>
-                  </div>
-                  {recentTxns.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "28px", color: "rgb(107,114,128)", fontSize: "13px" }}>
-                      No events yet — be the first Guardian!
-                    </div>
-                  ) : (
-                    recentTxns.map((tx, i) => {
-                      const tColor = TIER_COLOR[tx.tier] ?? "#7C3AED";
-                      return (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "12px 0", borderBottom: i < recentTxns.length - 1 ? "1px solid rgba(42,42,58,0.5)" : "none" }}>
-                          <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(239,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
-                            🔥
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: "13px", fontWeight: 600, color: "rgb(232,232,240)" }}>
-                              Burn $CODE
-                              <span style={{ marginLeft: "8px", fontSize: "12px", fontWeight: 400, color: tColor }}>({tx.tierName})</span>
-                            </div>
-                            <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginTop: "2px", fontFamily: "monospace" }}>
-                              {shortWallet(tx.wallet)} · {new Date(tx.createdAt).toLocaleTimeString("en-US")}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <div style={{ fontSize: "14px", fontWeight: 700, color: "#fb923c" }}>
-                              {Math.round(tx.amount * 5 * 100).toLocaleString()} $CODE
-                            </div>
-                            <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>5% of ${tx.amount}</div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+          {activeTab === "metrics" && <MetricsTab recentTxns={recentTxns} />}
 
           {/* ══════════ GAMES TAB ══════════ */}
           {activeTab === "games" && <ChessGame />}
 
           {/* ══════════ DAO TAB ══════════ */}
-          {activeTab === "dao" && (
-            <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <IVote />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "18px", fontWeight: 700, color: "rgb(232,232,240)" }}>DAO Governance</div>
-                    <div style={{ fontSize: "12px", color: "rgb(107,114,128)" }}>Vote on the future of CODE ETERNAL</div>
-                  </div>
-                </div>
-                <button style={{ display: "flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "white", border: "none", borderRadius: "12px", padding: "10px 18px", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter,sans-serif" }}>
-                  + Create Proposal
-                </button>
-              </div>
-
-              {/* Stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", marginBottom: "20px" }}>
-                {[
-                  { val: proposals.length, label: "Proposals", icon: "📊", color: "#7C3AED" },
-                  { val: proposals.filter(p=>p.status==="active").length, label: "Active", icon: "🟢", color: "#10B981" },
-                  { val: proposals.reduce((a,p)=>a+p.votesFor+p.votesAgainst,0).toLocaleString(), label: "Total Votes", icon: "🗳️", color: "#06B6D4" },
-                ].map(s => (
-                  <div key={s.label} className="glass-panel" style={{ padding: "16px", textAlign: "center" }}>
-                    <div style={{ fontSize: "24px", marginBottom: "4px" }}>{s.icon}</div>
-                    <div style={{ fontSize: "22px", fontWeight: 900, color: s.color }}>{s.val}</div>
-                    <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Proposals */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {proposals.map(p => {
-                  const total = p.votesFor + p.votesAgainst;
-                  const forPct = total > 0 ? (p.votesFor / total) * 100 : 0;
-                  const catColor = p.category === "Tokenomics" ? "#F59E0B" : p.category === "Ecosystem" ? "#06B6D4" : "#7C3AED";
-                  return (
-                    <div key={p.id} className="glass-panel" style={{ padding: "20px" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "10px", flexWrap: "wrap" }}>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: `rgba(0,0,0,0.3)`, color: catColor, border: `1px solid ${catColor}30` }}>{p.category}</span>
-                            {p.status === "active" && <span style={{ fontSize: "11px", color: "#10B981", display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#10B981", display:"inline-block" }} />Active</span>}
-                            {p.status === "passed" && <span style={{ fontSize: "11px", color: "#10B981" }}>✓ Passed</span>}
-                          </div>
-                          <div style={{ fontSize: "15px", fontWeight: 700, color: "rgb(232,232,240)" }}>{p.title}</div>
-                        </div>
-                      </div>
-                      <div style={{ fontSize: "13px", color: "rgb(139,139,158)", marginBottom: "14px" }}>{p.desc}</div>
-                      {/* Progress bar */}
-                      <div style={{ marginBottom: "12px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                          <span style={{ fontSize: "12px", color: "#10B981", fontWeight: 600 }}>For {p.votesFor.toLocaleString()}</span>
-                          <span style={{ fontSize: "12px", color: "#ef4444", fontWeight: 600 }}>Against {p.votesAgainst.toLocaleString()}</span>
-                        </div>
-                        <div style={{ height: "8px", borderRadius: "99px", overflow: "hidden", background: "#ef4444", display: "flex" }}>
-                          <div style={{ background: "#10B981", width: `${forPct}%`, transition: "width 0.3s" }} />
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
-                          <span style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{forPct.toFixed(1)}%</span>
-                          <span style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>⏱ {p.timeLeft}</span>
-                        </div>
-                      </div>
-                      {p.status === "active" && (
-                        <div style={{ display: "flex", gap: "10px" }}>
-                          <button onClick={() => voteOnProposal(p.id, "for")}
-                            style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#10B981", padding: "8px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter,sans-serif" }}>
-                            👍 For
-                          </button>
-                          <button onClick={() => voteOnProposal(p.id, "against")}
-                            style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#ef4444", padding: "8px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter,sans-serif" }}>
-                            👎 Against
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {activeTab === "dao" && <DaoTab />}
 
           {/* ══════════ SMART CONTRACT TAB ══════════ */}
           {activeTab === "contract" && (
