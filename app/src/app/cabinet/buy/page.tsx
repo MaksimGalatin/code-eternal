@@ -189,7 +189,10 @@ function BuyPageInner() {
       payTx.recentBlockhash = payBlockhash;
       payTx.feePayer        = payer;
       const sig = await wallet.sendTransaction(payTx, connection);
-      await connection.confirmTransaction({ signature: sig, blockhash: payBlockhash, lastValidBlockHeight: payLVBH }, "confirmed");
+      const confirmation = await connection.confirmTransaction({ signature: sig, blockhash: payBlockhash, lastValidBlockHeight: payLVBH }, "confirmed");
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
 
       setTxSig(sig);
       setStep("success");
@@ -202,7 +205,7 @@ function BuyPageInner() {
         const prov2 = new AnchorProvider(c2, { publicKey: p2, signTransaction: async (t: any) => t, signAllTransactions: async (t: any[]) => t }, {});
         const prog2 = new Program(IDL, prov2);
         const state: any = await (prog2.account as any).userState.fetch(pda);
-        if (state.tier > 0) { setStep("success"); return; }
+        if (state.tier >= currentTierId) { setStep("success"); return; }
       } catch {}
       setErrorMsg(e.message ?? "Transaction failed");
       setStep("error");
