@@ -276,8 +276,6 @@
     .arweave-dot { width: 5px; height: 5px; border-radius: 50%; background: #10B981; }
 
     .year-mark { font-size: 11px; color: rgba(255,255,255,0.12); letter-spacing: 0.08em; }
-    .passport-link { font-size: 11px; color: {{tierColor}}; text-decoration: none; letter-spacing: 0.04em; }
-    .passport-link:hover { text-decoration: underline; }
 
     /* ── RESPONSIVE ────────────────────────────────── */
     @media (max-width: 520px) {
@@ -426,9 +424,6 @@ The owner of this record has chosen to preserve their digital identity for etern
       <span class="arweave-dot"></span>
       Stored permanently on Arweave
     </span>
-    {{#if username}}
-    <a href="https://{{username}}.codeofdigitaleternity.com" class="passport-link">{{username}}.codeofdigitaleternity.com</a>
-    {{/if}}
     <span class="year-mark">{{year}}</span>
   </footer>
 
