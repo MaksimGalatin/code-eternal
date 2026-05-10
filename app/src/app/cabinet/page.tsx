@@ -483,12 +483,12 @@ export default function CabinetPage() {
                       {(siteStatus as any).username && (
                         <a href={`https://${(siteStatus as any).username}.codeofdigitaleternity.com`} target="_blank" rel="noopener noreferrer"
                           style={{ background: "linear-gradient(135deg,#7C3AED,#5B21B6)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
-                          🌐 Passport →
+                          Open Passport →
                         </a>
                       )}
                       <a href={siteStatus.arweaveUrl} target="_blank" rel="noopener noreferrer"
                         style={{ background: "linear-gradient(135deg,#10B981,#059669)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
-                        View Site →
+                        View on Arweave →
                       </a>
                     </div>
                   )}
