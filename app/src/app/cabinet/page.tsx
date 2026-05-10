@@ -479,10 +479,18 @@ export default function CabinetPage() {
                     </div>
                   </div>
                   {siteStatus.status === "done" && siteStatus.arweaveUrl && (
-                    <a href={siteStatus.arweaveUrl} target="_blank" rel="noopener noreferrer"
-                      style={{ background: "linear-gradient(135deg,#10B981,#059669)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
-                      View Site →
-                    </a>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {(siteStatus as any).username && (
+                        <a href={`https://${(siteStatus as any).username}.codeofdigitaleternity.com`} target="_blank" rel="noopener noreferrer"
+                          style={{ background: "linear-gradient(135deg,#7C3AED,#5B21B6)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
+                          🌐 Passport →
+                        </a>
+                      )}
+                      <a href={siteStatus.arweaveUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ background: "linear-gradient(135deg,#10B981,#059669)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
+                        View Site →
+                      </a>
+                    </div>
                   )}
                 </div>
               )}

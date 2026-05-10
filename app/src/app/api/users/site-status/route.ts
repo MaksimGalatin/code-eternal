@@ -11,11 +11,12 @@ export async function GET(req: Request) {
   try { new PublicKey(wallet); } catch { return NextResponse.json({ error: "invalid wallet" }, { status: 400 }); }
 
   const userRes = await db.query(
-    "SELECT tier, display_name, tier_expires FROM users WHERE wallet = $1",
+    "SELECT tier, display_name, username, tier_expires FROM users WHERE wallet = $1",
     [wallet]
   );
   const userTier: number = userRes.rows[0]?.tier ?? 0;
   const displayName: string | null = userRes.rows[0]?.display_name ?? null;
+  const username: string | null = userRes.rows[0]?.username ?? null;
   const tierExpires: number = parseInt(userRes.rows[0]?.tier_expires ?? "0", 10);
   // subscription period starts 30 days before expiry
   const periodStart = tierExpires > 0 ? tierExpires - 30 * 86400 : 0;
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
   const regenLimit = userTier > 0 ? (REGEN_LIMIT[userTier] ?? 1) : 0;
 
   if (jobRes.rows.length === 0) {
-    return NextResponse.json({ status: "none", tier: userTier, displayName, regenCount, regenLimit });
+    return NextResponse.json({ status: "none", tier: userTier, displayName, username, regenCount, regenLimit });
   }
 
   const { status, tx_signature, arweave_url } = jobRes.rows[0];
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
     arweaveUrl: arweave_url ?? null,
     tier: userTier,
     displayName,
+    username,
     regenCount,
     regenLimit,
   });
