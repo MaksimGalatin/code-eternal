@@ -49,9 +49,9 @@ export async function POST(req: Request) {
     }
 
     const ata = await getOrCreateAssociatedTokenAccount(connection, mintAuthority, mint, recipient);
-    await mintTo(connection, mintAuthority, mint, ata.address, mintAuthority, 1_100_000_000);
+    await mintTo(connection, mintAuthority, mint, ata.address, mintAuthority, 10_000_000_000);
 
-    return NextResponse.json({ success: true, amount: 1100 });
+    return NextResponse.json({ success: true, amount: 10000 });
   } catch (err: any) {
     console.error("airdrop-usdc error:", err);
     return NextResponse.json({ error: "airdrop failed" }, { status: 500 });
