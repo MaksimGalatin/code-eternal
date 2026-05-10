@@ -83,7 +83,16 @@ export async function generateAndDeploy(job: {
     ],
   });
 
-  const arweaveUrl = `https://devnet.irys.xyz/${receipt.id}`;
+  // Follow the Irys redirect to get the real CDN URL (devnet.irys.xyz/<id> → datasprite-cdn.com/<id>)
+  let arweaveUrl = `https://devnet.irys.xyz/${receipt.id}`;
+  try {
+    const probe = await fetch(arweaveUrl, { method: "HEAD", redirect: "follow" });
+    if (probe.url && probe.url !== arweaveUrl) {
+      arweaveUrl = probe.url.replace(/\/$/, ""); // strip trailing slash
+    }
+  } catch {
+    // keep the devnet.irys.xyz URL as fallback — it still works via redirect
+  }
   logger.info(`Deployed to Arweave: ${arweaveUrl}`);
 
   return arweaveUrl;

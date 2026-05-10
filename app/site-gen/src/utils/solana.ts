@@ -6,18 +6,19 @@ const PROGRAM_ID = new PublicKey(process.env.PROGRAM_ID!);
 const RPC_URL = process.env.HELIUS_RPC_URL!;
 
 const IRYS_BASE_URL = process.env.IRYS_BASE_URL ?? "https://devnet.irys.xyz";
-const IRYS_URL_RE = /^https:\/\/([a-z0-9.-]+\.)?irys\.xyz\/[A-Za-z0-9_-]{30,64}$/;
+// Matches devnet.irys.xyz/<id>  OR  <node>.devnet-1.datasprite-cdn.com/<id>  OR  node2.irys.xyz/<id>
+const IRYS_URL_RE = /^https:\/\/[a-z0-9.-]+\/([A-Za-z0-9_-]{30,64})\/?$/;
 
 export async function updateSiteUrlOnChain(
   walletAddress: string,
   arweaveUrl: string
 ): Promise<void> {
-  if (!IRYS_URL_RE.test(arweaveUrl)) {
+  const match = IRYS_URL_RE.exec(arweaveUrl);
+  if (!match) {
     throw new Error(`Invalid Arweave URL format: ${arweaveUrl}`);
   }
-  if (arweaveUrl.length > 64) {
-    arweaveUrl = arweaveUrl.replace("https://arweave.net/", "").replace("https://devnet.irys.xyz/", "");
-  }
+  // Store only the tx_id (43 chars) — base URL is reconstructed at read time
+  arweaveUrl = match[1];
 
   // Convert URL to [u8; 64]
   const urlBytes = new Uint8Array(64);
