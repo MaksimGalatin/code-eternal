@@ -214,22 +214,17 @@
       vertical-align: -7px; margin-left: 3px; font-style: normal;
     }
 
-    /* ── SOCIAL ────────────────────────────────────── */
-    .social-row {
-      padding: 12px 32px 20px;
-      display: flex; gap: 8px; flex-wrap: wrap;
-    }
-
-    .social-chip {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: {{tierColor}}12;
+    /* ── SOCIAL FIELDS ─────────────────────────────── */
+    .social-field {
       color: {{tierColor}};
-      border: 1px solid {{tierColor}}30;
-      border-radius: 100px;
-      padding: 5px 14px;
-      font-size: 12px; font-weight: 500;
+      font-size: 13px;
+      font-weight: 500;
       text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
+    .social-field:hover { text-decoration: underline; }
 
     /* ── MRZ ───────────────────────────────────────── */
     .mrz {
@@ -361,6 +356,24 @@
         <span class="f-label">Storage</span>
         <span class="f-value sm">Arweave ∞</span>
       </div>
+      {{#if telegram}}
+      <div class="field span2">
+        <span class="f-label">Telegram</span>
+        <a href="https://t.me/{{telegram}}" class="f-value social-field">📱 @{{telegram}}</a>
+      </div>
+      {{/if}}
+      {{#if twitter}}
+      <div class="field span2">
+        <span class="f-label">Twitter / X</span>
+        <a href="https://x.com/{{twitter}}" class="f-value social-field">𝕏 @{{twitter}}</a>
+      </div>
+      {{/if}}
+      {{#if website}}
+      <div class="field span2">
+        <span class="f-label">Website</span>
+        <a href="{{website}}" class="f-value social-field">🌐 {{website}}</a>
+      </div>
+      {{/if}}
     </div>
   </section>
 
@@ -396,15 +409,6 @@ The owner of this record has chosen to preserve their digital identity for etern
     </div>
   </div>
   {{/if}}
-  {{/if}}
-
-  <!-- ── Social ── -->
-  {{#if hasSocial}}
-  <div class="social-row">
-    {{#if telegram}}<a href="https://t.me/{{telegram}}" class="social-chip">📱 @{{telegram}}</a>{{/if}}
-    {{#if twitter}}<a href="https://x.com/{{twitter}}" class="social-chip">𝕏 @{{twitter}}</a>{{/if}}
-    {{#if website}}<a href="{{website}}" class="social-chip">🌐 Website</a>{{/if}}
-  </div>
   {{/if}}
 
   <!-- ── MRZ / Blockchain Proof ── -->
