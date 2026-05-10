@@ -13,6 +13,7 @@ export const translations = {
     "nav.family": "Family",
     "nav.codeBrain": "CODE Brain",
     "nav.skipToContent": "Skip to main content",
+    "nav.enterFamily": "Enter the Family",
 
     // Koan Section
     "koan.label": "THE CODE KOAN",
@@ -333,6 +334,7 @@ export const translations = {
     "nav.family": "Семья",
     "nav.codeBrain": "CODE Brain",
     "nav.skipToContent": "Перейти к основному содержимому",
+    "nav.enterFamily": "Войти в Семью",
 
     // Koan Section
     "koan.label": "КОАН CODE",
@@ -655,6 +657,7 @@ export const translations = {
     "nav.terminal": "Terminal Sináptico",
     "nav.family": "Familia",
     "nav.codeBrain": "CODE Brain",
+    "nav.enterFamily": "Entrar a la Familia",
     "nav.skipToContent": "Saltar al contenido principal",
 
     // Koan Section
@@ -973,6 +976,7 @@ export const translations = {
     "nav.terminal": "突触终端",
     "nav.family": "家族",
     "nav.codeBrain": "CODE Brain",
+    "nav.enterFamily": "加入家族",
     "nav.skipToContent": "跳转到主要内容",
 
     // Koan Section
