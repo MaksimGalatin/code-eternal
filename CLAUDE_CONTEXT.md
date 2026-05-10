@@ -883,13 +883,27 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - `UrlTooLong` error is reused for invalid site status — add `InvalidSiteStatus` variant post-hackathon
 - `SITE_STATUS_PENDING` constant declared but not used in constraints
 - Burn works only with a token where we hold mint authority — for production USDC a different burn mechanism is needed
-- Cloudflare subdomain (username.codeofdigitaleternity.com) not yet wired — add `CF_API_TOKEN` + `CF_ZONE_ID` to credentials.env when ready
+- ~~Cloudflare subdomain wired~~ ✅ — `username.codeofdigitaleternity.com` live via Worker proxy (see Changes 2026-05-10)
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
 - **Tier downgrade on renewal**: when subscription is expired (`clock.unix_timestamp > tier_expires`), any tier is accepted (allows buying tier 1 after being tier 3 and expiring). When active, `tier >= current_tier` is enforced. This is the current correct behavior.
 - **L3 referrer expiry not enforced on-chain** — ref3 always gets paid regardless of their subscription status (would require a 3rd remaining_account; skipped for simplicity)
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
+
+## Changes Applied (2026-05-13, Cloudflare Worker Passport)
+
+- **`cloudflare/worker-passport.js`** — transparent reverse proxy: `username.codeofdigitaleternity.com` fetches Arweave URL from `/api/site/by-username`, proxies HTML back to browser (no redirect). Skip list: `app`, `listener`, `www`, `api`. Edge caches: 5 min for DB lookup, 1 h for Irys content.
+- **`app/src/app/api/site/by-username/route.ts`** — GET endpoint: resolves `username` → `arweave_url` via Neon join `users + site_generation_jobs`.
+- **`app/scripts/migrate.sql`** — added `username VARCHAR(32) UNIQUE` on users table + `idx_users_username` index.
+- **`app/src/app/api/site/create/route.ts`** — persists `username` to `users.username` on site creation.
+- **Cloudflare deployment** (deployed 2026-05-13 via API):
+  - Worker: `code-eternal-passport` (Account Workers Scripts)
+  - Route: `*.codeofdigitaleternity.com/*` → `code-eternal-passport`
+  - DNS: `*.codeofdigitaleternity.com` A `192.0.2.1` proxied=true (wildcard, Cloudflare intercepts all)
+  - Zone ID: `019326ccdeada010024836e8874077b2`
+- **Per-subscription site regeneration limits** — Tier 1: 1, Tier 2: 5, Tier 3: 10 regenerations per subscription period. Counts only `ui-regen-*` jobs in window `[tier_expires - 30d, now]`. Enforced in `/api/site/create` (429 if exceeded) and surfaced in `/api/users/site-status` response (`regenCount`, `regenLimit`). Cabinet Site tab shows `X/Y updates used` badge (red when limit reached) and blocks the button with `🔒 Update limit reached` message.
+- **Devnet USDC airdrop** — increased from 1,100 to 10,000 per new user (`airdrop-usdc/route.ts`).
 
 ## Changes Applied (2026-05-12)
 
