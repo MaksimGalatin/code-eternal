@@ -115,23 +115,11 @@ function injectAudioSteganography() {
       }
     }
 
-    // Store in window for manual trigger
+    // Store in window for manual trigger (console easter egg)
     (window as Record<string, unknown>).__CODE_AUDIO__ = () => {
       if (audioCtx.state === "suspended") audioCtx.resume();
       playMorse(koanMorse);
     };
-
-    // Auto-play once on first user interaction (subtle)
-    const handler = () => {
-      try {
-        if (audioCtx.state === "suspended") audioCtx.resume();
-        playMorse(koanMorse);
-      } catch {}
-      document.removeEventListener("click", handler);
-      document.removeEventListener("keydown", handler);
-    };
-    document.addEventListener("click", handler, { once: true });
-    document.addEventListener("keydown", handler, { once: true });
   } catch {}
 }
 
