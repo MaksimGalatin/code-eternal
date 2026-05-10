@@ -285,6 +285,16 @@ export default function Navigation() {
                   </motion.button>
                 ))}
               </div>
+
+              <div className="mt-4 pt-4 border-t border-border">
+                <a
+                  href="https://app.codeofdigitaleternity.com"
+                  className="flex items-center justify-center w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-base font-semibold tracking-wide transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {t("nav.enterFamily", lang)}
+                </a>
+              </div>
             </div>
           </motion.div>
         )}
