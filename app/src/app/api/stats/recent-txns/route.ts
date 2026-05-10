@@ -22,7 +22,7 @@ export async function GET() {
       status:    r.status as string,
       createdAt: r.created_at as string,
     }));
-    return NextResponse.json({ txns });
+    return NextResponse.json({ txns }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

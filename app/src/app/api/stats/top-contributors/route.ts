@@ -21,7 +21,7 @@ export async function GET() {
       tierName: TIER_NAME[r.tier] ?? "Unknown",
       amountUsdc: TIER_PRICE[r.tier] ?? 0,
     }));
-    return NextResponse.json({ contributors });
+    return NextResponse.json({ contributors }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

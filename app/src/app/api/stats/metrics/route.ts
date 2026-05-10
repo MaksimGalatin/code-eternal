@@ -35,7 +35,7 @@ export async function GET() {
       treasuryUsdc: 892450, treasuryTrend: 3.1,
       avgFee: 0.00025, currentSlot: 14,
       burnHistory,
-    });
+    }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
