@@ -3,311 +3,426 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{name}} — CODE ETERNAL</title>
+  <title>{{name}} — Digital Passport · CODE ETERNAL</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: #0A0A0F;
+      background: #060610;
       color: #E8E8F0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
+      padding: 40px 16px 60px;
+      background-image:
+        linear-gradient(rgba(124,58,237,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,237,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
     }
 
-    .header {
+    /* ── PASSPORT CARD ─────────────────────────────── */
+    .passport {
       width: 100%;
-      padding: 24px 40px;
+      max-width: 680px;
+      background: #0D0D1A;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.07);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 40px 100px rgba(0,0,0,0.7),
+        0 0 80px {{tierColor}}14;
+    }
+
+    /* holographic top strip */
+    .passport::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        {{tierColor}} 20%,
+        #60A5FA 40%,
+        #10B981 55%,
+        {{tierColor}} 75%,
+        transparent 100%);
+      opacity: 0.85;
+      z-index: 1;
+    }
+
+    /* ── HEADER ────────────────────────────────────── */
+    .p-header {
+      padding: 22px 32px 18px;
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #1a1a2e;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      background: linear-gradient(180deg, {{tierColor}}08, transparent);
     }
 
-    .logo {
-      color: #7C3AED;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+    .issuer-block { display: flex; flex-direction: column; gap: 3px; }
+    .issuer-country {
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.28em; color: rgba(255,255,255,0.22);
+      text-transform: uppercase;
+    }
+    .issuer-name {
+      font-size: 17px; font-weight: 800;
+      letter-spacing: 0.06em; color: {{tierColor}};
+      text-transform: uppercase;
     }
 
-    .tier-badge {
-      background: {{tierColor}}22;
+    .seal-block {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+
+    .doc-type-block { text-align: right; display: flex; flex-direction: column; gap: 4px; }
+    .doc-type-label {
+      font-size: 9px; letter-spacing: 0.2em; color: rgba(255,255,255,0.2);
+      text-transform: uppercase;
+    }
+    .doc-type-value {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.45); text-transform: uppercase;
+    }
+    .doc-tier {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
       color: {{tierColor}};
-      border: 1px solid {{tierColor}}66;
-      padding: 4px 14px;
-      border-radius: 100px;
-      font-size: 13px;
-      font-weight: 600;
     }
 
-    .hero {
-      flex: 1;
+    /* ── IDENTITY SECTION ──────────────────────────── */
+    .identity {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 60px 20px 40px;
-      text-align: center;
-      max-width: 720px;
-      width: 100%;
+      gap: 28px;
+      padding: 28px 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      align-items: flex-start;
     }
 
-    .sigil {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, {{tierColor}}33, {{tierColor}}11);
-      border: 2px solid {{tierColor}}44;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 38px;
-      margin-bottom: 24px;
+    .photo-zone {
+      flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+
+    .photo-frame {
+      width: 96px; height: 116px;
+      border-radius: 10px;
+      border: 1px solid {{tierColor}}55;
+      overflow: hidden;
+      background: linear-gradient(145deg, {{tierColor}}12, rgba(0,0,0,0.5));
+      display: flex; align-items: center; justify-content: center;
       position: relative;
     }
 
-    .sigil::after {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border-radius: 50%;
-      border: 1px solid {{tierColor}}22;
+    .photo-frame::after {
+      content: 'PHOTO';
+      position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+      font-size: 7px; letter-spacing: 0.22em;
+      color: {{tierColor}}70; font-weight: 700;
+      pointer-events: none;
     }
 
-    .avatar {
-      width: 88px;
-      height: 88px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid {{tierColor}}66;
-      margin-bottom: 24px;
+    .photo-frame .avatar {
+      width: 100%; height: 100%; object-fit: cover; display: block;
     }
 
-    .name {
-      font-size: clamp(28px, 5vw, 44px);
-      font-weight: 700;
-      color: #E8E8F0;
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
+    .sigil-icon {
+      font-size: 46px; color: {{tierColor}}55; line-height: 1;
+      margin-bottom: 18px;
     }
 
-    .username {
+    .verified-badge {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.18em;
+      color: #10B981; display: flex; align-items: center; gap: 5px;
+    }
+    .verified-dot {
+      width: 5px; height: 5px; border-radius: 50%; background: #10B981; flex-shrink: 0;
+    }
+
+    /* ── FIELDS GRID ───────────────────────────────── */
+    .fields {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 20px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.span2 { grid-column: 1 / -1; }
+
+    .f-label {
+      font-size: 8px; font-weight: 700;
+      letter-spacing: 0.24em; text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+    }
+
+    .f-value {
+      font-size: 14px; font-weight: 600; color: #E0E0EE;
+      line-height: 1.2;
+    }
+    .f-value.lg { font-size: 22px; letter-spacing: -0.01em; }
+    .f-value.accent { color: {{tierColor}}; font-size: 13px; }
+    .f-value.sm { font-size: 13px; }
+
+    /* ── DIVIDER ───────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      margin: 0 32px;
+    }
+
+    /* ── CONTENT CARDS ─────────────────────────────── */
+    .content-area { padding: 24px 32px 8px; display: flex; flex-direction: column; gap: 12px; }
+
+    .scroll-card {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-left: 2px solid {{tierColor}}55;
+      border-radius: 10px;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.018);
+    }
+
+    .c-label {
+      font-size: 8px; font-weight: 700;
+      letter-spacing: 0.24em; text-transform: uppercase;
+      color: {{tierColor}}; margin-bottom: 10px;
+    }
+
+    .c-body {
+      font-size: 14px; line-height: 1.8;
+      color: #7E7E94; white-space: pre-wrap;
+    }
+
+    .c-manifesto {
+      font-size: 15px; font-style: italic; line-height: 1.75;
+      color: #A0A0B8;
+    }
+
+    .c-manifesto::before {
+      content: '\201C'; color: {{tierColor}}80;
+      font-size: 22px; line-height: 0;
+      vertical-align: -7px; margin-right: 3px; font-style: normal;
+    }
+    .c-manifesto::after {
+      content: '\201D'; color: {{tierColor}}80;
+      font-size: 22px; line-height: 0;
+      vertical-align: -7px; margin-left: 3px; font-style: normal;
+    }
+
+    /* ── SOCIAL ────────────────────────────────────── */
+    .social-row {
+      padding: 12px 32px 20px;
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    .social-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: {{tierColor}}12;
       color: {{tierColor}};
-      font-size: 15px;
-      margin-bottom: 6px;
-    }
-
-    .tagline {
-      color: #8B8B9E;
-      font-size: 14px;
-      margin-bottom: 36px;
-    }
-
-    .scroll {
-      width: 100%;
-      background: #13131C;
-      border: 1px solid #1e1e30;
-      border-radius: 16px;
-      padding: 28px 32px;
-      text-align: left;
-      margin-bottom: 16px;
-    }
-
-    .scroll-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: {{tierColor}};
-      margin-bottom: 14px;
-    }
-
-    .scroll-body {
-      color: #8B8B9E;
-      line-height: 1.8;
-      font-size: 15px;
-      white-space: pre-wrap;
-    }
-
-    .manifesto-text {
-      color: #A0A0B4;
-      font-size: 16px;
-      font-style: italic;
-      line-height: 1.7;
-    }
-
-    .social-links {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 16px;
-    }
-
-    .social-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: {{tierColor}}18;
-      color: {{tierColor}};
-      border: 1px solid {{tierColor}}44;
-      padding: 7px 16px;
+      border: 1px solid {{tierColor}}30;
       border-radius: 100px;
-      font-size: 13px;
-      font-weight: 500;
+      padding: 5px 14px;
+      font-size: 12px; font-weight: 500;
       text-decoration: none;
-      transition: background 0.15s;
     }
 
-    .social-btn:hover { background: {{tierColor}}30; }
-
-    .proof {
-      width: 100%;
-      max-width: 720px;
-      padding: 0 20px 60px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    /* ── MRZ ───────────────────────────────────────── */
+    .mrz {
+      background: rgba(0,0,0,0.28);
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 18px 32px;
+      position: relative; overflow: hidden;
     }
 
-    .proof-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid #1a1a2e;
-      gap: 16px;
+    .mrz::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px
+      );
+      pointer-events: none;
     }
 
-    .proof-label {
-      color: #4a4a5e;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      white-space: nowrap;
+    .mrz-label {
+      font-size: 8px; font-weight: 700;
+      letter-spacing: 0.24em; text-transform: uppercase;
+      color: rgba(255,255,255,0.14); margin-bottom: 10px;
     }
 
-    .proof-value {
-      color: #8B8B9E;
-      font-size: 12px;
-      font-family: "Menlo", "Monaco", "Courier New", monospace;
-      text-align: right;
-      word-break: break-all;
+    .mrz-row {
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.06em;
+      line-height: 1.9;
+      display: flex; gap: 12px;
     }
 
-    .footer {
-      width: 100%;
-      padding: 24px 40px;
-      border-top: 1px solid #1a1a2e;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
+    .mrz-key { color: rgba(255,255,255,0.28); flex-shrink: 0; }
+    .mrz-val { word-break: break-all; }
+
+    /* ── FOOTER ────────────────────────────────────── */
+    .p-footer {
+      padding: 13px 32px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: space-between;
     }
 
-    .arweave-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #4a4a5e;
-      font-size: 12px;
+    .arweave-stamp {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 11px; color: rgba(255,255,255,0.18);
     }
+    .arweave-dot { width: 5px; height: 5px; border-radius: 50%; background: #10B981; }
 
-    .arweave-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #10B981;
-      display: inline-block;
+    .year-mark { font-size: 11px; color: rgba(255,255,255,0.12); letter-spacing: 0.08em; }
+
+    /* ── RESPONSIVE ────────────────────────────────── */
+    @media (max-width: 520px) {
+      body { padding: 12px 8px 48px; }
+      .p-header, .identity, .content-area, .social-row, .mrz, .p-footer { padding-left: 20px; padding-right: 20px; }
+      .divider { margin: 0 20px; }
+      .identity { flex-direction: column; align-items: center; }
+      .photo-frame { width: 80px; height: 96px; }
+      .fields { grid-template-columns: 1fr 1fr; }
+      .issuer-name { font-size: 14px; }
     }
   </style>
 </head>
 <body>
+<div class="passport">
 
-  <header class="header">
-    <span class="logo">CODE ETERNAL</span>
-    <span class="tier-badge">{{tier}}</span>
+  <!-- ── Header ── -->
+  <header class="p-header">
+    <div class="issuer-block">
+      <span class="issuer-country">Solana Blockchain</span>
+      <span class="issuer-name">Code Eternal</span>
+    </div>
+
+    <div class="seal-block">
+      <svg width="46" height="46" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="23" cy="23" r="22" stroke="{{tierColor}}" stroke-opacity="0.28" stroke-width="1"/>
+        <circle cx="23" cy="23" r="16.5" stroke="{{tierColor}}" stroke-opacity="0.15" stroke-width="0.6"/>
+        <polygon points="23,9 26.4,18.9 37,18.9 28.3,24.9 31.7,34.8 23,28.8 14.3,34.8 17.7,24.9 9,18.9 19.6,18.9"
+          fill="{{tierColor}}" fill-opacity="0.13"
+          stroke="{{tierColor}}" stroke-opacity="0.38" stroke-width="0.6"/>
+      </svg>
+    </div>
+
+    <div class="doc-type-block">
+      <span class="doc-type-label">Document Type</span>
+      <span class="doc-type-value">Digital Passport</span>
+      <span class="doc-tier">{{tier}}</span>
+    </div>
   </header>
 
-  <main class="hero">
-    {{#if avatarDataUrl}}
-    <img src="{{avatarDataUrl}}" class="avatar" alt="Avatar" />
-    {{else}}
-    <div class="sigil">&#9670;</div>
-    {{/if}}
-
-    <h1 class="name">{{name}}</h1>
-    {{#if username}}
-    <div class="username">@{{username}}</div>
-    {{/if}}
-    <p class="tagline">Eternal digital identity · Solana + Arweave</p>
-
-    {{#if bio}}
-    <div class="scroll">
-      <div class="scroll-title">About</div>
-      <div class="scroll-body">{{bio}}</div>
-    </div>
-    {{/if}}
-
-    {{#if manifesto}}
-    <div class="scroll">
-      <div class="scroll-title">Manifesto</div>
-      <div class="manifesto-text">"{{manifesto}}"</div>
-    </div>
-    {{/if}}
-
-    {{#unless bio}}
-    {{#unless manifesto}}
-    <div class="scroll">
-      <div class="scroll-title">Memory Scroll</div>
-      <div class="scroll-body">
-        This record was created on {{registeredAt}} and stored permanently
-        on the Arweave blockchain. It cannot be deleted, modified, or censored.
-        As long as Arweave exists, this page exists.<br/><br/>
-        The owner of this record has chosen to preserve their digital identity
-        for eternity — a message to the future, a proof of presence in this moment.
+  <!-- ── Identity ── -->
+  <section class="identity">
+    <div class="photo-zone">
+      <div class="photo-frame">
+        {{#if avatarDataUrl}}
+        <img src="{{avatarDataUrl}}" class="avatar" alt="photo"/>
+        {{else}}
+        <span class="sigil-icon">&#9670;</span>
+        {{/if}}
       </div>
+      <span class="verified-badge"><span class="verified-dot"></span>VERIFIED</span>
     </div>
-    {{/unless}}
-    {{/unless}}
 
-    {{#if hasSocial}}
-    <div class="social-links">
-      {{#if telegram}}<a href="https://t.me/{{telegram}}" class="social-btn">📱 @{{telegram}}</a>{{/if}}
-      {{#if twitter}}<a href="https://x.com/{{twitter}}" class="social-btn">𝕏 @{{twitter}}</a>{{/if}}
-      {{#if website}}<a href="{{website}}" class="social-btn">🌐 Website</a>{{/if}}
-    </div>
-    {{/if}}
-  </main>
-
-  <section class="proof">
-    <div class="proof-row">
-      <span class="proof-label">Wallet</span>
-      <span class="proof-value">{{wallet}}</span>
-    </div>
-    <div class="proof-row">
-      <span class="proof-label">Access Tier</span>
-      <span class="proof-value" style="color:{{tierColor}}">{{tier}}</span>
-    </div>
-    <div class="proof-row">
-      <span class="proof-label">Registered</span>
-      <span class="proof-value">{{registeredAt}}</span>
-    </div>
-    <div class="proof-row">
-      <span class="proof-label">Transaction</span>
-      <span class="proof-value">{{txSignature}}</span>
+    <div class="fields">
+      <div class="field span2">
+        <span class="f-label">Full Name</span>
+        <span class="f-value lg">{{name}}</span>
+      </div>
+      {{#if username}}
+      <div class="field span2">
+        <span class="f-label">Handle</span>
+        <span class="f-value accent">@{{username}}.aifa.digital</span>
+      </div>
+      {{/if}}
+      <div class="field">
+        <span class="f-label">Network</span>
+        <span class="f-value sm">Solana</span>
+      </div>
+      <div class="field">
+        <span class="f-label">Issue Date</span>
+        <span class="f-value sm">{{registeredAt}}</span>
+      </div>
+      <div class="field">
+        <span class="f-label">Access Tier</span>
+        <span class="f-value accent">{{tier}}</span>
+      </div>
+      <div class="field">
+        <span class="f-label">Storage</span>
+        <span class="f-value sm">Arweave ∞</span>
+      </div>
     </div>
   </section>
 
-  <footer class="footer">
-    <span class="arweave-badge">
+  <!-- ── Content ── -->
+  {{#if bio}}
+  <div class="content-area" {{#unless manifesto}}style="padding-bottom:20px"{{/unless}}>
+    <div class="scroll-card">
+      <div class="c-label">About</div>
+      <div class="c-body">{{bio}}</div>
+    </div>
+    {{#if manifesto}}
+    <div class="scroll-card">
+      <div class="c-label">Manifesto</div>
+      <div class="c-manifesto">{{manifesto}}</div>
+    </div>
+    {{/if}}
+  </div>
+  {{else}}
+  {{#if manifesto}}
+  <div class="content-area" style="padding-bottom:20px">
+    <div class="scroll-card">
+      <div class="c-label">Manifesto</div>
+      <div class="c-manifesto">{{manifesto}}</div>
+    </div>
+  </div>
+  {{else}}
+  <div class="content-area" style="padding-bottom:20px">
+    <div class="scroll-card">
+      <div class="c-label">Memory Scroll</div>
+      <div class="c-body">This record was created on {{registeredAt}} and stored permanently on the Arweave blockchain. It cannot be deleted, modified, or censored. As long as Arweave exists, this page exists.
+
+The owner of this record has chosen to preserve their digital identity for eternity — a message to the future, a proof of presence in this moment.</div>
+    </div>
+  </div>
+  {{/if}}
+  {{/if}}
+
+  <!-- ── Social ── -->
+  {{#if hasSocial}}
+  <div class="social-row">
+    {{#if telegram}}<a href="https://t.me/{{telegram}}" class="social-chip">📱 @{{telegram}}</a>{{/if}}
+    {{#if twitter}}<a href="https://x.com/{{twitter}}" class="social-chip">𝕏 @{{twitter}}</a>{{/if}}
+    {{#if website}}<a href="{{website}}" class="social-chip">🌐 Website</a>{{/if}}
+  </div>
+  {{/if}}
+
+  <!-- ── MRZ / Blockchain Proof ── -->
+  <div class="mrz">
+    <div class="mrz-label">Blockchain Proof</div>
+    <div class="mrz-row"><span class="mrz-key">WALLET</span><span class="mrz-val">{{wallet}}</span></div>
+    <div class="mrz-row"><span class="mrz-key">TX&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mrz-val">{{txSignature}}</span></div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer class="p-footer">
+    <span class="arweave-stamp">
       <span class="arweave-dot"></span>
-      Stored permanently on Arweave · {{year}}
+      Stored permanently on Arweave
     </span>
+    <span class="year-mark">{{year}}</span>
   </footer>
 
+</div>
 </body>
 </html>
