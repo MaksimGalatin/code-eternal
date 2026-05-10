@@ -407,14 +407,6 @@ function BuyPageInner() {
           </div>
         )}
 
-        {/* Open AIfa Terminal button */}
-        <button
-          onClick={() => router.push("/cabinet")}
-          style={S.alfaBtn}
-        >
-          <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981", marginRight: "8px" }} />
-          {t("buy.openAifa", lang)}
-        </button>
 
       </div>
 
