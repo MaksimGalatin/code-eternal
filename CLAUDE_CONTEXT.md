@@ -893,7 +893,9 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 
 ## Changes Applied (2026-05-13, Cloudflare Worker Passport)
 
-- **`cloudflare/worker-passport.js`** — transparent reverse proxy: `username.codeofdigitaleternity.com` fetches Arweave URL from `/api/site/by-username`, proxies HTML back to browser (no redirect). Skip list: `app`, `listener`, `www`, `api`. Edge caches: 5 min for DB lookup, 1 h for Irys content.
+- **`cloudflare/worker-passport.js`** — transparent reverse proxy: `username.codeofdigitaleternity.com` fetches Arweave URL from `/api/site/by-username`, proxies HTML back to browser (no redirect). Skip list: `app`, `listener`, `www`, `api`. DB lookup: always fresh (no cache) so new site versions show immediately. Irys HTML: cached 1 h (content at a TX ID never changes).
+- **`cloudflare/wrangler.toml`** — wrangler config with `routes = [{ pattern = "*.codeofdigitaleternity.com/*", zone_name = "codeofdigitaleternity.com" }]` so CI deploys to the zone route, not workers.dev.
+- **`.github/workflows/deploy-worker.yml`** — CI/CD for Worker: triggers on `cloudflare/**` push, uses `cloudflare/wrangler-action@v3`. GitHub secrets required: `CF_API_TOKEN`, `CF_ACCOUNT_ID`.
 - **`app/src/app/api/site/by-username/route.ts`** — GET endpoint: resolves `username` → `arweave_url` via Neon join `users + site_generation_jobs`.
 - **`app/scripts/migrate.sql`** — added `username VARCHAR(32) UNIQUE` on users table + `idx_users_username` index.
 - **`app/src/app/api/site/create/route.ts`** — persists `username` to `users.username` on site creation.
@@ -903,7 +905,11 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
   - DNS: `*.codeofdigitaleternity.com` A `192.0.2.1` proxied=true (wildcard, Cloudflare intercepts all)
   - Zone ID: `019326ccdeada010024836e8874077b2`
 - **Per-subscription site regeneration limits** — Tier 1: 1, Tier 2: 5, Tier 3: 10 regenerations per subscription period. Counts only `ui-regen-*` jobs in window `[tier_expires - 30d, now]`. Enforced in `/api/site/create` (429 if exceeded) and surfaced in `/api/users/site-status` response (`regenCount`, `regenLimit`). Cabinet Site tab shows `X/Y updates used` badge (red when limit reached) and blocks the button with `🔒 Update limit reached` message.
-- **Devnet USDC airdrop** — increased from 1,100 to 10,000 per new user (`airdrop-usdc/route.ts`).
+- **Devnet USDC airdrop** — increased from 1,100 to 10,000 per new user (`airdrop-usdc/route.ts`). Rate limit raised to 20/min.
+- **Rate limit bug fixed** — `rateLimit()` returns `null` (allowed) or `number` (blocked). `airdrop-usdc` and `chat` routes were using `!rateLimit()` which inverted the logic and blocked everyone. Fixed to `rateLimit() !== null`.
+- **Cabinet site buttons** — "Open Passport →" (purple, subdomain link) + "View on Arweave →" (green, direct Irys link). Passport button only shown when `username` is set.
+- **`/api/users/site-status`** — added `username` field to response (read from `users.username` in DB).
+- **NFT passport card** — fixed height (`220px`) instead of `minHeight` to prevent resize on flip.
 
 ## Changes Applied (2026-05-12)
 
