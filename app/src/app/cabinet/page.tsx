@@ -628,14 +628,14 @@ export default function CabinetPage() {
               <div className="main-cols" style={{ display: "flex", gap: "16px", marginBottom: "20px", alignItems: "stretch" }}>
 
                 {/* cNFT Guardian Passport */}
-                <div style={{ flex: "1 1 40%", display: "flex", flexDirection: "column" }}>
+                <div style={{ flex: "1 1 40%", display: "grid", gridTemplateRows: "auto 1fr" }}>
                   <div style={{ fontSize: "13px", fontWeight: 600, color: "rgb(139,139,158)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
                     🛡️ cNFT Guardian Passport
                   </div>
                   <div
                     className="glass-panel"
                     onClick={() => setNftFlipped(f => !f)}
-                    style={{ padding: "24px", cursor: "pointer", flex: 1, position: "relative", overflow: "hidden", borderColor: tierObj ? `rgba(${tierObj.rgb},0.3)` : "rgba(42,42,58,0.8)" }}
+                    style={{ padding: "24px", cursor: "pointer", position: "relative", overflow: "hidden", borderColor: tierObj ? `rgba(${tierObj.rgb},0.3)` : "rgba(42,42,58,0.8)" }}
                   >
                     {tierObj && (
                       <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 0%, rgba(${tierObj.rgb},0.07) 0%, transparent 70%)`, pointerEvents: "none" }} />
@@ -704,13 +704,13 @@ export default function CabinetPage() {
                 </div>
 
                 {/* Top Guardians of Eternity */}
-                <div style={{ flex: "1 1 55%", display: "flex", flexDirection: "column" }}>
+                <div style={{ flex: "1 1 55%", display: "grid", gridTemplateRows: "auto 1fr" }}>
                   <div style={{ fontSize: "13px", fontWeight: 600, color: "rgb(232,232,240)", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
                     🔥 Top Guardians of Eternity
                   </div>
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {contributors.length === 0 ? (
-                    <div className="glass-panel" style={{ padding: "32px", textAlign: "center", color: "rgb(107,114,128)", fontSize: "13px", flex: 1 }}>
+                    <div className="glass-panel" style={{ padding: "32px", textAlign: "center", color: "rgb(107,114,128)", fontSize: "13px" }}>
                       No guardians yet — be the first!
                     </div>
                   ) : (
