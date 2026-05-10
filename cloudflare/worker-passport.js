@@ -22,11 +22,9 @@ export default {
     const username = parts[0].toLowerCase();
     if (SKIP.has(username)) return fetch(request);
 
-    // 1. Resolve username → arweave URL (cached 5 min in Cloudflare edge cache)
+    // 1. Resolve username → arweave URL (always fresh — so new site versions show immediately)
     const lookupUrl = `${APP_API}/api/site/by-username?username=${encodeURIComponent(username)}`;
-    const lookupResp = await fetch(lookupUrl, {
-      cf: { cacheTtl: 300, cacheEverything: true },
-    });
+    const lookupResp = await fetch(lookupUrl);
 
     if (!lookupResp.ok) {
       return new Response(notFoundPage(username), {
