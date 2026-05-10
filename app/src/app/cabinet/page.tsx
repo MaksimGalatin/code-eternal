@@ -691,7 +691,7 @@ export default function CabinetPage() {
                   <div
                     className="glass-panel"
                     onClick={() => setNftFlipped(f => !f)}
-                    style={{ padding: "24px", cursor: "pointer", minHeight: "220px", position: "relative", overflow: "hidden", borderColor: tierObj ? `rgba(${tierObj.rgb},0.3)` : "rgba(42,42,58,0.8)" }}
+                    style={{ padding: "24px", cursor: "pointer", height: "220px", position: "relative", overflow: "hidden", borderColor: tierObj ? `rgba(${tierObj.rgb},0.3)` : "rgba(42,42,58,0.8)" }}
                   >
                     {tierObj && (
                       <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 0%, rgba(${tierObj.rgb},0.07) 0%, transparent 70%)`, pointerEvents: "none" }} />
