@@ -5,6 +5,8 @@ import { privyServer } from "@/lib/privy";
 import { rateLimit, getIp } from "@/lib/rateLimit";
 import { PublicKey } from "@solana/web3.js";
 
+const REGEN_LIMIT: Record<number, number> = { 1: 1, 2: 5, 3: 10 };
+
 const SITE_GEN_URL = process.env.SITE_GEN_URL || "http://site-gen:3002";
 const SITE_GEN_SECRET = process.env.SITE_GEN_SECRET;
 
@@ -81,7 +83,7 @@ export async function POST(req: Request) {
   const client = await db.connect();
   try {
     const userRow = await client.query(
-      "SELECT tier, created_at FROM users WHERE wallet = $1",
+      "SELECT tier, tier_expires, created_at FROM users WHERE wallet = $1",
       [wallet]
     );
     if (!userRow.rows[0] || userRow.rows[0].tier === 0) {
@@ -89,7 +91,25 @@ export async function POST(req: Request) {
     }
 
     const tier: number = userRow.rows[0].tier;
+    const tierExpires: number = parseInt(userRow.rows[0].tier_expires ?? "0", 10);
     const registeredAt: Date = userRow.rows[0].created_at;
+
+    const limit = REGEN_LIMIT[tier] ?? 1;
+    const periodStart = tierExpires > 0 ? tierExpires - 30 * 86400 : 0;
+    const regenRes = await client.query(
+      `SELECT COUNT(*) FROM site_generation_jobs
+       WHERE wallet = $1
+         AND tx_signature LIKE 'ui-regen-%'
+         AND created_at > to_timestamp($2::bigint)`,
+      [wallet, periodStart]
+    );
+    const regenCount = parseInt(regenRes.rows[0].count, 10);
+    if (regenCount >= limit) {
+      return NextResponse.json(
+        { error: `Site update limit reached (${regenCount}/${limit} this subscription period). Renew your subscription to reset the counter.` },
+        { status: 429 }
+      );
+    }
 
     if (displayName) {
       await client.query("UPDATE users SET display_name = $1 WHERE wallet = $2", [displayName, wallet]);

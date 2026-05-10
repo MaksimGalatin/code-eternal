@@ -18,7 +18,7 @@ const TIERS = [
 const TIER_COLOR: Record<number, string> = { 1: "#7C3AED", 2: "#D4A24C", 3: "#10B981" };
 const TIER_NAME: Record<number, string>  = { 1: "Spark", 2: "Family Archives", 3: "Digital DNA" };
 
-type SiteStatus  = { status: "none"|"pending"|"done"|"error"; arweaveUrl?: string|null; tier: number };
+type SiteStatus  = { status: "none"|"pending"|"done"|"error"; arweaveUrl?: string|null; tier: number; regenCount?: number; regenLimit?: number };
 type Income      = { l1: number; l2: number; l3: number; total: number; locked: number; recent: any[] };
 type Overview    = { burnedUsdc: number; burnTxs: number; activeMembers: number; sitesCreated: number };
 type Contributor = { rank: number; wallet: string; displayName: string|null; tier: number; tierName: string; amountUsdc: number };
@@ -311,7 +311,7 @@ export default function CabinetPage() {
   }
 
   async function handleCreateSite() {
-    if (!wallet || siteCreating || !siteUsername || !siteDisplayName || isExpired) return;
+    if (!wallet || siteCreating || !siteUsername || !siteDisplayName || isExpired || regenLimitReached) return;
     setSiteCreating(true);
     setSiteError("");
     try {
@@ -355,6 +355,9 @@ export default function CabinetPage() {
   const isExpired = tierExpires > 0 && now > tierExpires;
   const daysLeft = tierExpires > 0 && !isExpired ? Math.ceil((tierExpires - now) / 86400) : 0;
   const expiryDate = tierExpires > 0 ? new Date(tierExpires * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+  const regenCount = siteStatus?.regenCount ?? 0;
+  const regenLimit = siteStatus?.regenLimit ?? 0;
+  const regenLimitReached = currentTier > 0 && regenLimit > 0 && regenCount >= regenLimit;
 
   if (!ready || !authenticated) {
     return <div style={{ background: "#0A0A0F", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontFamily: "Inter,sans-serif" }}>Loading...</div>;
@@ -913,7 +916,14 @@ export default function CabinetPage() {
                     <span style={{ fontSize: "20px" }}>✦</span>
                     <span style={{ fontSize: "20px", fontWeight: 800, color: "rgb(232,232,240)" }}>Create Eternal Site</span>
                   </div>
-                  {tierObj && <div style={{ fontSize: "12px", color: "rgb(107,114,128)", marginTop: "2px" }}>{tierObj.name} — ${tierObj.price}</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "2px" }}>
+                    {tierObj && <span style={{ fontSize: "12px", color: "rgb(107,114,128)" }}>{tierObj.name} — ${tierObj.price}</span>}
+                    {currentTier > 0 && regenLimit > 0 && (
+                      <span style={{ fontSize: "12px", padding: "1px 8px", borderRadius: "99px", background: regenLimitReached ? "rgba(239,68,68,0.1)" : "rgba(124,58,237,0.12)", color: regenLimitReached ? "#ef4444" : "rgb(167,139,250)", border: `1px solid ${regenLimitReached ? "rgba(239,68,68,0.3)" : "rgba(124,58,237,0.3)"}` }}>
+                        {regenCount}/{regenLimit} updates this period
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1030,17 +1040,17 @@ export default function CabinetPage() {
                     </div>
 
                     <button
-                      disabled={!siteUsername || !siteDisplayName || siteCreating || currentTier === 0 || isExpired}
+                      disabled={!siteUsername || !siteDisplayName || siteCreating || currentTier === 0 || isExpired || regenLimitReached}
                       onClick={handleCreateSite}
-                      style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0 && !isExpired) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: isExpired ? "rgb(42,42,58)" : (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: isExpired ? "#f85149" : "white", transition: "all 0.15s", opacity: siteCreating ? 0.7 : 1 }}
+                      style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: (siteUsername && siteDisplayName && !siteCreating && currentTier > 0 && !isExpired && !regenLimitReached) ? "pointer" : "not-allowed", fontWeight: 700, fontSize: "15px", fontFamily: "Inter,sans-serif", background: isExpired || regenLimitReached ? "rgb(42,42,58)" : (siteUsername && siteDisplayName && !siteCreating && currentTier > 0) ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgb(42,42,58)", color: isExpired ? "#f85149" : regenLimitReached ? "#ef4444" : "white", transition: "all 0.15s", opacity: siteCreating ? 0.7 : 1 }}
                     >
-                      {isExpired ? "🔒 Subscription expired — Renew to edit site" : siteCreating ? "⏳ Generating..." : "🌐 Create Eternal Site"}
+                      {isExpired ? "🔒 Subscription expired — Renew to edit site" : regenLimitReached ? `🔒 Update limit reached (${regenCount}/${regenLimit}) — Renew to reset` : siteCreating ? "⏳ Generating..." : "🌐 Create Eternal Site"}
                     </button>
                     {siteError && (
                       <div style={{ marginTop: "8px", fontSize: "12px", color: "#ef4444", textAlign: "center" }}>{siteError}</div>
                     )}
                     <div style={{ marginTop: "10px", fontSize: "11px", color: "rgb(107,114,128)", textAlign: "center" }}>
-                      {currentTier === 0 ? "Purchase a tier to activate site creation" : "Your site will be permanently saved on Arweave — it cannot be deleted or changed"}
+                      {currentTier === 0 ? "Purchase a tier to activate site creation" : regenLimitReached ? `${regenCount}/${regenLimit} updates used this subscription period` : `${regenCount}/${regenLimit} updates used · Your site is permanently saved on Arweave`}
                     </div>
                   </div>
 
