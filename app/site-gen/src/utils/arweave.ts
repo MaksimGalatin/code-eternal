@@ -88,6 +88,7 @@ export async function generateAndDeploy(job: {
     bio: job.bio || null,
     manifesto: job.manifesto || null,
     telegram: job.telegram || null,
+    telegramIsPrivate: job.telegram?.startsWith("+") ?? false,
     twitter: job.twitter || null,
     website: job.website || null,
     passportId,

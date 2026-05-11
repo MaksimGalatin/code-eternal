@@ -422,7 +422,7 @@
       {{#if telegram}}
       <div class="field span2">
         <span class="f-label">Telegram</span>
-        <a href="https://t.me/{{telegram}}" class="f-value social-field">📱 @{{telegram}}</a>
+        <a href="https://t.me/{{telegram}}" class="f-value social-field">📱 {{#if telegramIsPrivate}}Telegram{{else}}@{{telegram}}{{/if}}</a>
       </div>
       {{/if}}
       {{#if twitter}}

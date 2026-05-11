@@ -1064,8 +1064,8 @@ function CabinetPage() {
                             <div style={{fontSize:"11px",color:tc,marginBottom:"8px",fontFamily:"monospace"}}>
                               {siteUsername?`@${siteUsername}`:<span style={{color:"rgb(42,42,58)"}}>@username</span>}
                             </div>
-                            {siteBio&&<div style={{fontSize:"11px",color:"rgb(139,139,158)",marginBottom:"8px",maxWidth:"220px",lineHeight:1.5}}>{siteBio}</div>}
-                            {siteManifesto&&<div style={{fontSize:"10px",color:"rgb(107,114,128)",fontStyle:"italic",maxWidth:"220px",marginBottom:"6px"}}>"{siteManifesto}"</div>}
+                            {siteBio&&<div style={{fontSize:"11px",color:"rgb(139,139,158)",marginBottom:"8px",maxWidth:"220px",lineHeight:1.5,wordBreak:"break-word",overflowWrap:"break-word"}}>{siteBio}</div>}
+                            {siteManifesto&&<div style={{fontSize:"10px",color:"rgb(107,114,128)",fontStyle:"italic",maxWidth:"220px",marginBottom:"6px",wordBreak:"break-word",overflowWrap:"break-word"}}>"{siteManifesto}"</div>}
                           </div>
                           {/* Crypto strip — identicon + chip label + QR placeholder */}
                           <div style={{padding:"10px 16px",background:"rgba(0,0,0,0.18)",borderTop:"1px solid rgba(255,255,255,0.05)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px"}}>
@@ -1088,7 +1088,7 @@ function CabinetPage() {
                           {/* Social links */}
                           {(siteTelegram||siteTwitter||siteWebUrl)&&(
                             <div style={{padding:"8px 14px",display:"flex",gap:"6px",flexWrap:"wrap",justifyContent:"center"}}>
-                              {siteTelegram&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>📱 {siteTelegram}</span>}
+                              {siteTelegram&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>📱 {siteTelegram.startsWith("+") ? "Telegram" : siteTelegram}</span>}
                               {siteTwitter&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>𝕏 {siteTwitter}</span>}
                               {siteWebUrl&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>🌐 site</span>}
                             </div>

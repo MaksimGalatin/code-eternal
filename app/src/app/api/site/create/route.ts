@@ -15,6 +15,7 @@ const AVATAR_MAX_LEN = 120_000;
 const AVATAR_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
 const TWITTER_RE = /^[A-Za-z0-9_]{1,15}$/;
 const TELEGRAM_RE = /^[A-Za-z0-9_]{5,32}$/;
+const TELEGRAM_INVITE_RE = /^\+[A-Za-z0-9_-]{10,}$/;
 const WEBSITE_RE = /^https:\/\/[^\s]{1,200}$/;
 
 export async function POST(req: Request) {
@@ -68,10 +69,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `bio max ${MAX.bio} chars` }, { status: 400 });
   if (manifesto && manifesto.length > MAX.manifesto)
     return NextResponse.json({ error: `manifesto max ${MAX.manifesto} chars` }, { status: 400 });
-  const telegramClean = telegram?.replace(/^@/, "");
-  if (telegramClean && !TELEGRAM_RE.test(telegramClean))
+  const telegramClean = telegram
+    ?.replace(/^https?:\/\/(t\.me|telegram\.me)\//i, "")
+    .replace(/^@/, "")
+    .split("?")[0].replace(/\/$/, "");
+  if (telegramClean && !TELEGRAM_RE.test(telegramClean) && !TELEGRAM_INVITE_RE.test(telegramClean))
     return NextResponse.json({ error: "invalid telegram handle" }, { status: 400 });
-  const twitterClean = twitter?.replace(/^@/, "");
+  const twitterClean = twitter
+    ?.replace(/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i, "")
+    .replace(/^@/, "")
+    .split("?")[0].split("/")[0];
   if (twitterClean && !TWITTER_RE.test(twitterClean))
     return NextResponse.json({ error: "invalid twitter handle" }, { status: 400 });
   if (website && !WEBSITE_RE.test(website))
