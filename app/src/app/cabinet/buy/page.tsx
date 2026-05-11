@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, Suspense } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useSolanaWallets } from "@privy-io/react-auth/solana";
+import { useWallets, useCreateWallet, useSignAndSendTransaction } from "@privy-io/react-auth/solana";
+import bs58 from "bs58";
 import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
 import {
   getAssociatedTokenAddress,
@@ -52,7 +53,9 @@ function BuyPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { authenticated, ready } = usePrivy();
-  const { wallets, createWallet } = useSolanaWallets();
+  const { wallets } = useWallets();
+  const { createWallet } = useCreateWallet();
+  const { signAndSendTransaction } = useSignAndSendTransaction();
   const wallet = wallets[0];
   const { lang } = useLang();
 
@@ -168,7 +171,11 @@ function BuyPageInner() {
           .transaction();
         registerTx.recentBlockhash = blockhash;
         registerTx.feePayer        = payer;
-        const registerSig = await wallet.sendTransaction(registerTx, connection);
+        const registerResult = await signAndSendTransaction({
+          transaction: registerTx.serialize({ requireAllSignatures: false }),
+          wallet,
+        });
+        const registerSig = bs58.encode(registerResult.signature);
         await connection.confirmTransaction({ signature: registerSig, blockhash, lastValidBlockHeight }, "confirmed");
       }
 
@@ -191,7 +198,11 @@ function BuyPageInner() {
       ]).transaction();
       payTx.recentBlockhash = payBlockhash;
       payTx.feePayer        = payer;
-      const sig = await wallet.sendTransaction(payTx, connection);
+      const payResult = await signAndSendTransaction({
+        transaction: payTx.serialize({ requireAllSignatures: false }),
+        wallet,
+      });
+      const sig = bs58.encode(payResult.signature);
       const confirmation = await connection.confirmTransaction({ signature: sig, blockhash: payBlockhash, lastValidBlockHeight: payLVBH }, "confirmed");
       if (confirmation.value.err) {
         throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);

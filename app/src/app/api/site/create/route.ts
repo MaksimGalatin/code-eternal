@@ -25,10 +25,13 @@ export async function POST(req: Request) {
   let authenticatedWallet: string;
   try {
     const claims = await privyServer.verifyAuthToken(token);
+    // Privy 3.x: getUser accepts userId string (backward-compat) or { idToken } object
     const privyUser = await privyServer.getUser(claims.userId);
     const solanaAcct = (privyUser.linkedAccounts as any[]).find(
       (a: any) =>
-        a.type === "wallet" && a.chainType === "solana" && a.walletClientType === "privy"
+        a.type === "wallet" &&
+        (a.chainType === "solana" || a.chain_type === "solana") &&
+        (a.walletClientType === "privy" || a.wallet_client_type === "privy")
     );
     if (!solanaAcct?.address) {
       return NextResponse.json({ error: "no solana wallet linked" }, { status: 403 });
