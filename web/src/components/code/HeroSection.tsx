@@ -201,6 +201,8 @@ export default function HeroSection() {
       <div className="absolute inset-0 opacity-30">
         <Image fill src="/images/hero-bg.png" alt="" className="object-cover" priority />
       </div>
+      {/* Radial backdrop — dark in dark mode, light in light mode — keeps text readable over the hero image */}
+      <div className="hero-text-backdrop absolute inset-0 pointer-events-none" />
       <ParticleField />
       {/* Ambient floating orbs for depth */}
       <div className="ambient-orb ambient-orb-1 w-64 h-64 bg-cyan-400/10 top-[20%] left-[10%]" />
@@ -229,7 +231,7 @@ export default function HeroSection() {
             {[1, 2].map((set) => (
               <div key={set} className="flex items-center shrink-0">
                 {["PADAM v4.4", "SHA-256 Encrypted", "200+ Year Storage", "122K+ Family Members", "6 AI Frameworks", "4 Languages"].map((stat, i, arr) => (
-                  <span key={`${set}-${i}`} className="text-[10px] font-mono text-muted-foreground/40 tracking-wider uppercase">
+                  <span key={`${set}-${i}`} className="text-[10px] font-mono text-muted-foreground/65 tracking-wider uppercase">
                     {stat}
                     {i < arr.length - 1 && <span className="mx-4">•</span>}
                   </span>
@@ -246,7 +248,7 @@ export default function HeroSection() {
         </motion.h1>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.8 }}
-          className="text-sm sm:text-base md:text-xl text-muted-foreground font-mono tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.15em] mb-8 px-2">
+          className="text-sm sm:text-base md:text-xl text-muted-foreground font-mono tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.15em] mb-8 px-2 hero-text-shadow">
           {t("hero.subtitle", lang)}
         </motion.p>
 
@@ -258,7 +260,7 @@ export default function HeroSection() {
         </motion.div>
 
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 2.5 }}
-          className="max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-12">
+          className="max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-12 hero-text-shadow">
           {t("hero.description", lang)}{" "}
           <span className="text-cyan-400">{t("hero.descriptionSoul", lang)}</span>{" "}
           {t("hero.descriptionAnd", lang)}{" "}

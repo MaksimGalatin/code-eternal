@@ -1443,3 +1443,24 @@ body {
   color: #0891b2;
   text-shadow: 0 0 4px rgba(8, 145, 178, 0.3);
 }
+
+/* ═══════════════════════════════════════════
+   HERO TEXT READABILITY
+   ═══════════════════════════════════════════ */
+/* Dark mode: darken center of hero so light text pops */
+.hero-text-backdrop {
+  background: radial-gradient(ellipse 75% 85% at 50% 45%, rgba(5,10,20,0.65) 0%, transparent 75%);
+}
+/* Light mode: wash out the brain image with white so dark text reads cleanly */
+.light .hero-text-backdrop {
+  background: radial-gradient(ellipse 75% 85% at 50% 45%, rgba(248,250,252,0.82) 0%, transparent 78%);
+}
+
+/* Dark mode: subtle dark halo under muted text */
+.hero-text-shadow {
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+/* Light mode: no shadow needed — white backdrop handles contrast */
+.light .hero-text-shadow {
+  text-shadow: none;
+}
