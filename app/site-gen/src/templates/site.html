@@ -334,28 +334,28 @@
         <span class="f-label">Full Name</span>
         <span class="f-value lg">{{name}}</span>
       </div>
-      {{#if username}}
-      <div class="field span2">
-        <span class="f-label">Handle</span>
-        <span class="f-value accent">@{{username}}.aifa.digital</span>
-      </div>
-      {{/if}}
       <div class="field">
-        <span class="f-label">Network</span>
-        <span class="f-value sm">Solana</span>
+        <span class="f-label">Passport ID</span>
+        <span class="f-value accent">{{passportId}}</span>
       </div>
       <div class="field">
         <span class="f-label">Issue Date</span>
         <span class="f-value sm">{{registeredAt}}</span>
       </div>
       <div class="field">
-        <span class="f-label">Access Tier</span>
-        <span class="f-value accent">{{tier}}</span>
+        <span class="f-label">Network</span>
+        <span class="f-value sm">Solana</span>
       </div>
       <div class="field">
         <span class="f-label">Storage</span>
         <span class="f-value sm">Arweave ∞</span>
       </div>
+      {{#if username}}
+      <div class="field span2">
+        <span class="f-label">Digital Identity</span>
+        <a href="https://{{username}}.codeofdigitaleternity.com" class="f-value social-field">🌐 {{username}}.codeofdigitaleternity.com</a>
+      </div>
+      {{/if}}
       {{#if telegram}}
       <div class="field span2">
         <span class="f-label">Telegram</span>

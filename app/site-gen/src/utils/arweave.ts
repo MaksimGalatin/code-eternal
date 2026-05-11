@@ -33,6 +33,7 @@ export async function generateAndDeploy(job: {
 
   const tierMeta = TIER_META[job.tier] ?? { name: "Spark", color: "#7C3AED" };
   const walletShort = `${job.wallet.slice(0, 4)}...${job.wallet.slice(-4)}`;
+  const passportId = `CE-${job.wallet.slice(0, 8).toUpperCase()}`;
 
   const html = template({
     name: job.displayName || walletShort,
@@ -53,6 +54,7 @@ export async function generateAndDeploy(job: {
     telegram: job.telegram || null,
     twitter: job.twitter || null,
     website: job.website || null,
+    passportId,
     hasSocial: !!(job.telegram || job.twitter || job.website),
     avatarDataUrl: job.avatarDataUrl || null,
   });
