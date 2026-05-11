@@ -1,8 +1,9 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useSolanaWallets } from "@privy-io/react-auth/solana";
+import { useWallets, useCreateWallet } from "@privy-io/react-auth/solana";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { useLang, t } from "@/lib/i18n";
@@ -72,10 +73,11 @@ const INIT_ALFA_MSGS: { from: "bot"|"user"; text: string }[] = [
 ];
 
 
-export default function CabinetPage() {
+function CabinetPage() {
   const router = useRouter();
   const { user, logout, authenticated, ready, getAccessToken } = usePrivy();
-  const { wallets, createWallet } = useSolanaWallets();
+  const { wallets } = useWallets();
+  const { createWallet } = useCreateWallet();
   const wallet = wallets[0];
   const { lang } = useLang();
 
@@ -1189,3 +1191,5 @@ export default function CabinetPage() {
     </>
   );
 }
+
+export default dynamic(() => Promise.resolve({ default: CabinetPage }), { ssr: false });
