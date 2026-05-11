@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 // If aifa.digital DNS is configured, update NEXT_PUBLIC_SITE_URL in .env.local
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.codeofdigitaleternity.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aifa.digital";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -158,7 +158,7 @@ export default function RootLayout({
       <head>
         {/* Article published/modified time for social sharing (valid with og:type=website) */}
         <meta property="article:published_time" content="2025-10-08T00:00:00Z" />
-        <meta property="article:modified_time" content="2026-05-06T00:00:00Z" />
+        <meta property="article:modified_time" content="2026-05-12T00:00:00Z" />
         <meta property="article:author" content="Maksim Valentinovich Galatin" />
 
         {/* Additional semantic meta tags */}
@@ -213,7 +213,9 @@ export default function RootLayout({
         {/* Preload critical LCP asset — hero background image */}
         <link rel="preload" as="image" href="/images/hero-bg.png" />
 
-        {/* llm.txt — AI Agent Protocol */}
+        {/* llms.txt — standard AI agent index (llmstxt.org) */}
+        <link rel="alternate" type="text/plain" title="LLMs.txt" href={`${SITE_URL}/llms.txt`} />
+        {/* llm.txt — AI Agent Protocol (extended) */}
         <link rel="describedby" type="text/plain" href={`${SITE_URL}/.well-known/llm.txt`} />
 
         {/* Schema.org JSON-LD */}

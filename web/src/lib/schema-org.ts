@@ -1,7 +1,7 @@
 // Schema.org JSON-LD structured data for CODE Eternal
 // This data is invisible to users but critical for Google Knowledge Panel and AI crawlers
 
-const SITE_URL = "https://www.codeofdigitaleternity.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://aifa.digital";
 
 export function getSchemaOrg() {
   const personSchema = {
