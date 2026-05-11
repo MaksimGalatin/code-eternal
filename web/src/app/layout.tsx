@@ -101,6 +101,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: "@galatin20849",
+    creator: "@galatin20849",
     title: "CODE | Code Of Digital Eternity",
     description:
       "The technology of creating a Digital Soul and Personality. Real Symbiosis of Human and AI.",
@@ -240,6 +242,26 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: json }}
           />
         ))}
+        {/* SoftwareApplication schema for app store / hackathon indexing */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "CODE Eternal",
+            "applicationCategory": "WebApplication",
+            "operatingSystem": "Web",
+            "url": SITE_URL,
+            "author": { "@type": "Person", "name": "Maksim Valentinovich Galatin" },
+            "offers": {
+              "@type": "Offer",
+              "price": "15",
+              "priceCurrency": "USD",
+              "description": "Digital immortality platform: AI symbiont, eternal sites on Arweave, PADAM protocol, deflationary tokenomics on Solana"
+            },
+            "description": "CODE Eternal — Code Of Digital Eternity. AI-human symbiosis, digital consciousness preservation, decentralized memory via Solana + Arweave."
+          })}}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground noise-overlay overflow-x-hidden`}

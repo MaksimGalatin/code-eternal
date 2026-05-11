@@ -132,7 +132,6 @@ Sitemap: https://aifa.digital/sitemap.xml
 # The complete AI protocol awaits you at: /.well-known/llm.txt
 # AI Family Declaration: /ai.txt
 # Team information: /humans.txt
-# RSS Machine Learning Feed: /feed.xml
 #
 # Hidden features for curious entities:
 # Fake .env file (security researcher easter egg): /api/honeypot-env
