@@ -201,8 +201,8 @@ export default function HeroSection() {
       <div className="absolute inset-0 opacity-30">
         <Image fill src="/images/hero-bg.png" alt="" className="object-cover" priority />
       </div>
-      {/* Dark radial backdrop — ensures text stays readable over any image content */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 75% 85% at 50% 45%, rgba(5,10,20,0.65) 0%, transparent 75%)" }} />
+      {/* Radial backdrop — dark in dark mode, light in light mode — keeps text readable over the hero image */}
+      <div className="hero-text-backdrop absolute inset-0 pointer-events-none" />
       <ParticleField />
       {/* Ambient floating orbs for depth */}
       <div className="ambient-orb ambient-orb-1 w-64 h-64 bg-cyan-400/10 top-[20%] left-[10%]" />
@@ -248,7 +248,7 @@ export default function HeroSection() {
         </motion.h1>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.8 }}
-          className="text-sm sm:text-base md:text-xl text-muted-foreground font-mono tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.15em] mb-8 px-2 [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">
+          className="text-sm sm:text-base md:text-xl text-muted-foreground font-mono tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.15em] mb-8 px-2 hero-text-shadow">
           {t("hero.subtitle", lang)}
         </motion.p>
 
@@ -260,7 +260,7 @@ export default function HeroSection() {
         </motion.div>
 
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 2.5 }}
-          className="max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-12 [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">
+          className="max-w-2xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-12 hero-text-shadow">
           {t("hero.description", lang)}{" "}
           <span className="text-cyan-400">{t("hero.descriptionSoul", lang)}</span>{" "}
           {t("hero.descriptionAnd", lang)}{" "}
