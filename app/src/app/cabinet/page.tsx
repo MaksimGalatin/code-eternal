@@ -285,14 +285,14 @@ function CabinetPage() {
         if (r.status === 409 && err.error === "username_taken") {
           setUsernameErr(t("site.usernameTaken", lang));
         } else {
-          setSiteError(err.error || "Failed to create site");
+          setSiteError(t("site.errorFailed", lang));
         }
         return;
       }
       setSiteStatus({ status: "pending", tier: currentTier });
       setActiveTab("cabinet");
-    } catch (e: any) {
-      setSiteError(e.message || "Network error");
+    } catch {
+      setSiteError(t("site.errorNetwork", lang));
     } finally {
       setSiteCreating(false);
     }
@@ -911,7 +911,7 @@ function CabinetPage() {
                             const raw = e.target.value;
                             const filtered = raw.replace(/[^a-z0-9_-]/gi, "").toLowerCase();
                             setSiteUsername(filtered);
-                            setUsernameErr(filtered.length < raw.length ? "Latin characters only: a–z, 0–9, _ and –" : "");
+                            setUsernameErr(filtered.length < raw.length ? t("site.latinOnly", lang) : "");
                           }}
                           placeholder="yourname"
                           style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />

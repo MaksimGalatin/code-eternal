@@ -180,6 +180,9 @@ export const translations = {
 
     // Site — errors
     "site.usernameTaken": "Username already taken. Please choose another.",
+    "site.latinOnly": "Latin characters only: a–z, 0–9, _ and –",
+    "site.errorFailed": "Failed to create site. Please try again.",
+    "site.errorNetwork": "Network error. Check your connection and retry.",
   },
 
   ru: {
@@ -358,6 +361,9 @@ export const translations = {
 
     // Site — errors
     "site.usernameTaken": "Это имя пользователя уже занято. Выберите другое.",
+    "site.latinOnly": "Только латинские символы: a–z, 0–9, _ и –",
+    "site.errorFailed": "Не удалось создать сайт. Попробуйте ещё раз.",
+    "site.errorNetwork": "Ошибка сети. Проверьте соединение и повторите.",
   },
 
   es: {
@@ -536,6 +542,9 @@ export const translations = {
 
     // Site — errors
     "site.usernameTaken": "Este nombre de usuario ya está en uso. Elige otro.",
+    "site.latinOnly": "Solo caracteres latinos: a–z, 0–9, _ y –",
+    "site.errorFailed": "No se pudo crear el sitio. Inténtalo de nuevo.",
+    "site.errorNetwork": "Error de red. Comprueba tu conexión y reintenta.",
   },
 
   zh: {
@@ -714,6 +723,9 @@ export const translations = {
 
     // Site — errors
     "site.usernameTaken": "用户名已被占用，请选择其他用户名。",
+    "site.latinOnly": "仅限拉丁字符：a–z、0–9、_ 和 –",
+    "site.errorFailed": "创建站点失败，请重试。",
+    "site.errorNetwork": "网络错误，请检查连接后重试。",
   },
 } as const;
 
