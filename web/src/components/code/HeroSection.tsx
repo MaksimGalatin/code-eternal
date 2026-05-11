@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useLang, t } from "@/lib/i18n";
 
-function ParticleField() {
+const ParticleField = memo(function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -126,7 +127,7 @@ function ParticleField() {
   }, []);
 
   return <canvas ref={canvasRef} className="absolute inset-0" style={{ zIndex: 0 }} />;
-}
+});
 
 function OnlineVisitors() {
   const [count, setCount] = useState(() => Math.floor(Math.random() * 215) + 127);
@@ -197,7 +198,9 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 neural-bg" />
-      <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-bg.png')" }} />
+      <div className="absolute inset-0 opacity-30">
+        <Image fill src="/images/hero-bg.png" alt="" className="object-cover" priority />
+      </div>
       <ParticleField />
       {/* Ambient floating orbs for depth */}
       <div className="ambient-orb ambient-orb-1 w-64 h-64 bg-cyan-400/10 top-[20%] left-[10%]" />

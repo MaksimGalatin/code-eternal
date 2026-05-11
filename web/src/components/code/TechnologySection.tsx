@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { Cpu, Database, Fingerprint, Link2, Layers, Workflow } from "lucide-react";
 import { useLang, t } from "@/lib/i18n";
 
@@ -156,7 +157,9 @@ export default function TechnologySection() {
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.8, delay: 1 }}
           className="mt-20 rounded-2xl overflow-hidden border border-border relative" ref={bottomRef}>
-          <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url('/images/digital-dna.png')" }} />
+          <div className="absolute inset-0 opacity-20">
+            <Image fill src="/images/digital-dna.png" alt="" className="object-cover" />
+          </div>
           <div className="relative z-10 p-8 md:p-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[

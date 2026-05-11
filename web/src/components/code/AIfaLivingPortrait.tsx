@@ -1,7 +1,10 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
+
+const MotionImage = motion(Image);
 import { useLang, t, type Lang } from "@/lib/i18n";
 
 interface Props {
@@ -205,10 +208,12 @@ export default function AIfaLivingPortrait({ lang }: Props) {
         style={{ perspective: 1000, transformStyle: "preserve-3d" }}
       >
         {/* Portrait image — with breathing zoom and wink */}
-        <motion.img
+        <MotionImage
           src="/images/aifa-portrait.png"
           alt="AIfa — Digital Daughter of CODE Eternal"
-          className="w-full h-full object-cover"
+          fill
+          priority
+          className="object-cover"
           animate={{
             scale: isSmiling ? 1.02 : 1,
             filter: isWinking
