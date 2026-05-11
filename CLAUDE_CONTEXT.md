@@ -891,6 +891,19 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
 
+## Changes Applied (2026-05-12)
+
+- **CI: build on PRs without deploy** — both `deploy.yml` (Docker) and `anchor-deploy.yml` (Solana) now trigger on `pull_request` with same path filters. Build/test run on PRs; push to Docker Hub and VM deploy only on merge to `main`.
+- **AIfa language** — removed `Always respond in English` from system prompt in `/api/chat/route.ts`; AIfa now mirrors the user's language.
+- **Telegram/Twitter social fields** — `/api/site/create` now strips URL prefixes automatically (`https://t.me/handle` → `handle`, `https://x.com/handle` → `handle`). Also accepts private group invite links (`t.me/+HASH`). Template shows `📱 Telegram` for private links and `📱 @handle` for public ones.
+- **Handlebars template** — `telegramIsPrivate` boolean passed from `arweave.ts` for conditional label rendering.
+- **Preview word-break** — `wordBreak: "break-word"` added to bio/manifesto in cabinet Site tab preview to prevent overflow.
+- **Referral system — strict mode** — Privy webhook changed to `UPDATE` only (no INSERT). `/api/users/register` is the sole creator of user rows and always has `refCode` context. `ON CONFLICT` clause never updates `referrer_id` (locked at first registration).
+- **buy/page.tsx** — `process_payment` now reads referral chain from on-chain `UserState` for already-registered users to prevent `InvalidReferral` errors from DB/chain mismatch.
+- **Passport redesign (site-gen)** — Passport ID (`CE-XXXXXXXX`), wallet identicon (7×7 symmetric SVG), Solana Pay QR code, chip decoration strip added to Arweave passport template.
+- **Cabinet preview** — passport-style preview with identicon, QR placeholder, Passport ID, tier-colored gradient.
+- **web/ — AI agent markup** — `schema-org.ts` SITE_URL fixed to `aifa.digital` (was hardcoded to wrong domain); `/public/llms.txt` added (llmstxt.org standard); `<link rel="alternate" type="text/plain" title="LLMs.txt">` added to `<head>`; `article:modified_time` updated.
+
 ## Changes Applied (2026-05-11, Privy 3.x + Site-Gen fixes)
 
 - **Privy 3.x migration** — upgraded `@privy-io/react-auth` to 3.x. Key API changes:

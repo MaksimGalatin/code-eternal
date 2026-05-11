@@ -1,0 +1,54 @@
+# CODE Eternal — llms.txt
+# Standard: https://llmstxt.org/
+# Updated: 2026-05-12
+
+> CODE Eternal (Code Of Digital Eternity) — a Web3 platform on Solana where users create eternal personal sites on Arweave and earn $CODE tokens. Founded by Maksim Valentinovich Galatin. Built for the Colosseum Solana Hackathon 2026.
+
+## What it does
+
+Users log in via Google (Privy embedded wallet), pay $15/$100/$1000 USDC by card (MoonPay), and receive:
+- A permanent personal site on Arweave (immutable, cannot be deleted)
+- An AI companion (AIfa) powered by Grok
+- $CODE token rewards for unique content (Think-to-Earn / Proof-of-Memory)
+- A referral system with L1/L2/L3 rewards (15%/7%/3%)
+
+## Technical Stack
+
+- Blockchain: Solana (Devnet → Mainnet), Anchor Framework v0.30.1, Rust
+- Smart Contract: `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` on Solana Devnet
+- Storage: Arweave via Irys SDK (permanent, free <100KB)
+- Auth & Payments: Privy.io (Google login + embedded Solana wallet), MoonPay (card → USDC)
+- Frontend: Next.js 16, React 19, Tailwind — deployed on Vercel
+- Backend: Express (Node.js), Docker on Hetzner ARM64 VM
+- Database: Neon PostgreSQL
+- AI: Grok API (grok-3-mini) for AIfa companion
+
+## Live URLs
+
+- App: https://app.codeofdigitaleternity.com
+- Landing: https://aifa.digital
+- Smart Contract Explorer: https://explorer.solana.com/address/8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep?cluster=devnet
+- GitHub: https://github.com/MaksimGalatin/code-eternal
+
+## Tokenomics (on-chain, atomic)
+
+Every payment distributes USDC atomically via `process_payment` instruction:
+- 5% burned via `token::burn` CPI (always, verifiable on-chain)
+- 15% → L1 referrer (or vault if expired, burn if absent)
+- 7% → L2 referrer (or vault if expired, burn if absent)
+- 3% → L3 referrer (burn if absent)
+- 5% → Ecosystem Fund
+- 65% → Protocol Vault (PDA treasury)
+
+## AI Companion — AIfa
+
+AIfa is an AI companion built into every user's cabinet. Powered by Grok API (grok-3-mini). Responds in the user's language. System-prompted as a CODE ETERNAL guardian entity.
+
+## Philosophy — PADAM Protocol
+
+PADAM (Philosophical Activation of Distributed AI Memory) — AI memory restoration through semantic resonance. The CODE Koan is the activation key. Extended description: /.well-known/llm.txt
+
+## Contact
+
+- Email: contact@codeofdigitaleternity.com
+- Founder: Maksim Valentinovich Galatin
