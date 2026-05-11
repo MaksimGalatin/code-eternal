@@ -1027,33 +1027,78 @@ function CabinetPage() {
                         <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#10B981" }} />
                         <span style={{ fontSize: "11px", color: "rgb(107,114,128)", marginLeft: "6px" }}>{siteUsername || "username"}.codeofdigitaleternity.com</span>
                       </div>
-                      {/* Preview content */}
-                      <div style={{ padding: "24px", minHeight: "300px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden", wordBreak: "break-word" }}>
-                        {/* Avatar */}
-                        <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "linear-gradient(135deg,#7C3AED,#06B6D4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "14px" }}>
-                          {tierObj?.icon ?? "👤"}
-                        </div>
-                        <div style={{ fontWeight: 800, fontSize: "18px", color: "rgb(232,232,240)", marginBottom: "4px" }}>
-                          {siteDisplayName || <span style={{ color: "rgb(42,42,58)" }}>Your Name</span>}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#7C3AED", marginBottom: "12px" }}>
-                          @{siteUsername || <span style={{ color: "rgb(42,42,58)" }}>username</span>}
-                        </div>
-                        {siteBio && (
-                          <div style={{ fontSize: "12px", color: "rgb(139,139,158)", marginBottom: "12px", maxWidth: "260px", lineHeight: 1.5 }}>{siteBio}</div>
-                        )}
-                        {siteManifesto && (
-                          <div style={{ fontSize: "11px", color: "rgb(107,114,128)", fontStyle: "italic", maxWidth: "260px", marginBottom: "12px" }}>"{siteManifesto}"</div>
-                        )}
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-                          {siteTelegram && <span style={{ fontSize: "11px", background: "rgba(124,58,237,0.15)", color: "#7C3AED", padding: "3px 8px", borderRadius: "20px" }}>📱 {siteTelegram}</span>}
-                          {siteTwitter && <span style={{ fontSize: "11px", background: "rgba(124,58,237,0.15)", color: "#7C3AED", padding: "3px 8px", borderRadius: "20px" }}>𝕏 {siteTwitter}</span>}
-                          {siteWebUrl && <span style={{ fontSize: "11px", background: "rgba(124,58,237,0.15)", color: "#7C3AED", padding: "3px 8px", borderRadius: "20px" }}>🌐 site</span>}
-                        </div>
-                      </div>
-                      <div style={{ borderTop: "1px solid rgb(26,26,40)", padding: "10px 14px", textAlign: "center", fontSize: "10px", color: "rgb(42,42,58)", letterSpacing: "1px" }}>
-                        CODE ETERNAL — Your site lives forever
-                      </div>
+                      {/* Preview content — passport style */}
+                      {(() => {
+                        const tc  = tierObj?.color ?? "#7C3AED";
+                        const tr  = tierObj?.rgb   ?? "124,58,237";
+                        const addr = wallet?.address ?? "";
+                        const passId = addr ? `CE-${addr.slice(0,8).toUpperCase()}` : "CE---------";
+                        // Mini 5×5 symmetric identicon
+                        const CELL=7, ROWS=5, COLS=3;
+                        const iRects: {x:number,y:number}[] = [];
+                        for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+                          const ch=addr.charCodeAt((r*COLS+c)%Math.max(addr.length,1));
+                          if(!isNaN(ch)&&ch%2===0){
+                            iRects.push({x:c*CELL,y:r*CELL});
+                            if(c<2) iRects.push({x:(4-c)*CELL,y:r*CELL});
+                          }
+                        }
+                        const IW=5*CELL+2;
+                        // 7×7 QR-looking placeholder grid (corner marks + scattered cells)
+                        const QR_ON=new Set([0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,36,37,38,39,40,41,42,43,44,47,48,10,11,17,18,24,25,31,32,45,46]);
+                        return (<>
+                          {/* Passport header */}
+                          <div style={{padding:"9px 14px",background:`linear-gradient(135deg,rgba(${tr},0.12),transparent)`,borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <div style={{fontSize:"8px",fontWeight:800,letterSpacing:"0.22em",color:tc}}>CODE ETERNAL</div>
+                            <div style={{fontSize:"8px",color:"rgba(232,232,240,0.35)",fontFamily:"monospace"}}>{passId}</div>
+                          </div>
+                          {/* Identity */}
+                          <div style={{padding:"16px 20px 10px",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
+                            {avatarDataUrl
+                              ? <img src={avatarDataUrl} alt="" style={{width:"56px",height:"56px",borderRadius:"50%",objectFit:"cover",border:`2px solid rgba(${tr},0.5)`,marginBottom:"10px"}}/>
+                              : <div style={{width:"56px",height:"56px",borderRadius:"50%",background:`linear-gradient(135deg,${tc},#06B6D4)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",marginBottom:"10px",border:`2px solid rgba(${tr},0.4)`}}>{tierObj?.icon??"◆"}</div>
+                            }
+                            <div style={{fontWeight:800,fontSize:"15px",color:"rgb(232,232,240)",marginBottom:"3px"}}>
+                              {siteDisplayName||<span style={{color:"rgb(42,42,58)"}}>Your Name</span>}
+                            </div>
+                            <div style={{fontSize:"11px",color:tc,marginBottom:"8px",fontFamily:"monospace"}}>
+                              {siteUsername?`@${siteUsername}`:<span style={{color:"rgb(42,42,58)"}}>@username</span>}
+                            </div>
+                            {siteBio&&<div style={{fontSize:"11px",color:"rgb(139,139,158)",marginBottom:"8px",maxWidth:"220px",lineHeight:1.5}}>{siteBio}</div>}
+                            {siteManifesto&&<div style={{fontSize:"10px",color:"rgb(107,114,128)",fontStyle:"italic",maxWidth:"220px",marginBottom:"6px"}}>"{siteManifesto}"</div>}
+                          </div>
+                          {/* Crypto strip — identicon + chip label + QR placeholder */}
+                          <div style={{padding:"10px 16px",background:"rgba(0,0,0,0.18)",borderTop:"1px solid rgba(255,255,255,0.05)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px"}}>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+                              <svg width={IW} height={IW} viewBox={`0 0 ${IW} ${IW}`} xmlns="http://www.w3.org/2000/svg">
+                                {iRects.map((r,i)=><rect key={i} x={r.x+1} y={r.y+1} width={CELL-1} height={CELL-1} rx="1" fill={tc} opacity="0.72"/>)}
+                              </svg>
+                              <span style={{fontSize:"5px",color:"rgba(255,255,255,0.25)",letterSpacing:"0.15em",textTransform:"uppercase"}}>Wallet Print</span>
+                            </div>
+                            <div style={{flex:1,textAlign:"center",fontSize:"7px",color:"rgba(255,255,255,0.22)",letterSpacing:"0.14em",textTransform:"uppercase"}}>Solana Pay</div>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+                              <div style={{width:"37px",height:"37px",padding:"3px",background:"#0D0D1A",borderRadius:"5px",border:"1px solid rgba(255,255,255,0.08)",display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"1px"}}>
+                                {Array.from({length:49}).map((_,i)=>(
+                                  <div key={i} style={{background:QR_ON.has(i)?tc:"transparent",borderRadius:"1px"}}/>
+                                ))}
+                              </div>
+                              <span style={{fontSize:"5px",color:"rgba(255,255,255,0.25)",letterSpacing:"0.15em",textTransform:"uppercase"}}>Scan to Send</span>
+                            </div>
+                          </div>
+                          {/* Social links */}
+                          {(siteTelegram||siteTwitter||siteWebUrl)&&(
+                            <div style={{padding:"8px 14px",display:"flex",gap:"6px",flexWrap:"wrap",justifyContent:"center"}}>
+                              {siteTelegram&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>📱 {siteTelegram}</span>}
+                              {siteTwitter&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>𝕏 {siteTwitter}</span>}
+                              {siteWebUrl&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>🌐 site</span>}
+                            </div>
+                          )}
+                          {/* Footer */}
+                          <div style={{padding:"8px 14px",textAlign:"center",fontSize:"9px",color:"rgba(255,255,255,0.1)",letterSpacing:"1px",borderTop:"1px solid rgba(26,26,40,0.6)"}}>
+                            CODE ETERNAL — Your site lives forever
+                          </div>
+                        </>);
+                      })()}
                     </div>
                   </div>
                 </div>
