@@ -505,8 +505,7 @@ function applyBgMove(st:BgState, from:number|"bar", to:number|"off", dieIdx:numb
 }
 
 function bgCanMove(st:BgState): boolean {
-  return st.dice.some((_,i)=>!st.usedDice[i]&&bgValidMoves({...st,usedDice:st.usedDice.map((u,j)=>j===i?true:u),...{usedDice:st.usedDice}},st.dice[i]).length>0) ||
-    st.dice.some((_,i)=>!st.usedDice[i]&&bgValidMoves(st,st.dice[i]).length>0);
+  return st.dice.some((d,i)=>!st.usedDice[i]&&bgValidMoves(st,d).length>0);
 }
 
 function Backgammon() {
@@ -518,7 +517,7 @@ function Backgammon() {
     const dice=d1===d2?[d1,d1,d1,d1]:[d1,d2];
     const ns={...st, dice, usedDice:Array(dice.length).fill(false), phase:"move" as const, msg:`Rolled ${dice.join(", ")}. Select a checker.`, selected:null};
     // check if can move
-    const canMv=dice.some((_,i)=>bgValidMoves({...ns,usedDice:ns.usedDice.map((_,j)=>j===i?true:false),...{usedDice:ns.usedDice}},dice[i]).length>0);
+    const canMv=dice.some(d=>bgValidMoves(ns,d).length>0);
     if(!canMv){ setSt({...ns, msg:`No moves available! Turn passes.`}); endTurn({...ns}); return; }
     setSt(ns);
   }
