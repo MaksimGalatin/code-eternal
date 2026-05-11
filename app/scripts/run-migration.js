@@ -2,9 +2,11 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const client = new Client({
-  connectionString: 'postgresql://neondb_owner:npg_ETuoDYl0fG9L@ep-odd-rain-alm1m69x.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require'
-});
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL env var is required');
+  process.exit(1);
+}
+const client = new Client({ connectionString: process.env.DATABASE_URL });
 
 const sql = fs.readFileSync(path.join(__dirname, 'migrate.sql'), 'utf8');
 
