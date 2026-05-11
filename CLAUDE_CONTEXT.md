@@ -79,19 +79,21 @@ code-eternal/
 
 ### Frontend
 - Squarespace — landing page (live)
-- Next.js 14 + TypeScript + Tailwind — app (`app/src/` directory)
+- Next.js 16 + TypeScript + Tailwind — app (`app/src/` directory)
 - **Vercel** — hosting for Next.js app (moved from Hetzner 2026-05-09, auto-deploys on push to main)
   - Project: `app.codeofdigitaleternity.com` (ID: `prj_DrlUafVTqw3AGdxG8wiLrr92RG1r`)
   - Root Directory: `app`, framework: Next.js, Node: 24.x
   - All env vars set via Vercel CLI (see Environment Variables section)
 
 ### Auth & Payments
-- Privy (privy.io) — Google login + hidden Solana wallet (embedded, user never sees seed phrase)
+- Privy 3.x (privy.io) — Google login + hidden Solana wallet (embedded, user never sees seed phrase)
   - App ID: `cmoofvdt4008o0cjps5l8nvnu`
-  - ✅ Embedded wallets enabled (`createOnLogin: "users-without-wallets"`) — HTTPS is live
+  - ✅ Embedded wallets enabled (`createOnLogin: "off"`, Solana wallet created explicitly via `createWallet()`) — HTTPS is live
   - Allowed origin: `https://app.codeofdigitaleternity.com`
+  - RPC configured via `config.solana.rpcs["solana:devnet"]` using `createSolanaRpc`/`createSolanaRpcSubscriptions` from `@solana/kit`
+  - `signAndSendTransaction` must pass `chain: "solana:devnet"` or Privy defaults to mainnet
 - MoonPay via Privy `useFundWallet` — card → USDC on-ramp directly to embedded wallet (production)
-- Devnet: mock USDC airdrop via `/api/devnet/airdrop-usdc` (1100 USDC, no card needed)
+- Devnet: mock USDC airdrop via `/api/devnet/airdrop-usdc` (10,000 USDC, no card needed)
 - Flow: `Google login → Privy wallet → process_payment tx → Helius webhook → listener → site-gen → Arweave`
 
 ### Blockchain
@@ -151,7 +153,8 @@ Listener:
   → updates users.tier in Neon PostgreSQL
   → sends HTML email via Resend (PDF guide is post-hackathon)
   → sends Telegram notification via Grammy bot (post-hackathon)
-  → HTTP POST to site-gen:3002/jobs (direct, no SQS; deduplication: skips if job row already exists)
+  → if wallet has no done job: HTTP POST to site-gen:3002/jobs (direct, no SQS; deduplication: skips if tx_signature already exists)
+  → if wallet already has a done job: marks new job done immediately with existing arweave_url (no site-gen dispatch — preserves user's custom site)
 
 site-gen (Docker, /jobs endpoint):
   → compile HTML from template using user data (Handlebars, app/site-gen/src/templates/site.html)
@@ -165,10 +168,12 @@ User sees: Arweave URL shown in cabinet site status panel
 UI-triggered site regeneration (from Site tab):
   User fills form (username, bio, manifesto, social links) → clicks "Create Eternal Site"
   → POST /api/site/create (Next.js API)
-    → checks tier > 0 in DB (403 if no subscription)
-    → updates users.display_name
+    → Privy JWT auth — verifies caller owns the wallet
+    → checks tier > 0 + subscription not expired (403 if no active subscription)
+    → checks regen count limit (Tier 1: 1, Tier 2: 5, Tier 3: 10 per subscription period)
+    → saves display_name, username, bio, manifesto, telegram, twitter, website to users table (COALESCE — preserves existing if not provided)
     → inserts new site_generation_jobs row with synthetic tx_signature (ui-regen-{wallet}-{ts})
-    → fire-and-forget POST to site-gen:3002/jobs with all custom fields
+    → waitUntil() POST to site-gen:3002/jobs with all custom fields including avatarDataUrl
   → cabinet navigates to Cabinet tab showing pending status
   → site-gen generates and deploys exactly like payment-triggered flow
 ```
@@ -193,11 +198,12 @@ Backend → award_memory() on-chain → adds memory_score to UserState
 ### Neon PostgreSQL Schema
 
 ```sql
-users (id, wallet, email, display_name, referrer_id, ref_code, tier, tier_expires,
-       tg_chat_id, tg_link_token, created_at)
+users (id, wallet, email, display_name, username, referrer_id, ref_code, tier, tier_expires,
+       tg_chat_id, tg_link_token, site_bio, site_manifesto, site_telegram, site_twitter,
+       site_website, created_at)
 referral_payments (id, payer_wallet, referrer_wallet, level, amount_usdc, tx_hash, tier, created_at)
 burn_events (id, amount, tx_hash, created_at)
-site_generation_jobs (id, wallet, tier, tx_signature, status, arweave_url, completed_at, error_message, created_at)  -- listener writes; site-gen reads.
+site_generation_jobs (id, wallet, tier, tx_signature, status, arweave_url text, completed_at, error_message, created_at)  -- listener writes; site-gen reads.
 applications_1000 (id, fio, contact, language, avatar_desc, reason, status, created_at)
 ```
 
@@ -643,7 +649,9 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Direct HTTP listener→site-gen | Simpler than SQS for single-VM setup; no AWS dependency |
 | Vercel SITE_GEN_URL = https://listener.codeofdigitaleternity.com | site-gen /jobs is publicly exposed via nginx; protected by SITE_GEN_SECRET Bearer token |
 | `.transaction()` + `wallet.sendTransaction()` instead of Anchor `rpc()` | Anchor's `rpc()` is incompatible with Privy embedded wallets — throws "Expected Buffer". Must build tx manually, set `recentBlockhash`/`feePayer`, then call Privy's `sendTransaction`. Provider is created with empty wallet `{}` (read-only). |
-| `createWallet()` called in `useEffect` on cabinet + buy pages | `createOnLogin: "users-without-wallets"` only creates EVM wallets — Solana wallet must be explicitly created via `useSolanaWallets().createWallet()` |
+| `createWallet()` called in `useEffect` on cabinet + buy pages | `createOnLogin: "off"` — Solana wallet must be explicitly created via `useSolanaWallets().createWallet()` |
+| `next/dynamic(..., { ssr: false })` for cabinet + buy pages | `force-dynamic` does NOT prevent SSR in App Router — Privy hooks crash during SSR. Must use `next/dynamic` with `ssr: false` to truly skip server rendering. |
+| `chain: "solana:devnet"` in `signAndSendTransaction` | Privy 3.x embedded wallets default to `solana:mainnet` — must pass chain explicitly or get "No RPC configuration found" error |
 
 ### File Structure
 
@@ -680,7 +688,8 @@ app/src/
 
 ```json
 "@coral-xyz/anchor": "^0.30.1"
-"@privy-io/react-auth": "^1.82.0"
+"@privy-io/react-auth": "^3.x"
+"@solana/kit": "latest"
 "@solana/web3.js": "^1.98.0"
 "@solana/spl-token": "^0.4.9"
 "nanoid": "^5.0.7"
@@ -746,8 +755,9 @@ app/listener/src/
 4. Write `referral_payments` rows for each referral level present
 5. Upsert `users.tier` for payer wallet
 6. Send HTML email via Resend (dynamic import)
-7. Check `site_generation_jobs` for existing row (deduplication)
-8. Insert job row + HTTP POST to `site-gen:3002/jobs` (all tiers get a site)
+7. Check `site_generation_jobs` for existing row (deduplication by tx_signature)
+8. Insert job row; if wallet already has a `done` job → mark new job done with existing URL, skip site-gen dispatch
+9. If no existing done job (first payment) → HTTP POST to `site-gen:3002/jobs`
 
 ---
 
@@ -757,6 +767,8 @@ app/listener/src/
 **Entry:** `app/site-gen/src/index.ts` — Express app, single POST `/jobs`
 
 **Irys node:** `https://devnet.irys.xyz` (matches Solana devnet) — mainnet will use `https://node2.irys.xyz`
+**Irys URL format:** devnet Irys now returns CDN URLs (`https://<hash>.devnet-1.datasprite-cdn.com/<TX_ID>`). The TX ID is the last path segment — that's what gets stored on-chain (64-byte field). The full URL is stored in `site_generation_jobs.arweave_url` (text column).
+**UpdateCooldown handling:** `update_site_url` on-chain enforces 60s cooldown. `site-gen/src/index.ts` catches `UpdateCooldown` error and retries once after 70s via `updateSiteUrlOnChainWithCooldownRetry()`.
 **Irys wallet:** `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X` — must have devnet SOL to connect
 **Re-fund if needed:** `solana transfer 8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X 0.5 --url devnet --allow-unfunded-recipient`
 
@@ -890,6 +902,27 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **L3 referrer expiry not enforced on-chain** — ref3 always gets paid regardless of their subscription status (would require a 3rd remaining_account; skipped for simplicity)
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
+
+## Changes Applied (2026-05-11, Privy 3.x + Site-Gen fixes)
+
+- **Privy 3.x migration** — upgraded `@privy-io/react-auth` to 3.x. Key API changes:
+  - `config.solanaClusters` → `config.solana.rpcs` using `createSolanaRpc`/`createSolanaRpcSubscriptions` from `@solana/kit`
+  - `signAndSendTransaction` now requires `chain: "solana:devnet"` — without it Privy defaults to `solana:mainnet` and throws "No RPC configuration found"
+  - `toSolanaWalletConnectors` import moved to `@privy-io/react-auth/solana`
+- **SSR fix for cabinet + buy pages** — `export const dynamic = 'force-dynamic'` does NOT prevent SSR in Next.js App Router. Fix: `export default dynamic(() => Promise.resolve({ default: PageComponent }), { ssr: false })` using `next/dynamic`. Without this, Privy hooks crash during SSR with "useWallets was called outside the PrivyProvider".
+- **CSP updated** — added `https://fonts.googleapis.com` to `style-src` and `https://fonts.gstatic.com` to `font-src` (Privy 3.x loads Inter from Google Fonts).
+- **site-gen cooldown retry** — `update_site_url` on-chain has a 60s cooldown. If two site-gen jobs fire within 60s (e.g. payment job + UI regen), the second hits `UpdateCooldown`. Fixed: `updateSiteUrlOnChainWithCooldownRetry()` catches `UpdateCooldown`, waits 70s, retries once.
+- **retry-site-url.js** — fixed hardcoded `arweave.net` prefix; now uses `IRYS_BASE_URL` env var (defaults to `https://devnet.irys.xyz`).
+- **arweave_url column widened** — `site_generation_jobs.arweave_url` was `varchar(100)`; Irys CDN URLs are 129+ chars. Widened to `text`.
+- **Irys CDN URL format** — Irys devnet now returns `https://<hash>.devnet-1.datasprite-cdn.com/<TX_ID>` instead of `https://devnet.irys.xyz/<TX_ID>`. Both formats work; the TX ID is still the last path segment and is stored on-chain.
+- **Listener: skip site-gen if user already has a site** — payment webhooks used to always dispatch a new (default) site, overwriting any custom site the user had created. Fix: if the wallet already has a `done` job in `site_generation_jobs`, the new job is immediately marked done with the existing `arweave_url` — no site-gen dispatch. First-time payment still generates a default site.
+- **DB: site custom fields saved to users table** — `site_bio`, `site_manifesto`, `site_telegram`, `site_twitter`, `site_website` columns added to `users`. `/api/site/create` persists these via `COALESCE` (only updates non-null fields) so future UI regenerations preserve the user's last saved values.
+- **Neon PostgreSQL schema updated**:
+  - `users` table: added `site_bio text`, `site_manifesto text`, `site_telegram varchar(32)`, `site_twitter varchar(15)`, `site_website varchar(256)`
+  - `site_generation_jobs.arweave_url`: widened from `varchar(100)` to `text`
+- **`add-site-columns.js`** — migration script at `app/scripts/add-site-columns.js` (already run against Neon).
+- **tsconfig.json** — updated for Next.js 16: `moduleResolution: "bundler"`, `jsx: "react-jsx"`, plugins `[{ "name": "next" }]`.
+- **next.config.js** — removed `eslint` block (not supported in Next.js 16); kept `turbopack: {}`.
 
 ## Changes Applied (2026-05-13, Cloudflare Worker Passport)
 
