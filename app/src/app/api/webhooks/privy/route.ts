@@ -49,12 +49,14 @@ export async function POST(req: Request) {
 
     if (wallet?.address) {
       try {
+        // Only sync email for existing users — do NOT insert new rows here.
+        // User creation (with referrer_id from the ref link) happens exclusively
+        // in /api/users/register called from the cabinet on first load.
+        // If we inserted here first (without refCode), the referrer_id would be
+        // lost because register's ON CONFLICT clause cannot overwrite it (strict mode).
         await db.query(
-          `INSERT INTO users (wallet, email, ref_code, created_at)
-           VALUES ($1, $2, $3, NOW())
-           ON CONFLICT (wallet) DO UPDATE SET
-             email = COALESCE(EXCLUDED.email, users.email)`,
-          [wallet.address, email, nanoid(8)]
+          `UPDATE users SET email = COALESCE($2, email) WHERE wallet = $1`,
+          [wallet.address, email]
         );
       } catch (err: any) {
         console.error("privy webhook db error:", err.message);
