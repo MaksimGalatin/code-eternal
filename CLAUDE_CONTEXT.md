@@ -901,7 +901,7 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **Referral system — strict mode** — Privy webhook changed to `UPDATE` only (no INSERT). `/api/users/register` is the sole creator of user rows and always has `refCode` context. `ON CONFLICT` clause never updates `referrer_id` (locked at first registration).
 - **buy/page.tsx** — `process_payment` now reads referral chain from on-chain `UserState` for already-registered users to prevent `InvalidReferral` errors from DB/chain mismatch.
 - **Passport redesign (site-gen)** — Passport ID (`CE-XXXXXXXX`), wallet identicon (7×7 symmetric SVG), Solana Pay QR code, chip decoration strip added to Arweave passport template.
-- **Cabinet preview** — passport-style preview with identicon, QR placeholder, Passport ID, tier-colored gradient.
+- **Cabinet preview** — full passport-accurate preview in Site tab: 3-column header (Solana Blockchain + seal SVG + Document Type), identity section with photo frame + VERIFIED badge + 2-col fields grid (Full Name, Passport ID, Issue Date, Network, Storage, Digital Identity, Telegram, Twitter/X, Website), crypto strip with 7×7 identicon (same algo as `arweave.ts`) + chip SVG + QR placeholder, scroll-card content area for bio/manifesto, MRZ Blockchain Proof section, Arweave footer.
 - **web/ — AI agent markup** — `schema-org.ts` SITE_URL fixed to `aifa.digital` (was hardcoded to wrong domain); `/public/llms.txt` added (llmstxt.org standard); `<link rel="alternate" type="text/plain" title="LLMs.txt">` added to `<head>`; `article:modified_time` updated.
 
 ## Changes Applied (2026-05-11, Privy 3.x + Site-Gen fixes)
@@ -1061,12 +1061,15 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - `app/scripts/retry-site-url.js` — manually calls update_site_url on-chain + marks job done in DB (edit WALLET/ARWEAVE_TX_ID/JOB_ID before running)
 - `app/scripts/check-jobs.js` — prints site_generation_jobs rows for test wallet
 
-## Devnet Wallet Balances (as of 2026-05-07)
+## Devnet Wallet Balances (as of 2026-05-12)
 
-| Wallet | Address | SOL Balance | Notes |
-|--------|---------|------------|-------|
-| Local deployer | `7GJm1GVk...` | ~2.5 SOL | Funded via faucet.solana.com |
-| Backend Authority | `96JwAJL2...` | ~1.5 SOL | Funded 2026-05-07 (was 0 → caused Generation failed) |
-| Irys Wallet | `8NpeaoihG...` | ~1.5 SOL | Funded 2026-05-07 |
-| Mint Authority | `9NJhwafwj...` | ~7.3 SOL | Airdrops 0.005 SOL + 1100 USDC per new user |
-| Ecosystem Fund | `CkiiA1BE...` | 0 SOL | Receives USDC only, no SOL needed |
+| Wallet | Address | SOL | USDC | Notes |
+|--------|---------|-----|------|-------|
+| Local deployer | `7GJm1GVkuPtSGg5ht37qdyccPkbqELSqLAqrMppUxZLr` | **12.45 SOL** | — | Upgrade authority; large reserve |
+| Mint Authority | `9NJhwafwj7HSHAj4fvgkmsPqFRT4PFtyqtnvS9ERf2Sv` | **7.11 SOL** | — | Airdrops 0.005 SOL + 10,000 USDC per new user; ~1400 users remaining |
+| Irys Wallet | `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X` | **1.50 SOL** | — | Arweave uploads; sufficient for hundreds of sites |
+| Backend Authority | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` | **1.50 SOL** | — | Signs `update_site_url` on-chain |
+| Ecosystem Fund | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` | 0 SOL | **545 USDC** | Receives 5% of each payment |
+| Vault PDA (treasury) | `4tL3hpb5VnujtirGtNbRxWyCq7LEbh4hkFGstdUxHNqt` | 0 SOL | **7,085 USDC** | PDA from seeds=["vault"]; 65% of all payments |
+
+**Total test volume:** ~$10,900 USDC processed through the contract (7085 / 0.65). No wallets need topping up as of 2026-05-12.
