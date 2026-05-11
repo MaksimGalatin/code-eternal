@@ -97,6 +97,18 @@ export async function POST(req: Request) {
     const tierExpires: number = parseInt(userRow.rows[0].tier_expires ?? "0", 10);
     const registeredAt: Date = userRow.rows[0].created_at;
 
+    // Check username availability before any regen-limit accounting so a taken
+    // username never costs the user one of their limited site-creation attempts.
+    if (username) {
+      const taken = await client.query(
+        "SELECT 1 FROM users WHERE username = $1 AND wallet != $2 LIMIT 1",
+        [username.toLowerCase(), wallet]
+      );
+      if (taken.rows.length > 0) {
+        return NextResponse.json({ error: "username_taken" }, { status: 409 });
+      }
+    }
+
     const limit = REGEN_LIMIT[tier] ?? 1;
     const periodStart = tierExpires > 0 ? tierExpires - 30 * 86400 : 0;
     const regenRes = await client.query(
@@ -196,7 +208,10 @@ export async function POST(req: Request) {
     })());
 
     return NextResponse.json({ jobId });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === "23505" && err.constraint?.includes("username")) {
+      return NextResponse.json({ error: "username_taken" }, { status: 409 });
+    }
     console.error("site/create error:", err);
     return NextResponse.json({ error: "internal error" }, { status: 500 });
   } finally {

@@ -282,13 +282,17 @@ function CabinetPage() {
       });
       if (!r.ok) {
         const err = await r.json();
-        setSiteError(err.error || "Failed to create site");
+        if (r.status === 409 && err.error === "username_taken") {
+          setUsernameErr(t("site.usernameTaken", lang));
+        } else {
+          setSiteError(t("site.errorFailed", lang));
+        }
         return;
       }
       setSiteStatus({ status: "pending", tier: currentTier });
       setActiveTab("cabinet");
-    } catch (e: any) {
-      setSiteError(e.message || "Network error");
+    } catch {
+      setSiteError(t("site.errorNetwork", lang));
     } finally {
       setSiteCreating(false);
     }
@@ -901,13 +905,13 @@ function CabinetPage() {
                       <label htmlFor="site-username" style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
                         <span>👤</span> {t("site.username", lang)} <span style={{ color: "#ef4444" }}>*</span>
                       </label>
-                      <div style={{ display: "flex", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)", borderRadius: "10px", overflow: "hidden" }}>
+                      <div style={{ display: "flex", background: "rgb(19,19,28)", border: `1px solid ${usernameErr ? "#ef4444" : "rgb(42,42,58)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-color 0.15s" }}>
                         <input id="site-username" type="text" value={siteUsername}
                           onChange={e => {
                             const raw = e.target.value;
                             const filtered = raw.replace(/[^a-z0-9_-]/gi, "").toLowerCase();
                             setSiteUsername(filtered);
-                            setUsernameErr(filtered.length < raw.length ? "Latin characters only: a–z, 0–9, _ and –" : "");
+                            setUsernameErr(filtered.length < raw.length ? t("site.latinOnly", lang) : "");
                           }}
                           placeholder="yourname"
                           style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
