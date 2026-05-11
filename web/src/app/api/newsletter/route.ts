@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isValidEmail(email: string): boolean {
+  const at = email.indexOf("@");
+  if (at < 1 || at === email.length - 1) return false;
+  const domain = email.slice(at + 1);
+  const dot = domain.lastIndexOf(".");
+  return dot > 0 && dot < domain.length - 1 && !/\s/.test(email);
+}
 const DATA_FILE = path.join(process.cwd(), "data", "newsletter.json");
 
 interface Subscriber {
@@ -35,7 +41,7 @@ export async function POST(request: Request) {
 
     const trimmed = email.trim().toLowerCase();
 
-    if (!EMAIL_REGEX.test(trimmed)) {
+    if (!isValidEmail(trimmed)) {
       return NextResponse.json(
         { success: false, error: "Invalid email format. Please provide a valid email address." },
         { status: 400 }

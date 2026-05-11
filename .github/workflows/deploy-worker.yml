@@ -10,6 +10,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy Passport Worker
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: cloudflare/wrangler-action@v3

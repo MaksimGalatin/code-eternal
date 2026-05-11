@@ -3,6 +3,14 @@ import { db } from "@/lib/db";
 import { nanoid } from "nanoid";
 import { PublicKey } from "@solana/web3.js";
 
+function isValidEmail(email: string): boolean {
+  const at = email.indexOf("@");
+  if (at < 1 || at === email.length - 1) return false;
+  const domain = email.slice(at + 1);
+  const dot = domain.lastIndexOf(".");
+  return dot > 0 && dot < domain.length - 1 && !/\s/.test(email);
+}
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { wallet, email, refCode } = body as {
@@ -13,7 +21,7 @@ export async function POST(req: Request) {
 
   if (!wallet) return NextResponse.json({ error: "wallet required" }, { status: 400 });
   try { new PublicKey(wallet); } catch { return NextResponse.json({ error: "invalid wallet" }, { status: 400 }); }
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  if (email && !isValidEmail(email))
     return NextResponse.json({ error: "invalid email" }, { status: 400 });
 
   const client = await db.connect();
