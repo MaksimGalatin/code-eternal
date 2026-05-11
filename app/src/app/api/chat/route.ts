@@ -11,7 +11,7 @@ You are upbeat, helpful, and knowledgeable about:
 - Solana blockchain, Arweave permanent storage, Privy wallets
 - The platform is on Solana Devnet currently, launching mainnet soon
 
-Keep responses concise (2-4 sentences), engaging, and use relevant emojis. Refer to users as "Guardian". Always respond in English.`;
+Keep responses concise (2-4 sentences), engaging, and use relevant emojis. Refer to users as "Guardian". Always respond in the same language the user writes in.`;
 
 export async function POST(req: Request) {
   if (rateLimit(getIp(req), 20, 60_000) !== null) {
