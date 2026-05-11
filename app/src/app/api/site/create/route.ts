@@ -114,12 +114,27 @@ export async function POST(req: Request) {
       );
     }
 
-    if (displayName) {
-      await client.query("UPDATE users SET display_name = $1 WHERE wallet = $2", [displayName, wallet]);
-    }
-    if (username) {
-      await client.query("UPDATE users SET username = $1 WHERE wallet = $2", [username.toLowerCase(), wallet]);
-    }
+    await client.query(
+      `UPDATE users SET
+        display_name = COALESCE($1, display_name),
+        username = COALESCE($2, username),
+        site_bio = COALESCE($3, site_bio),
+        site_manifesto = COALESCE($4, site_manifesto),
+        site_telegram = COALESCE($5, site_telegram),
+        site_twitter = COALESCE($6, site_twitter),
+        site_website = COALESCE($7, site_website)
+       WHERE wallet = $8`,
+      [
+        displayName || null,
+        username ? username.toLowerCase() : null,
+        bio || null,
+        manifesto || null,
+        telegramClean || null,
+        twitterClean || null,
+        website || null,
+        wallet,
+      ]
+    );
 
     const jobRow = await client.query(
       "SELECT tx_signature FROM site_generation_jobs WHERE wallet = $1 ORDER BY created_at DESC LIMIT 1",

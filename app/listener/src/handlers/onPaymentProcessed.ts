@@ -229,7 +229,23 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
   // Send confirmation email (non-fatal)
   await sendConfirmationEmail(payerWallet, tier, signature, totalUsdc);
 
-  // Dispatch to site-gen with exponential-backoff retry
+  // If the user already has a completed site (from a previous payment or UI regen),
+  // skip generating a new one — their eternal site stays as-is.
+  const existingSite = await db.query(
+    "SELECT arweave_url FROM site_generation_jobs WHERE wallet = $1 AND status = 'done' ORDER BY id DESC LIMIT 1",
+    [payerWallet]
+  );
+  if (existingSite.rows.length > 0) {
+    const existingUrl = existingSite.rows[0].arweave_url;
+    await db.query(
+      "UPDATE site_generation_jobs SET status = 'done', arweave_url = $1, completed_at = NOW() WHERE id = $2",
+      [existingUrl, jobId]
+    );
+    logger.info(`Job ${jobId}: user already has a site (${existingUrl}), skipping site-gen dispatch`);
+    return;
+  }
+
+  // First-time payment — dispatch to site-gen
   const siteGenUrl = process.env.SITE_GEN_URL || "http://site-gen:3002";
   const siteGenSecret = process.env.SITE_GEN_SECRET;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
