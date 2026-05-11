@@ -41,6 +41,19 @@ app.post("/jobs", async (req, res) => {
   });
 });
 
+async function updateSiteUrlOnChainWithCooldownRetry(wallet: string, arweaveUrl: string, jobId: number) {
+  try {
+    await updateSiteUrlOnChain(wallet, arweaveUrl);
+  } catch (err: any) {
+    const isCooldown = String(err).includes("UpdateCooldown");
+    if (!isCooldown) throw err;
+    // Contract enforces 60s cooldown between updates — wait 70s and retry once
+    logger.info(`Job ${jobId}: UpdateCooldown hit, retrying in 70s...`);
+    await new Promise(r => setTimeout(r, 70_000));
+    await updateSiteUrlOnChain(wallet, arweaveUrl);
+  }
+}
+
 async function processJob(job: any) {
   logger.info(`Processing job: ${job.jobId} for wallet: ${job.wallet}`);
 
@@ -54,7 +67,7 @@ async function processJob(job: any) {
 
     const arweaveUrl = await generateAndDeploy({ ...job, displayName });
 
-    await updateSiteUrlOnChain(job.wallet, arweaveUrl);
+    await updateSiteUrlOnChainWithCooldownRetry(job.wallet, arweaveUrl, job.jobId);
 
     await db.query(
       `UPDATE site_generation_jobs
@@ -66,25 +79,6 @@ async function processJob(job: any) {
     logger.info(`Site ready: ${arweaveUrl} for ${job.wallet}`);
   } catch (err) {
     logger.error(`Generation error for job ${job.jobId}:`, err);
-
-    // If on-chain update failed (e.g. cooldown from a concurrent job), read the
-    // on-chain state directly — if Arweave URL is already set, site is deployed.
-    try {
-      await new Promise(r => setTimeout(r, 3000)); // wait for concurrent job to settle
-      const onChainUrl = await readOnChainArweaveUrl(job.wallet);
-      if (onChainUrl) {
-        await db.query(
-          `UPDATE site_generation_jobs
-           SET status = 'done', arweave_url = $1, completed_at = NOW(), error_message = NULL
-           WHERE id = $2`,
-          [onChainUrl, job.jobId]
-        );
-        logger.info(`Job ${job.jobId} marked done via on-chain URL: ${onChainUrl}`);
-        return;
-      }
-    } catch (onChainErr) {
-      logger.error(`Failed to read on-chain state for ${job.wallet}:`, onChainErr);
-    }
 
     await db.query(
       `UPDATE site_generation_jobs

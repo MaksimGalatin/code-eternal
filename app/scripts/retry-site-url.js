@@ -9,9 +9,9 @@ const anchor = require("@coral-xyz/anchor");
 const { Pool } = require("pg");
 const path = require("path");
 
-const WALLET = "AAefXLA3iWp7iyekpvtgZpe9q6zUGWLfxgpSCYfw7qtw";
-const ARWEAVE_TX_ID = "i5be1vAMzMgAEyhkpmzWfLxu3QPRRfyMX85AdjvejSU";
-const JOB_ID = 3;
+const WALLET = "FxQwRzBWd9JDg86fFeD7GHpWUZRpcEcGA48aT279SMmF";
+const ARWEAVE_TX_ID = "7FKqjxXZKGTttKsdMVDkEEiZePV3Uz8cYvTGbcL8S3xR";
+const JOB_ID = 66;
 
 async function main() {
   console.log("=== Retry update_site_url ===");
@@ -61,7 +61,8 @@ async function main() {
 
   // Step 2: Update DB
   const db = new Pool({ connectionString: process.env.DATABASE_URL });
-  const arweaveUrl = `https://arweave.net/${ARWEAVE_TX_ID}`;
+  const irysBase = process.env.IRYS_BASE_URL || "https://devnet.irys.xyz";
+  const arweaveUrl = `${irysBase}/${ARWEAVE_TX_ID}`;
   await db.query(
     `UPDATE site_generation_jobs
      SET status = 'done', arweave_url = $1, completed_at = NOW(), error_message = NULL
