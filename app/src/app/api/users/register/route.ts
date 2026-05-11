@@ -38,7 +38,8 @@ export async function POST(req: Request) {
       `INSERT INTO users (wallet, email, ref_code, referrer_id)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (wallet) DO UPDATE
-         SET email = COALESCE(EXCLUDED.email, users.email)
+         SET email       = COALESCE(EXCLUDED.email, users.email),
+             referrer_id = COALESCE(users.referrer_id, EXCLUDED.referrer_id)
        RETURNING id, ref_code`,
       [wallet, email ?? null, nanoid(12), referrerId]
     );

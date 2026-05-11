@@ -144,15 +144,49 @@ function BuyPageInner() {
       const ecosystemFundTokenAccount  = await getAssociatedTokenAddress(usdcMint, ECOSYSTEM_FUND_WALLET);
       const payerTokenAccount          = await getAssociatedTokenAddress(usdcMint, payer);
 
+      // Fetch DB referral chain as fallback for new users
       const refRes = await fetch(`/api/referrals/chain?wallet=${wallet.address}`);
-      const { ref1, ref2, ref3 } = await refRes.json();
+      const { ref1: dbRef1, ref2: dbRef2, ref3: dbRef3 } = await refRes.json();
+
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+
+      setStep("registering");
+      // Check on-chain registration; if already registered, derive the referral chain
+      // from on-chain state to stay in sync with what the contract enforces.
+      let needsRegister = false;
+      let ref1: string | null = dbRef1;
+      let ref2: string | null = dbRef2;
+      let ref3: string | null = dbRef3;
+
+      try {
+        const onChain: any = await (program.account as any).userState.fetch(userStatePDA);
+        // Already registered — use on-chain referrer chain (contract validates against this)
+        ref1 = onChain.referrer ? onChain.referrer.toBase58() : null;
+        ref2 = null;
+        ref3 = null;
+        if (ref1) {
+          try {
+            const r1Pda = PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref1).toBuffer()], PROGRAM_ID)[0];
+            const r1: any = await (program.account as any).userState.fetch(r1Pda);
+            ref2 = r1.referrer ? r1.referrer.toBase58() : null;
+          } catch { /* ref2 stays null */ }
+        }
+        if (ref2) {
+          try {
+            const r2Pda = PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref2).toBuffer()], PROGRAM_ID)[0];
+            const r2: any = await (program.account as any).userState.fetch(r2Pda);
+            ref3 = r2.referrer ? r2.referrer.toBase58() : null;
+          } catch { /* ref3 stays null */ }
+        }
+      } catch {
+        needsRegister = true;
+        // Keep DB-derived refs — they become the on-chain referrer chain via registerUser below
+      }
 
       const ref1TokenAccount = ref1 ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref1)) : payerTokenAccount;
       const ref2TokenAccount = ref2 ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref2)) : payerTokenAccount;
       const ref3TokenAccount = ref3 ? await getAssociatedTokenAddress(usdcMint, new PublicKey(ref3)) : payerTokenAccount;
 
-      // UserState PDAs for referrers — passed as remaining accounts so the contract
-      // can verify the chain matches what was stored on-chain at register_user time.
       const ref1StatePda = ref1
         ? PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref1).toBuffer()], PROGRAM_ID)[0]
         : null;
@@ -160,11 +194,6 @@ function BuyPageInner() {
         ? PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref2).toBuffer()], PROGRAM_ID)[0]
         : null;
 
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-
-      setStep("registering");
-      let needsRegister = false;
-      try { await (program.account as any).userState.fetch(userStatePDA); } catch { needsRegister = true; }
       if (needsRegister) {
         const registerTx = await program.methods.registerUser(ref1 ? new PublicKey(ref1) : null)
           .accounts({ payer, userState: userStatePDA, systemProgram: SystemProgram.programId })
