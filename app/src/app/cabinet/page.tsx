@@ -1088,7 +1088,7 @@ function CabinetPage() {
                           {/* Social links */}
                           {(siteTelegram||siteTwitter||siteWebUrl)&&(
                             <div style={{padding:"8px 14px",display:"flex",gap:"6px",flexWrap:"wrap",justifyContent:"center"}}>
-                              {siteTelegram&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>📱 {siteTelegram}</span>}
+                              {siteTelegram&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>📱 {siteTelegram.startsWith("+") ? "Telegram" : siteTelegram}</span>}
                               {siteTwitter&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>𝕏 {siteTwitter}</span>}
                               {siteWebUrl&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>🌐 site</span>}
                             </div>

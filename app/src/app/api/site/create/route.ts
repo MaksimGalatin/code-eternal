@@ -15,6 +15,7 @@ const AVATAR_MAX_LEN = 120_000;
 const AVATAR_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
 const TWITTER_RE = /^[A-Za-z0-9_]{1,15}$/;
 const TELEGRAM_RE = /^[A-Za-z0-9_]{5,32}$/;
+const TELEGRAM_INVITE_RE = /^\+[A-Za-z0-9_-]{10,}$/;
 const WEBSITE_RE = /^https:\/\/[^\s]{1,200}$/;
 
 export async function POST(req: Request) {
@@ -71,8 +72,8 @@ export async function POST(req: Request) {
   const telegramClean = telegram
     ?.replace(/^https?:\/\/(t\.me|telegram\.me)\//i, "")
     .replace(/^@/, "")
-    .split("?")[0].split("/")[0];
-  if (telegramClean && !TELEGRAM_RE.test(telegramClean))
+    .split("?")[0].replace(/\/$/, "");
+  if (telegramClean && !TELEGRAM_RE.test(telegramClean) && !TELEGRAM_INVITE_RE.test(telegramClean))
     return NextResponse.json({ error: "invalid telegram handle" }, { status: 400 });
   const twitterClean = twitter
     ?.replace(/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i, "")
