@@ -209,11 +209,11 @@ export default function HeroSection() {
         <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" style={{ animation: "scan-line 8s linear infinite" }} />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center overflow-hidden">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 newsletter-border">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse-glow" />
-          <span className="text-xs md:text-sm text-cyan-400 font-mono tracking-wider">{t("hero.badge", lang)}</span>
+          className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full glass mb-8 newsletter-border max-w-full">
+          <span className="w-2 h-2 shrink-0 rounded-full bg-cyan-400 animate-pulse-glow" />
+          <span className="text-[10px] sm:text-xs md:text-sm text-cyan-400 font-mono tracking-normal sm:tracking-wider truncate">{t("hero.badge", lang)}</span>
           <OnlineVisitors />
           <SignalStrength />
         </motion.div>
@@ -246,7 +246,7 @@ export default function HeroSection() {
         </motion.h1>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.8 }}
-          className="text-lg md:text-xl text-muted-foreground font-mono tracking-[0.15em] mb-8">
+          className="text-sm sm:text-base md:text-xl text-muted-foreground font-mono tracking-[0.06em] sm:tracking-[0.12em] md:tracking-[0.15em] mb-8 px-2">
           {t("hero.subtitle", lang)}
         </motion.p>
 
