@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-3-mini",
+        model: "grok-3",
         messages,
         max_tokens: 2000,
         temperature: 0.8,
