@@ -226,6 +226,69 @@
     }
     .social-field:hover { text-decoration: underline; }
 
+    /* ── CRYPTO CHIP ──────────────────────────────── */
+    .crypto-strip {
+      padding: 16px 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .identicon-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .identicon-label {
+      font-size: 7px; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(255,255,255,0.18);
+    }
+
+    .qr-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .qr-frame {
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      background: #0D0D1A;
+    }
+    .qr-frame img { display: block; border-radius: 4px; }
+    .qr-label {
+      font-size: 7px; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(255,255,255,0.18);
+      text-align: center;
+    }
+    .qr-hint {
+      font-size: 9px;
+      color: rgba(255,255,255,0.25);
+      text-align: center;
+    }
+
+    .chip-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .chip-svg-wrap { opacity: 0.6; }
+    .chip-tagline {
+      font-size: 9px; letter-spacing: 0.16em;
+      color: rgba(255,255,255,0.22);
+      text-transform: uppercase;
+      text-align: center;
+    }
+
     /* ── MRZ ───────────────────────────────────────── */
     .mrz {
       background: rgba(0,0,0,0.28);
@@ -334,28 +397,28 @@
         <span class="f-label">Full Name</span>
         <span class="f-value lg">{{name}}</span>
       </div>
-      {{#if username}}
-      <div class="field span2">
-        <span class="f-label">Handle</span>
-        <span class="f-value accent">@{{username}}.aifa.digital</span>
-      </div>
-      {{/if}}
       <div class="field">
-        <span class="f-label">Network</span>
-        <span class="f-value sm">Solana</span>
+        <span class="f-label">Passport ID</span>
+        <span class="f-value accent">{{passportId}}</span>
       </div>
       <div class="field">
         <span class="f-label">Issue Date</span>
         <span class="f-value sm">{{registeredAt}}</span>
       </div>
       <div class="field">
-        <span class="f-label">Access Tier</span>
-        <span class="f-value accent">{{tier}}</span>
+        <span class="f-label">Network</span>
+        <span class="f-value sm">Solana</span>
       </div>
       <div class="field">
         <span class="f-label">Storage</span>
         <span class="f-value sm">Arweave ∞</span>
       </div>
+      {{#if username}}
+      <div class="field span2">
+        <span class="f-label">Digital Identity</span>
+        <a href="https://{{username}}.codeofdigitaleternity.com" class="f-value social-field">🌐 {{username}}.codeofdigitaleternity.com</a>
+      </div>
+      {{/if}}
       {{#if telegram}}
       <div class="field span2">
         <span class="f-label">Telegram</span>
@@ -376,6 +439,53 @@
       {{/if}}
     </div>
   </section>
+
+  <!-- ── Crypto Chip Strip ── -->
+  <div class="crypto-strip">
+    <!-- Identicon -->
+    <div class="identicon-wrap">
+      {{{identiconSvg}}}
+      <span class="identicon-label">Wallet Print</span>
+    </div>
+
+    <!-- Center chip decoration -->
+    <div class="chip-center">
+      <div class="chip-svg-wrap">
+        <svg width="48" height="36" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="46" height="34" rx="5" stroke="{{tierColor}}" stroke-opacity="0.4" stroke-width="1"/>
+          <rect x="6" y="6" width="36" height="24" rx="3" stroke="{{tierColor}}" stroke-opacity="0.25" stroke-width="0.8"/>
+          <line x1="16" y1="1" x2="16" y2="6" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="24" y1="1" x2="24" y2="6" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="32" y1="1" x2="32" y2="6" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="16" y1="30" x2="16" y2="35" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="24" y1="30" x2="24" y2="35" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="32" y1="30" x2="32" y2="35" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="1" y1="12" x2="6" y2="12" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="1" y1="18" x2="6" y2="18" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="1" y1="24" x2="6" y2="24" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="42" y1="12" x2="47" y2="12" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="42" y1="18" x2="47" y2="18" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <line x1="42" y1="24" x2="47" y2="24" stroke="{{tierColor}}" stroke-opacity="0.35" stroke-width="1"/>
+          <rect x="13" y="10" width="22" height="16" rx="2" fill="{{tierColor}}" fill-opacity="0.08" stroke="{{tierColor}}" stroke-opacity="0.2" stroke-width="0.6"/>
+          <line x1="18" y1="10" x2="18" y2="26" stroke="{{tierColor}}" stroke-opacity="0.15" stroke-width="0.6"/>
+          <line x1="24" y1="10" x2="24" y2="26" stroke="{{tierColor}}" stroke-opacity="0.15" stroke-width="0.6"/>
+          <line x1="30" y1="10" x2="30" y2="26" stroke="{{tierColor}}" stroke-opacity="0.15" stroke-width="0.6"/>
+          <line x1="13" y1="15" x2="35" y2="15" stroke="{{tierColor}}" stroke-opacity="0.15" stroke-width="0.6"/>
+          <line x1="13" y1="21" x2="35" y2="21" stroke="{{tierColor}}" stroke-opacity="0.15" stroke-width="0.6"/>
+        </svg>
+      </div>
+      <span class="chip-tagline">Solana Pay</span>
+    </div>
+
+    <!-- QR Code -->
+    <div class="qr-wrap">
+      <div class="qr-frame">
+        <img src="{{qrDataUrl}}" width="100" height="100" alt="Solana Pay QR"/>
+      </div>
+      <span class="qr-label">Scan to Send</span>
+      <span class="qr-hint">Phantom · Solflare · Any Solana wallet</span>
+    </div>
+  </div>
 
   <!-- ── Content ── -->
   {{#if bio}}
