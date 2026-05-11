@@ -5,18 +5,6 @@
 
 ---
 
-## Team
-
-| Person | Role |
-|--------|------|
-| **Maksim Shchuplov** | Platform/DevOps Engineer — builds and operates the system |
-| **Maksim Galatin** | Idea author and product owner — defines what gets built |
-
-Maksim Shchuplov: 16 years IT, Master's in Engineering. Stack: AWS, Kubernetes, Terraform, CI/CD.
-Working on AI tooling (MCP servers, developer skills) at a large Baltic bank in Vilnius.
-
----
-
 ## What is CODE ETERNAL
 
 A Web3 service on Solana where a regular person who knows nothing about crypto:
