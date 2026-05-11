@@ -8,7 +8,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { useLang, t } from "@/lib/i18n";
 import LangSwitcher from "@/components/LangSwitcher";
-import ChessGame from "@/components/ChessGame";
+import GamesArena from "@/components/GamesArena";
 import DaoTab from "@/components/DaoTab";
 import MetricsTab from "@/components/MetricsTab";
 
@@ -1061,7 +1061,7 @@ function CabinetPage() {
           {activeTab === "metrics" && <MetricsTab recentTxns={recentTxns} />}
 
           {/* ══════════ GAMES TAB ══════════ */}
-          {activeTab === "games" && <ChessGame />}
+          {activeTab === "games" && <GamesArena />}
 
           {/* ══════════ DAO TAB ══════════ */}
           {activeTab === "dao" && <DaoTab />}
