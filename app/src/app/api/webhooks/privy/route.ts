@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
-import { nanoid } from "nanoid";
 
 function verifySignature(rawBody: Buffer, signature: string, secret: string): boolean {
   const expected = crypto
