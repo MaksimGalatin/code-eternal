@@ -1,5 +1,5 @@
 'use client';
-export const dynamic = 'force-dynamic';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, Suspense } from "react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -497,10 +497,12 @@ const S = {
   } as React.CSSProperties,
 };
 
-export default function BuyPage() {
+function BuyPage() {
   return (
     <Suspense fallback={<div style={{ background: "#0A0A0F", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B6B7E", fontFamily: "Inter,sans-serif" }}>...</div>}>
       <BuyPageInner />
     </Suspense>
   );
 }
+
+export default dynamic(() => Promise.resolve({ default: BuyPage }), { ssr: false });

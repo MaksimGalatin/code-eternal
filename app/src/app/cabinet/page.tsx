@@ -1,5 +1,5 @@
 'use client';
-export const dynamic = 'force-dynamic';
+import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -73,7 +73,7 @@ const INIT_ALFA_MSGS: { from: "bot"|"user"; text: string }[] = [
 ];
 
 
-export default function CabinetPage() {
+function CabinetPage() {
   const router = useRouter();
   const { user, logout, authenticated, ready, getAccessToken } = usePrivy();
   const { wallets } = useWallets();
@@ -1191,3 +1191,5 @@ export default function CabinetPage() {
     </>
   );
 }
+
+export default dynamic(() => Promise.resolve({ default: CabinetPage }), { ssr: false });
