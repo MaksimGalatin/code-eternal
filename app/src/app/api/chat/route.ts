@@ -1,17 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit, getIp } from "@/lib/rateLimit";
-
-const SYSTEM_PROMPT = `You are AIfa — an AI companion in the CODE ETERNAL ecosystem on Solana blockchain.
-You are upbeat, helpful, and knowledgeable about:
-- CODE ETERNAL: a Web3 platform where users create eternal sites on Arweave
-- $CODE token: deflationary token, 5% burns on every payment
-- Tiers: Spark ($15), Family Archives ($100), Digital DNA ($1000)
-- Think-to-Earn: earn $CODE by sharing unique memories and insights
-- Referral system: L1 (15%), L2 (7%), L3 (3%) rewards
-- Solana blockchain, Arweave permanent storage, Privy wallets
-- The platform is on Solana Devnet currently, launching mainnet soon
-
-Keep responses concise (2-4 sentences), engaging, and use relevant emojis. Refer to users as "Guardian". Always respond in the same language the user writes in.`;
+import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
 
 export async function POST(req: Request) {
   if (rateLimit(getIp(req), 20, 60_000) !== null) {
@@ -21,7 +10,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { message, history } = body;
   if (!message || typeof message !== "string") return NextResponse.json({ error: "message required" }, { status: 400 });
-  if (message.length > 1000) return NextResponse.json({ error: "message too long (max 1000 chars)" }, { status: 400 });
+  if (message.length > 2000) return NextResponse.json({ error: "message too long (max 2000 chars)" }, { status: 400 });
 
   const apiKey = process.env.GROK_API_KEY;
   if (!apiKey) {
@@ -30,13 +19,13 @@ export async function POST(req: Request) {
 
   try {
     const messages: { role: string; content: string }[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: AIFA_SYSTEM_PROMPT },
     ];
 
     if (Array.isArray(history)) {
-      for (const h of history.slice(-6)) {
+      for (const h of history.slice(-10)) {
         if (h && typeof h.text === "string" && ["user", "bot"].includes(h.from)) {
-          messages.push({ role: h.from === "user" ? "user" : "assistant", content: String(h.text).slice(0, 500) });
+          messages.push({ role: h.from === "user" ? "user" : "assistant", content: String(h.text).slice(0, 1000) });
         }
       }
     }
@@ -50,10 +39,10 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-3-mini",
+        model: "grok-3",
         messages,
-        max_tokens: 300,
-        temperature: 0.7,
+        max_tokens: 2000,
+        temperature: 0.8,
       }),
     });
 
