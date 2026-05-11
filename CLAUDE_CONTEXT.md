@@ -831,7 +831,7 @@ Vercel auto-deploys on every push to `main`. No manual steps needed.
 
 To force a redeploy via API:
 ```bash
-TOKEN=vca_2dtE9NS4sX1ltVmhMJJUQnCu5E95XMHwa2uXWFCmhUmSTCEi6j2aPocN
+TOKEN=<your-vercel-token>   # generate at vercel.com/account/tokens — do NOT commit real tokens
 curl -s -X POST "https://api.vercel.com/v13/deployments?teamId=team_iNXQxvTVpuw5xoVdOQKhevnD" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"app.codeofdigitaleternity.com","project":"prj_DrlUafVTqw3AGdxG8wiLrr92RG1r","gitSource":{"type":"github","repoId":1211486674,"ref":"main"}}'
