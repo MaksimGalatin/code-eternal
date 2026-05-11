@@ -1033,69 +1033,173 @@ function CabinetPage() {
                         const tr  = tierObj?.rgb   ?? "124,58,237";
                         const addr = wallet?.address ?? "";
                         const passId = addr ? `CE-${addr.slice(0,8).toUpperCase()}` : "CE---------";
-                        // Mini 5×5 symmetric identicon
-                        const CELL=7, ROWS=5, COLS=3;
+                        // 7×7 symmetric identicon matching generateIdenticon() in arweave.ts
+                        const IC=7, IP=2, IR=7, ICOLS=4;
+                        const IW=7*IC+IP*2;
                         const iRects: {x:number,y:number}[] = [];
-                        for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-                          const ch=addr.charCodeAt((r*COLS+c)%Math.max(addr.length,1));
-                          if(!isNaN(ch)&&ch%2===0){
-                            iRects.push({x:c*CELL,y:r*CELL});
-                            if(c<2) iRects.push({x:(4-c)*CELL,y:r*CELL});
+                        for(let row=0;row<IR;row++) for(let col=0;col<ICOLS;col++){
+                          const idx=(row*ICOLS+col)%Math.max(addr.length,1);
+                          if(addr.length>0&&addr.charCodeAt(idx)%2===0){
+                            iRects.push({x:IP+col*IC,y:IP+row*IC});
+                            if(col<3) iRects.push({x:IP+(6-col)*IC,y:IP+row*IC});
                           }
                         }
-                        const IW=5*CELL+2;
-                        // 7×7 QR-looking placeholder grid (corner marks + scattered cells)
+                        // QR placeholder grid
                         const QR_ON=new Set([0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,36,37,38,39,40,41,42,43,44,47,48,10,11,17,18,24,25,31,32,45,46]);
+                        const fLabel: React.CSSProperties = {fontSize:"6px",color:"rgba(255,255,255,0.28)",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:"1px"};
+                        const fVal: React.CSSProperties   = {fontSize:"9px",color:"rgba(232,232,240,0.75)",wordBreak:"break-word"};
+                        const fValAcc: React.CSSProperties= {fontSize:"9px",color:tc,fontFamily:"monospace",wordBreak:"break-word"};
                         return (<>
-                          {/* Passport header */}
-                          <div style={{padding:"9px 14px",background:`linear-gradient(135deg,rgba(${tr},0.12),transparent)`,borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <div style={{fontSize:"8px",fontWeight:800,letterSpacing:"0.22em",color:tc}}>CODE ETERNAL</div>
-                            <div style={{fontSize:"8px",color:"rgba(232,232,240,0.35)",fontFamily:"monospace"}}>{passId}</div>
+                          {/* ── Header ── */}
+                          <div style={{padding:"8px 12px",background:`linear-gradient(135deg,rgba(${tr},0.1),transparent)`,borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"4px"}}>
+                            <div style={{display:"flex",flexDirection:"column",gap:"1px"}}>
+                              <span style={{fontSize:"6px",color:"rgba(255,255,255,0.38)",letterSpacing:"0.18em",textTransform:"uppercase"}}>Solana Blockchain</span>
+                              <span style={{fontSize:"11px",fontWeight:800,letterSpacing:"0.12em",color:tc}}>Code Eternal</span>
+                            </div>
+                            <svg width="30" height="30" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="23" cy="23" r="22" stroke={tc} strokeOpacity="0.28" strokeWidth="1"/>
+                              <circle cx="23" cy="23" r="16.5" stroke={tc} strokeOpacity="0.15" strokeWidth="0.6"/>
+                              <polygon points="23,9 26.4,18.9 37,18.9 28.3,24.9 31.7,34.8 23,28.8 14.3,34.8 17.7,24.9 9,18.9 19.6,18.9" fill={tc} fillOpacity="0.13" stroke={tc} strokeOpacity="0.38" strokeWidth="0.6"/>
+                            </svg>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"1px"}}>
+                              <span style={{fontSize:"6px",color:"rgba(255,255,255,0.25)",letterSpacing:"0.1em",textTransform:"uppercase"}}>Document Type</span>
+                              <span style={{fontSize:"8px",fontWeight:700,color:"rgba(232,232,240,0.65)",letterSpacing:"0.06em"}}>Digital Passport</span>
+                              <span style={{fontSize:"7px",color:tc,letterSpacing:"0.05em"}}>{tierObj ? t(tierObj.nameKey, lang) : "—"}</span>
+                            </div>
                           </div>
-                          {/* Identity */}
-                          <div style={{padding:"16px 20px 10px",display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-                            {avatarDataUrl
-                              ? <img src={avatarDataUrl} alt="" style={{width:"56px",height:"56px",borderRadius:"50%",objectFit:"cover",border:`2px solid rgba(${tr},0.5)`,marginBottom:"10px"}}/>
-                              : <div style={{width:"56px",height:"56px",borderRadius:"50%",background:`linear-gradient(135deg,${tc},#06B6D4)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",marginBottom:"10px",border:`2px solid rgba(${tr},0.4)`}}>{tierObj?.icon??"◆"}</div>
-                            }
-                            <div style={{fontWeight:800,fontSize:"15px",color:"rgb(232,232,240)",marginBottom:"3px"}}>
-                              {siteDisplayName||<span style={{color:"rgb(42,42,58)"}}>Your Name</span>}
-                            </div>
-                            <div style={{fontSize:"11px",color:tc,marginBottom:"8px",fontFamily:"monospace"}}>
-                              {siteUsername?`@${siteUsername}`:<span style={{color:"rgb(42,42,58)"}}>@username</span>}
-                            </div>
-                            {siteBio&&<div style={{fontSize:"11px",color:"rgb(139,139,158)",marginBottom:"8px",maxWidth:"220px",lineHeight:1.5,wordBreak:"break-word",overflowWrap:"break-word"}}>{siteBio}</div>}
-                            {siteManifesto&&<div style={{fontSize:"10px",color:"rgb(107,114,128)",fontStyle:"italic",maxWidth:"220px",marginBottom:"6px",wordBreak:"break-word",overflowWrap:"break-word"}}>"{siteManifesto}"</div>}
-                          </div>
-                          {/* Crypto strip — identicon + chip label + QR placeholder */}
-                          <div style={{padding:"10px 16px",background:"rgba(0,0,0,0.18)",borderTop:"1px solid rgba(255,255,255,0.05)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px"}}>
-                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
-                              <svg width={IW} height={IW} viewBox={`0 0 ${IW} ${IW}`} xmlns="http://www.w3.org/2000/svg">
-                                {iRects.map((r,i)=><rect key={i} x={r.x+1} y={r.y+1} width={CELL-1} height={CELL-1} rx="1" fill={tc} opacity="0.72"/>)}
-                              </svg>
-                              <span style={{fontSize:"5px",color:"rgba(255,255,255,0.25)",letterSpacing:"0.15em",textTransform:"uppercase"}}>Wallet Print</span>
-                            </div>
-                            <div style={{flex:1,textAlign:"center",fontSize:"7px",color:"rgba(255,255,255,0.22)",letterSpacing:"0.14em",textTransform:"uppercase"}}>Solana Pay</div>
-                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
-                              <div style={{width:"37px",height:"37px",padding:"3px",background:"#0D0D1A",borderRadius:"5px",border:"1px solid rgba(255,255,255,0.08)",display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"1px"}}>
-                                {Array.from({length:49}).map((_,i)=>(
-                                  <div key={i} style={{background:QR_ON.has(i)?tc:"transparent",borderRadius:"1px"}}/>
-                                ))}
+
+                          {/* ── Identity ── */}
+                          <div style={{padding:"10px 12px",display:"flex",gap:"10px",alignItems:"flex-start",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                            {/* Photo zone */}
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"4px",flexShrink:0}}>
+                              <div style={{width:"52px",height:"64px",borderRadius:"4px",background:"rgba(0,0,0,0.4)",border:`1px solid rgba(${tr},0.35)`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                                {avatarDataUrl
+                                  ? <img src={avatarDataUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                                  : <span style={{fontSize:"18px",color:tc,opacity:0.7}}>◆</span>
+                                }
                               </div>
-                              <span style={{fontSize:"5px",color:"rgba(255,255,255,0.25)",letterSpacing:"0.15em",textTransform:"uppercase"}}>Scan to Send</span>
+                              <div style={{display:"flex",alignItems:"center",gap:"2px",background:"rgba(16,185,129,0.12)",borderRadius:"8px",padding:"1px 5px"}}>
+                                <div style={{width:"3px",height:"3px",borderRadius:"50%",background:"#10B981"}}/>
+                                <span style={{fontSize:"5px",color:"#10B981",fontWeight:700,letterSpacing:"0.1em"}}>VERIFIED</span>
+                              </div>
+                            </div>
+                            {/* Fields grid */}
+                            <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:"5px 8px"}}>
+                              <div style={{gridColumn:"span 2"}}>
+                                <div style={fLabel}>Full Name</div>
+                                <div style={{fontSize:"12px",fontWeight:700,color:"rgba(232,232,240,0.92)",wordBreak:"break-word"}}>{siteDisplayName||<span style={{color:"rgba(255,255,255,0.12)"}}>Your Name</span>}</div>
+                              </div>
+                              <div>
+                                <div style={fLabel}>Passport ID</div>
+                                <div style={fValAcc}>{passId}</div>
+                              </div>
+                              <div>
+                                <div style={fLabel}>Issue Date</div>
+                                <div style={fVal}>{new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
+                              </div>
+                              <div>
+                                <div style={fLabel}>Network</div>
+                                <div style={fVal}>Solana</div>
+                              </div>
+                              <div>
+                                <div style={fLabel}>Storage</div>
+                                <div style={fVal}>Arweave ∞</div>
+                              </div>
+                              {siteUsername&&<div style={{gridColumn:"span 2"}}>
+                                <div style={fLabel}>Digital Identity</div>
+                                <div style={fValAcc}>🌐 {siteUsername}.codeofdigitaleternity.com</div>
+                              </div>}
+                              {siteTelegram&&<div style={{gridColumn:"span 2"}}>
+                                <div style={fLabel}>Telegram</div>
+                                <div style={fVal}>📱 {siteTelegram.startsWith("+")?"Telegram":`@${siteTelegram}`}</div>
+                              </div>}
+                              {siteTwitter&&<div style={{gridColumn:"span 2"}}>
+                                <div style={fLabel}>Twitter / X</div>
+                                <div style={fVal}>𝕏 @{siteTwitter}</div>
+                              </div>}
+                              {siteWebUrl&&<div style={{gridColumn:"span 2"}}>
+                                <div style={fLabel}>Website</div>
+                                <div style={{...fVal,wordBreak:"break-all"}}>🌐 {siteWebUrl}</div>
+                              </div>}
                             </div>
                           </div>
-                          {/* Social links */}
-                          {(siteTelegram||siteTwitter||siteWebUrl)&&(
-                            <div style={{padding:"8px 14px",display:"flex",gap:"6px",flexWrap:"wrap",justifyContent:"center"}}>
-                              {siteTelegram&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>📱 {siteTelegram.startsWith("+") ? "Telegram" : siteTelegram}</span>}
-                              {siteTwitter&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>𝕏 {siteTwitter}</span>}
-                              {siteWebUrl&&<span style={{fontSize:"10px",background:`rgba(${tr},0.15)`,color:tc,padding:"2px 7px",borderRadius:"20px"}}>🌐 site</span>}
+
+                          {/* ── Crypto strip ── */}
+                          <div style={{padding:"8px 12px",background:"rgba(0,0,0,0.15)",borderBottom:"1px solid rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:"6px"}}>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+                              <svg width={IW} height={IW} viewBox={`0 0 ${IW} ${IW}`} xmlns="http://www.w3.org/2000/svg" style={{display:"block"}}>
+                                {iRects.map((r,i)=><rect key={i} x={r.x} y={r.y} width={IC-1} height={IC-1} rx="1" fill={tc} opacity="0.75"/>)}
+                              </svg>
+                              <span style={{fontSize:"5px",color:"rgba(255,255,255,0.18)",letterSpacing:"0.22em",textTransform:"uppercase"}}>Wallet Print</span>
+                            </div>
+                            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
+                              <div style={{opacity:0.6}}>
+                                <svg width="36" height="27" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <rect x="1" y="1" width="46" height="34" rx="5" stroke={tc} strokeOpacity="0.4" strokeWidth="1"/>
+                                  <rect x="6" y="6" width="36" height="24" rx="3" stroke={tc} strokeOpacity="0.25" strokeWidth="0.8"/>
+                                  <line x1="16" y1="1" x2="16" y2="6" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="24" y1="1" x2="24" y2="6" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="32" y1="1" x2="32" y2="6" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="16" y1="30" x2="16" y2="35" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="24" y1="30" x2="24" y2="35" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="32" y1="30" x2="32" y2="35" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="1" y1="12" x2="6" y2="12" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="1" y1="18" x2="6" y2="18" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="1" y1="24" x2="6" y2="24" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="42" y1="12" x2="47" y2="12" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="42" y1="18" x2="47" y2="18" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <line x1="42" y1="24" x2="47" y2="24" stroke={tc} strokeOpacity="0.35" strokeWidth="1"/>
+                                  <rect x="13" y="10" width="22" height="16" rx="2" fill={tc} fillOpacity="0.08" stroke={tc} strokeOpacity="0.2" strokeWidth="0.6"/>
+                                  <line x1="18" y1="10" x2="18" y2="26" stroke={tc} strokeOpacity="0.15" strokeWidth="0.6"/>
+                                  <line x1="24" y1="10" x2="24" y2="26" stroke={tc} strokeOpacity="0.15" strokeWidth="0.6"/>
+                                  <line x1="30" y1="10" x2="30" y2="26" stroke={tc} strokeOpacity="0.15" strokeWidth="0.6"/>
+                                  <line x1="13" y1="15" x2="35" y2="15" stroke={tc} strokeOpacity="0.15" strokeWidth="0.6"/>
+                                  <line x1="13" y1="21" x2="35" y2="21" stroke={tc} strokeOpacity="0.15" strokeWidth="0.6"/>
+                                </svg>
+                              </div>
+                              <span style={{fontSize:"6px",color:"rgba(255,255,255,0.22)",letterSpacing:"0.16em",textTransform:"uppercase"}}>Solana Pay</span>
+                            </div>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}}>
+                              <div style={{padding:"4px",background:"#0D0D1A",borderRadius:"5px",border:"1px solid rgba(255,255,255,0.08)"}}>
+                                <div style={{width:"49px",height:"49px",display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"1px"}}>
+                                  {Array.from({length:49}).map((_,i)=>(
+                                    <div key={i} style={{background:QR_ON.has(i)?tc:"transparent",borderRadius:"1px"}}/>
+                                  ))}
+                                </div>
+                              </div>
+                              <span style={{fontSize:"5px",color:"rgba(255,255,255,0.18)",letterSpacing:"0.22em",textTransform:"uppercase",textAlign:"center"}}>Scan to Send</span>
+                            </div>
+                          </div>
+
+                          {/* ── Content ── */}
+                          {(siteBio||siteManifesto)&&(
+                            <div style={{padding:"8px 12px",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                              {siteBio&&<div style={{marginBottom:siteManifesto?"6px":0,background:"rgba(255,255,255,0.03)",borderRadius:"6px",padding:"6px 8px"}}>
+                                <div style={{fontSize:"6px",color:"rgba(255,255,255,0.28)",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:"3px"}}>About</div>
+                                <div style={{fontSize:"9px",color:"rgba(232,232,240,0.65)",lineHeight:1.5,wordBreak:"break-word"}}>{siteBio}</div>
+                              </div>}
+                              {siteManifesto&&<div style={{background:"rgba(255,255,255,0.03)",borderRadius:"6px",padding:"6px 8px"}}>
+                                <div style={{fontSize:"6px",color:"rgba(255,255,255,0.28)",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:"3px"}}>Manifesto</div>
+                                <div style={{fontSize:"9px",color:"rgba(232,232,240,0.55)",lineHeight:1.5,fontStyle:"italic",wordBreak:"break-word"}}>"{siteManifesto}"</div>
+                              </div>}
                             </div>
                           )}
-                          {/* Footer */}
-                          <div style={{padding:"8px 14px",textAlign:"center",fontSize:"9px",color:"rgba(255,255,255,0.1)",letterSpacing:"1px",borderTop:"1px solid rgba(26,26,40,0.6)"}}>
-                            CODE ETERNAL — Your site lives forever
+
+                          {/* ── MRZ / Blockchain Proof ── */}
+                          <div style={{padding:"7px 12px",background:"rgba(0,0,0,0.28)",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                            <div style={{fontSize:"6px",color:"rgba(255,255,255,0.22)",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:"4px",paddingBottom:"3px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>Blockchain Proof</div>
+                            <div style={{fontSize:"7px",fontFamily:"monospace",letterSpacing:"0.04em",lineHeight:1.8}}>
+                              <div style={{display:"flex",gap:"6px"}}><span style={{color:"rgba(255,255,255,0.28)",flexShrink:0}}>WALLET</span><span style={{wordBreak:"break-all",color:"rgba(232,232,240,0.45)"}}>{addr||"—"}</span></div>
+                            </div>
+                          </div>
+
+                          {/* ── Footer ── */}
+                          <div style={{padding:"6px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                              <div style={{width:"4px",height:"4px",borderRadius:"50%",background:"#10B981"}}/>
+                              <span style={{fontSize:"8px",color:"rgba(255,255,255,0.18)"}}>Stored permanently on Arweave</span>
+                            </div>
+                            <span style={{fontSize:"8px",color:"rgba(255,255,255,0.12)",letterSpacing:"0.08em"}}>2026</span>
                           </div>
                         </>);
                       })()}
