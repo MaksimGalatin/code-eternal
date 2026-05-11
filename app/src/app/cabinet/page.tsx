@@ -283,7 +283,7 @@ function CabinetPage() {
       if (!r.ok) {
         const err = await r.json();
         if (r.status === 409 && err.error === "username_taken") {
-          setSiteError(t("site.usernameTaken", lang));
+          setUsernameErr(t("site.usernameTaken", lang));
         } else {
           setSiteError(err.error || "Failed to create site");
         }
@@ -905,7 +905,7 @@ function CabinetPage() {
                       <label htmlFor="site-username" style={{ fontSize: "12px", color: "rgb(107,114,128)", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
                         <span>👤</span> {t("site.username", lang)} <span style={{ color: "#ef4444" }}>*</span>
                       </label>
-                      <div style={{ display: "flex", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)", borderRadius: "10px", overflow: "hidden" }}>
+                      <div style={{ display: "flex", background: "rgb(19,19,28)", border: `1px solid ${usernameErr ? "#ef4444" : "rgb(42,42,58)"}`, borderRadius: "10px", overflow: "hidden", transition: "border-color 0.15s" }}>
                         <input id="site-username" type="text" value={siteUsername}
                           onChange={e => {
                             const raw = e.target.value;
