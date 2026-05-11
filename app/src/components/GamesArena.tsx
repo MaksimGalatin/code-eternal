@@ -1,5 +1,17 @@
 'use client';
-import React, { memo, useState, useCallback } from "react";
+import React, { memo, useState, useEffect } from "react";
+import { useLang, t } from "@/lib/i18n";
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return mobile;
+}
 
 // ─── Chess (extracted from ChessGame.tsx) ────────────────────────────────────
 const CHESS_PIECES: Record<string, string> = {
@@ -45,6 +57,8 @@ function chessAiMove(board:ChessBoard):ChessBoard|null{
 }
 
 function Chess() {
+  const mobile = useIsMobile();
+  const cell = mobile ? 36 : 44;
   const [board, setBoard] = useState(initChessBoard);
   const [selected, setSelected] = useState<[number,number]|null>(null);
   const [legalMoves, setLegalMoves] = useState<[number,number][]>([]);
@@ -95,10 +109,10 @@ function Chess() {
         {status==="black_wins"&&<span style={{fontWeight:700,color:"#ef4444"}}>💀 AIfa wins!</span>}
         {status==="playing"&&<span style={{fontWeight:600,color:"rgb(232,232,240)"}}>{whiteTurn?"♔ White to move":"⏳ AIfa thinking…"}</span>}
       </div>
-      <div style={{display:"flex",justifyContent:"center",marginBottom:"12px"}}>
+      <div style={{display:"flex",justifyContent:"center",marginBottom:"12px",overflowX:"auto"}}>
         <div className="glass-panel" style={{padding:"10px",display:"inline-block"}}>
           <div style={{display:"flex",paddingLeft:"20px",marginBottom:"2px"}}>
-            {["a","b","c","d","e","f","g","h"].map(l=><div key={l} style={{width:"44px",textAlign:"center",fontSize:"10px",color:"rgb(107,114,128)"}}>{l}</div>)}
+            {["a","b","c","d","e","f","g","h"].map(l=><div key={l} style={{width:`${cell}px`,textAlign:"center",fontSize:"10px",color:"rgb(107,114,128)"}}>{l}</div>)}
           </div>
           {board.map((row,r)=>(
             <div key={r} style={{display:"flex",alignItems:"center"}}>
@@ -108,10 +122,10 @@ function Chess() {
                 const isSel=selected?.[0]===r&&selected?.[1]===c;
                 const isLegal=legalMoves.some(([lr,lc])=>lr===r&&lc===c);
                 return (
-                  <button key={c} onClick={()=>handleClick(r,c)} style={{width:"44px",height:"44px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",border:"none",cursor:"pointer",position:"relative",
+                  <button key={c} onClick={()=>handleClick(r,c)} style={{width:`${cell}px`,height:`${cell}px`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:mobile?"16px":"20px",border:"none",cursor:"pointer",position:"relative",
                     background:isSel?"rgba(124,58,237,0.45)":isLegal?(isDark?"rgba(16,185,129,0.25)":"rgba(16,185,129,0.18)"):isDark?"rgba(30,27,75,0.7)":"rgba(49,46,129,0.4)",
                     outline:isSel?"2px solid #7C3AED":isLegal&&piece?"2px solid #10B981":"none",transition:"background 0.12s"}}>
-                    {isLegal&&!piece&&<div style={{width:"12px",height:"12px",borderRadius:"50%",background:"rgba(16,185,129,0.6)",pointerEvents:"none"}}/>}
+                    {isLegal&&!piece&&<div style={{width:"10px",height:"10px",borderRadius:"50%",background:"rgba(16,185,129,0.6)",pointerEvents:"none"}}/>}
                     {piece&&<span style={{color:piece.startsWith("w")?"white":"#06B6D4",textShadow:piece.startsWith("w")?"0 0 4px rgba(255,255,255,0.4)":"0 0 4px rgba(6,182,212,0.4)"}}>{CHESS_PIECES[piece]||""}</span>}
                   </button>
                 );
@@ -171,6 +185,8 @@ function tttBestMove(b:TTTBoard):number{
 }
 
 function TicTacToe() {
+  const mobile = useIsMobile();
+  const cell = mobile ? 72 : 80;
   const [board, setBoard] = useState<TTTBoard>(Array(9).fill(null));
   const [xTurn, setXTurn] = useState(true);
   const winner = tttWinner(board);
@@ -204,17 +220,17 @@ function TicTacToe() {
         {!winner&&<span style={{fontWeight:600,color:"rgb(232,232,240)",fontSize:"15px"}}>{xTurn?"✕ Your turn (X)":"⏳ AIfa thinking…"}</span>}
       </div>
       <div className="glass-panel" style={{padding:"16px",display:"inline-block"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,80px)",gridTemplateRows:"repeat(3,80px)",gap:"4px"}}>
-          {board.map((cell,i)=>{
+        <div style={{display:"grid",gridTemplateColumns:`repeat(3,${cell}px)`,gridTemplateRows:`repeat(3,${cell}px)`,gap:"4px"}}>
+          {board.map((sq,i)=>{
             const isWin=winLine?.includes(i);
             return (
               <button key={i} onClick={()=>handleClick(i)} style={{
-                width:"80px",height:"80px",display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:"36px",fontWeight:700,border:"1px solid rgba(124,58,237,0.2)",borderRadius:"8px",cursor:cell||winner?"default":"pointer",
+                width:`${cell}px`,height:`${cell}px`,display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:mobile?"28px":"36px",fontWeight:700,border:"1px solid rgba(124,58,237,0.2)",borderRadius:"8px",cursor:sq||winner?"default":"pointer",
                 background:isWin?"rgba(124,58,237,0.2)":"rgba(15,15,25,0.6)",
-                color:cell==="X"?"#10B981":cell==="O"?"#ef4444":"transparent",
+                color:sq==="X"?"#10B981":sq==="O"?"#ef4444":"transparent",
                 transition:"background 0.1s",fontFamily:"Inter,sans-serif"
-              }}>{cell||"·"}</button>
+              }}>{sq||"·"}</button>
             );
           })}
         </div>
@@ -284,6 +300,9 @@ function applyCheckerMove(b:CheckersBoard, m:CheckerMove): CheckersBoard {
 }
 
 function Checkers() {
+  const mobile = useIsMobile();
+  const cell = mobile ? 38 : 52;
+  const piece = mobile ? 26 : 36;
   const [board, setBoard] = useState(initCheckers);
   const [selected, setSelected] = useState<[number,number]|null>(null);
   const [validMoves, setValidMoves] = useState<CheckerMove[]>([]);
@@ -352,34 +371,36 @@ function Checkers() {
         {status==="black_wins"&&<span style={{fontWeight:700,color:"#ef4444",fontSize:"16px"}}>💀 AIfa wins!</span>}
         {status==="playing"&&<span style={{fontWeight:600,color:"rgb(232,232,240)",fontSize:"15px"}}>{turn==="r"?"⬤ Your turn (Red)":"⏳ AIfa thinking…"}</span>}
       </div>
-      <div className="glass-panel" style={{padding:"10px",display:"inline-block"}}>
-        {board.map((row,r)=>(
-          <div key={r} style={{display:"flex"}}>
-            {row.map((cell,c)=>{
-              const isDark=(r+c)%2===1;
-              const isSel=selected?.[0]===r&&selected?.[1]===c;
-              const isTarget=validMoves.some(m=>m.tr===r&&m.tc===c);
-              return (
-                <button key={c} onClick={()=>handleClick(r,c)} style={{
-                  width:"52px",height:"52px",display:"flex",alignItems:"center",justifyContent:"center",
-                  border:"none",cursor:"pointer",
-                  background:isSel?"rgba(124,58,237,0.4)":isTarget?"rgba(16,185,129,0.25)":isDark?"rgba(20,18,60,0.85)":"rgba(60,50,120,0.35)",
-                  outline:isSel?"2px solid #7C3AED":isTarget?"2px solid #10B981":"none",
-                  transition:"background 0.1s"
-                }}>
-                  {cell&&<div style={{
-                    width:"36px",height:"36px",borderRadius:"50%",
-                    background:cell==="r"||cell==="R"?"#dc2626":"#1e1b4b",
-                    border:cell==="r"||cell==="R"?"2px solid #f87171":"2px solid #60a5fa",
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:"16px",boxShadow:"0 2px 4px rgba(0,0,0,0.4)"
-                  }}>{(cell==="R"||cell==="B")?"♛":""}</div>}
-                  {isTarget&&!cell&&<div style={{width:"14px",height:"14px",borderRadius:"50%",background:"rgba(16,185,129,0.7)",pointerEvents:"none"}}/>}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+      <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch" as any}}>
+        <div className="glass-panel" style={{padding:"10px",display:"inline-block"}}>
+          {board.map((row,r)=>(
+            <div key={r} style={{display:"flex"}}>
+              {row.map((sq,c)=>{
+                const isDark=(r+c)%2===1;
+                const isSel=selected?.[0]===r&&selected?.[1]===c;
+                const isTarget=validMoves.some(m=>m.tr===r&&m.tc===c);
+                return (
+                  <button key={c} onClick={()=>handleClick(r,c)} style={{
+                    width:`${cell}px`,height:`${cell}px`,display:"flex",alignItems:"center",justifyContent:"center",
+                    border:"none",cursor:"pointer",
+                    background:isSel?"rgba(124,58,237,0.4)":isTarget?"rgba(16,185,129,0.25)":isDark?"rgba(20,18,60,0.85)":"rgba(60,50,120,0.35)",
+                    outline:isSel?"2px solid #7C3AED":isTarget?"2px solid #10B981":"none",
+                    transition:"background 0.1s"
+                  }}>
+                    {sq&&<div style={{
+                      width:`${piece}px`,height:`${piece}px`,borderRadius:"50%",
+                      background:sq==="r"||sq==="R"?"#dc2626":"#1e1b4b",
+                      border:sq==="r"||sq==="R"?"2px solid #f87171":"2px solid #60a5fa",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:mobile?"12px":"16px",boxShadow:"0 2px 4px rgba(0,0,0,0.4)"
+                    }}>{(sq==="R"||sq==="B")?"♛":""}</div>}
+                    {isTarget&&!sq&&<div style={{width:"12px",height:"12px",borderRadius:"50%",background:"rgba(16,185,129,0.7)",pointerEvents:"none"}}/>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
       <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
         <div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>
@@ -509,6 +530,10 @@ function bgCanMove(st:BgState): boolean {
 }
 
 function Backgammon() {
+  const mobile = useIsMobile();
+  const ptW = mobile ? 30 : 42;
+  const barW = mobile ? 24 : 32;
+  const chkSz = mobile ? 20 : 28;
   const [st, setSt] = useState<BgState>(initBg);
 
   function roll(){
@@ -617,25 +642,22 @@ function Backgammon() {
     const count=Math.abs(pts[idx]);
     const isWhite=pts[idx]>0;
     const isSel=st.selected===idx;
-    // check if this is a valid target
     const isTarget=st.selected!==null && st.dice.some((_,i)=>{
       if(st.usedDice[i]) return false;
       return bgValidMoves(st,st.dice[i]).some(m=>m.from===st.selected&&m.to===idx);
     });
-
-    // top row: indices 12-23 (top of board, points 13-24), bottom row: indices 0-11 (points 1-12)
     return (
       <button key={idx} onClick={()=>handlePointClick(idx)} style={{
-        width:"42px",minHeight:"52px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"4px 0",
+        width:`${ptW}px`,minHeight:`${ptW+10}px`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"3px 0",
         background:isSel?"rgba(124,58,237,0.3)":isTarget?"rgba(16,185,129,0.2)":"transparent",
         border:isSel?"1px solid #7C3AED":isTarget?"1px solid #10B981":"1px solid transparent",
         borderRadius:"4px",cursor:"pointer",gap:"2px",transition:"background 0.1s"
       }}>
         {Array.from({length:Math.min(count,5)}).map((_,i)=>(
-          <div key={i} style={{width:"28px",height:"28px",borderRadius:"50%",background:isWhite?"#e5e7eb":"#1e1b4b",border:isWhite?"2px solid #9ca3af":"2px solid #60a5fa",flexShrink:0,fontSize:"10px",display:"flex",alignItems:"center",justifyContent:"center",color:isWhite?"#111":"#93c5fd"}}>{i===0&&count>5?count:""}</div>
+          <div key={i} style={{width:`${chkSz}px`,height:`${chkSz}px`,borderRadius:"50%",background:isWhite?"#e5e7eb":"#1e1b4b",border:isWhite?"2px solid #9ca3af":"2px solid #60a5fa",flexShrink:0,fontSize:"9px",display:"flex",alignItems:"center",justifyContent:"center",color:isWhite?"#111":"#93c5fd"}}>{i===0&&count>5?count:""}</div>
         ))}
-        {count>5&&<div style={{fontSize:"10px",color:"rgb(107,114,128)"}}>{count}</div>}
-        {isTarget&&count===0&&<div style={{width:"14px",height:"14px",borderRadius:"50%",background:"rgba(16,185,129,0.7)"}}/>}
+        {count>5&&<div style={{fontSize:"9px",color:"rgb(107,114,128)"}}>{count}</div>}
+        {isTarget&&count===0&&<div style={{width:"12px",height:"12px",borderRadius:"50%",background:"rgba(16,185,129,0.7)"}}/>}
       </button>
     );
   }
@@ -660,27 +682,29 @@ function Backgammon() {
       </div>
 
       {/* Board */}
-      <div className="glass-panel" style={{padding:"8px",display:"inline-block",position:"relative"}}>
-        {/* Top row: points 13-24 (indices 12-23), left to right */}
-        <div style={{display:"flex",gap:"2px",marginBottom:"4px"}}>
-          {[12,13,14,15,16,17].map(i=>renderPoint(i))}
-          {/* Bar */}
-          <button onClick={handleBarClick} style={{width:"32px",minHeight:"52px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:st.selected==="bar"?"rgba(124,58,237,0.3)":"rgba(15,15,25,0.8)",border:st.selected==="bar"?"1px solid #7C3AED":"1px solid rgba(124,58,237,0.2)",borderRadius:"4px",cursor:"pointer",gap:"2px",padding:"4px 0"}}>
-            {st.bar[0]>0&&Array.from({length:Math.min(st.bar[0],3)}).map((_,i)=>(
-              <div key={i} style={{width:"24px",height:"24px",borderRadius:"50%",background:"#e5e7eb",border:"2px solid #9ca3af"}}/>
-            ))}
-            {st.bar[1]>0&&Array.from({length:Math.min(st.bar[1],3)}).map((_,i)=>(
-              <div key={i} style={{width:"24px",height:"24px",borderRadius:"50%",background:"#1e1b4b",border:"2px solid #60a5fa"}}/>
-            ))}
-            <div style={{fontSize:"9px",color:"rgba(107,114,128,0.6)"}}>BAR</div>
-          </button>
-          {[18,19,20,21,22,23].map(i=>renderPoint(i))}
-        </div>
-        {/* Bottom row: points 12-1 (indices 11-0), left to right */}
-        <div style={{display:"flex",gap:"2px",marginTop:"4px"}}>
-          {[11,10,9,8,7,6].map(i=>renderPoint(i))}
-          <div style={{width:"32px"}}/>
-          {[5,4,3,2,1,0].map(i=>renderPoint(i))}
+      <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch" as any,width:"100%"}}>
+        <div className="glass-panel" style={{padding:"8px",display:"inline-block",position:"relative"}}>
+          {/* Top row: points 13-24 (indices 12-23), left to right */}
+          <div style={{display:"flex",gap:"2px",marginBottom:"4px"}}>
+            {[12,13,14,15,16,17].map(i=>renderPoint(i))}
+            {/* Bar */}
+            <button onClick={handleBarClick} style={{width:`${barW}px`,minHeight:`${ptW+10}px`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:st.selected==="bar"?"rgba(124,58,237,0.3)":"rgba(15,15,25,0.8)",border:st.selected==="bar"?"1px solid #7C3AED":"1px solid rgba(124,58,237,0.2)",borderRadius:"4px",cursor:"pointer",gap:"2px",padding:"4px 0"}}>
+              {st.bar[0]>0&&Array.from({length:Math.min(st.bar[0],3)}).map((_,i)=>(
+                <div key={i} style={{width:`${chkSz}px`,height:`${chkSz}px`,borderRadius:"50%",background:"#e5e7eb",border:"2px solid #9ca3af"}}/>
+              ))}
+              {st.bar[1]>0&&Array.from({length:Math.min(st.bar[1],3)}).map((_,i)=>(
+                <div key={i} style={{width:`${chkSz}px`,height:`${chkSz}px`,borderRadius:"50%",background:"#1e1b4b",border:"2px solid #60a5fa"}}/>
+              ))}
+              <div style={{fontSize:"8px",color:"rgba(107,114,128,0.6)"}}>BAR</div>
+            </button>
+            {[18,19,20,21,22,23].map(i=>renderPoint(i))}
+          </div>
+          {/* Bottom row: points 12-1 (indices 11-0), left to right */}
+          <div style={{display:"flex",gap:"2px",marginTop:"4px"}}>
+            {[11,10,9,8,7,6].map(i=>renderPoint(i))}
+            <div style={{width:`${barW}px`}}/>
+            {[5,4,3,2,1,0].map(i=>renderPoint(i))}
+          </div>
         </div>
       </div>
 
@@ -705,17 +729,19 @@ function Backgammon() {
 
 // ─── GamesArena wrapper ───────────────────────────────────────────────────────
 type GameId = "chess"|"ttt"|"checkers"|"backgammon";
-const GAMES: {id:GameId; label:string; icon:string; desc:string}[] = [
-  {id:"chess",       label:"Chess",       icon:"♟", desc:"Classic chess vs AIfa"},
-  {id:"ttt",         label:"Tic-Tac-Toe", icon:"✕", desc:"Perfect minimax AI"},
-  {id:"checkers",    label:"Checkers",    icon:"⬤", desc:"Mandatory captures"},
-  {id:"backgammon",  label:"Backgammon",  icon:"🎲", desc:"Roll & bear off"},
-];
 
 function GamesArena() {
+  const { lang } = useLang();
+  const mobile = useIsMobile();
   const [active, setActive] = useState<GameId>("chess");
-  // key-based remount so switching game resets its state
   const [keys, setKeys] = useState<Record<GameId,number>>({chess:0,ttt:0,checkers:0,backgammon:0});
+
+  const games = [
+    {id:"chess"      as GameId, icon:"♟", label:t("games.chess",lang),       desc:t("games.chess.desc",lang)},
+    {id:"ttt"        as GameId, icon:"✕", label:t("games.ttt",lang),         desc:t("games.ttt.desc",lang)},
+    {id:"checkers"   as GameId, icon:"⬤", label:t("games.checkers",lang),    desc:t("games.checkers.desc",lang)},
+    {id:"backgammon" as GameId, icon:"🎲", label:t("games.backgammon",lang),  desc:t("games.backgammon.desc",lang)},
+  ];
 
   function selectGame(id:GameId){
     setActive(id);
@@ -725,27 +751,28 @@ function GamesArena() {
   return (
     <div style={{maxWidth:"1280px",margin:"0 auto"}}>
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"20px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"16px"}}>
         <div style={{width:"40px",height:"40px",borderRadius:"12px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}}>🎮</div>
         <div>
-          <div style={{fontSize:"18px",fontWeight:700,color:"rgb(232,232,240)"}}>Game Arena</div>
-          <div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>Play against AIfa — your AI companion</div>
+          <div style={{fontSize:"18px",fontWeight:700,color:"rgb(232,232,240)"}}>{t("games.title",lang)}</div>
+          <div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>{t("games.subtitle",lang)}</div>
         </div>
       </div>
 
-      {/* Game selector */}
-      <div style={{display:"flex",gap:"8px",marginBottom:"20px",flexWrap:"wrap"}}>
-        {GAMES.map(g=>(
+      {/* Game selector — 2-col grid on mobile, row on desktop */}
+      <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:"8px",marginBottom:"16px"}}>
+        {games.map(g=>(
           <button key={g.id} onClick={()=>selectGame(g.id)} style={{
-            display:"flex",alignItems:"center",gap:"8px",padding:"10px 18px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.15s",
+            display:"flex",alignItems:"center",gap:"8px",padding:mobile?"8px 12px":"10px 18px",borderRadius:"12px",
+            fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif",transition:"all 0.15s",
             background:active===g.id?"rgba(124,58,237,0.2)":"rgba(15,15,25,0.6)",
             border:active===g.id?"1px solid rgba(124,58,237,0.5)":"1px solid rgba(124,58,237,0.15)",
             color:active===g.id?"#7C3AED":"rgb(107,114,128)"
           }}>
-            <span style={{fontSize:"16px"}}>{g.icon}</span>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start"}}>
-              <span>{g.label}</span>
-              <span style={{fontSize:"10px",fontWeight:400,color:active===g.id?"rgba(124,58,237,0.8)":"rgba(107,114,128,0.7)"}}>{g.desc}</span>
+            <span style={{fontSize:"16px",flexShrink:0}}>{g.icon}</span>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0}}>
+              <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{g.label}</span>
+              <span style={{fontSize:"10px",fontWeight:400,color:active===g.id?"rgba(124,58,237,0.8)":"rgba(107,114,128,0.7)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>{g.desc}</span>
             </div>
           </button>
         ))}

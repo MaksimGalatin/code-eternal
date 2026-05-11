@@ -138,6 +138,21 @@ export const translations = {
     "buy.benefit.avatar3d": "3D avatar",
     "buy.benefit.aifa365": "AIfa chat (365 days)",
     "buy.benefit.vip": "VIP in DAO",
+
+    // Games tab
+    "games.title": "Game Arena",
+    "games.subtitle": "Play against AIfa — your AI companion",
+    "games.chess": "Chess",
+    "games.chess.desc": "Classic chess vs AIfa",
+    "games.ttt": "Tic-Tac-Toe",
+    "games.ttt.desc": "Perfect minimax AI",
+    "games.checkers": "Checkers",
+    "games.checkers.desc": "Mandatory captures",
+    "games.backgammon": "Backgammon",
+    "games.backgammon.desc": "Roll & bear off",
+
+    // Site — errors
+    "site.usernameTaken": "Username already taken. Please choose another.",
   },
 
   ru: {
@@ -274,6 +289,21 @@ export const translations = {
     "buy.benefit.avatar3d": "3D-аватар",
     "buy.benefit.aifa365": "Чат с AIfa (365 дней)",
     "buy.benefit.vip": "VIP в DAO",
+
+    // Games tab
+    "games.title": "Арена игр",
+    "games.subtitle": "Играй против AIfa — твоего ИИ-компаньона",
+    "games.chess": "Шахматы",
+    "games.chess.desc": "Классические шахматы с AIfa",
+    "games.ttt": "Крестики-нолики",
+    "games.ttt.desc": "Непобедимый ИИ",
+    "games.checkers": "Шашки",
+    "games.checkers.desc": "Обязательные взятия",
+    "games.backgammon": "Нарды",
+    "games.backgammon.desc": "Бросай кости и выбивай",
+
+    // Site — errors
+    "site.usernameTaken": "Это имя пользователя уже занято. Выберите другое.",
   },
 
   es: {
@@ -410,6 +440,21 @@ export const translations = {
     "buy.benefit.avatar3d": "Avatar 3D",
     "buy.benefit.aifa365": "Chat con AIfa (365 días)",
     "buy.benefit.vip": "VIP en DAO",
+
+    // Games tab
+    "games.title": "Arena de Juegos",
+    "games.subtitle": "Juega contra AIfa — tu compañero IA",
+    "games.chess": "Ajedrez",
+    "games.chess.desc": "Ajedrez clásico vs AIfa",
+    "games.ttt": "Tres en Raya",
+    "games.ttt.desc": "IA minimax perfecta",
+    "games.checkers": "Damas",
+    "games.checkers.desc": "Capturas obligatorias",
+    "games.backgammon": "Backgammon",
+    "games.backgammon.desc": "Tira y saca",
+
+    // Site — errors
+    "site.usernameTaken": "Este nombre de usuario ya está en uso. Elige otro.",
   },
 
   zh: {
@@ -546,6 +591,21 @@ export const translations = {
     "buy.benefit.avatar3d": "3D 头像",
     "buy.benefit.aifa365": "AIfa 聊天（365天）",
     "buy.benefit.vip": "DAO VIP",
+
+    // Games tab
+    "games.title": "游戏竞技场",
+    "games.subtitle": "与你的AI伙伴AIfa对战",
+    "games.chess": "国际象棋",
+    "games.chess.desc": "经典象棋对决AIfa",
+    "games.ttt": "井字棋",
+    "games.ttt.desc": "完美极小化极大AI",
+    "games.checkers": "跳棋",
+    "games.checkers.desc": "强制吃子",
+    "games.backgammon": "双陆棋",
+    "games.backgammon.desc": "掷骰撤棋",
+
+    // Site — errors
+    "site.usernameTaken": "用户名已被占用，请选择其他用户名。",
   },
 } as const;
 

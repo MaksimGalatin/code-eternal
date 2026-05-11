@@ -282,7 +282,11 @@ function CabinetPage() {
       });
       if (!r.ok) {
         const err = await r.json();
-        setSiteError(err.error || "Failed to create site");
+        if (r.status === 409 && err.error === "username_taken") {
+          setSiteError(t("site.usernameTaken", lang));
+        } else {
+          setSiteError(err.error || "Failed to create site");
+        }
         return;
       }
       setSiteStatus({ status: "pending", tier: currentTier });

@@ -196,7 +196,10 @@ export async function POST(req: Request) {
     })());
 
     return NextResponse.json({ jobId });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === "23505" && err.constraint?.includes("username")) {
+      return NextResponse.json({ error: "username_taken" }, { status: 409 });
+    }
     console.error("site/create error:", err);
     return NextResponse.json({ error: "internal error" }, { status: 500 });
   } finally {
