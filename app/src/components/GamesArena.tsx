@@ -620,7 +620,7 @@ function Backgammon() {
     // check if this is a valid target
     const isTarget=st.selected!==null && st.dice.some((_,i)=>{
       if(st.usedDice[i]) return false;
-      return bgValidMoves(st,st.dice[i]).some(m=>(m.from===st.selected||m.from==="bar"===st.selected)&&m.to===idx);
+      return bgValidMoves(st,st.dice[i]).some(m=>m.from===st.selected&&m.to===idx);
     });
 
     // top row: indices 12-23 (top of board, points 13-24), bottom row: indices 0-11 (points 1-12)
