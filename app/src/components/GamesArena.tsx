@@ -495,7 +495,7 @@ function bgValidMoves(st:BgState, die:number): {from:number|"bar"; to:number|"of
   return moves;
 }
 
-function applyBgMove(st:BgState, from:number|"bar", to:number|"off", dieIdx:number): BgState {
+function applyBgMove(st:BgState, from:number|"bar", to:number|"off", dieIdx:number, lang:Lang="en"): BgState {
   const ns:BgState=JSON.parse(JSON.stringify(st));
   const isWhite=st.turn==="white";
   ns.usedDice=[...st.usedDice]; ns.usedDice[dieIdx]=true;
@@ -562,7 +562,7 @@ function Backgammon({ lang }: { lang: Lang }) {
         const mvs=bgValidMoves(cur,cur.dice[i]);
         if(mvs.length){
           const mv=mvs[Math.floor(Math.random()*mvs.length)];
-          cur=applyBgMove(cur,mv.from,mv.to,i);
+          cur=applyBgMove(cur,mv.from,mv.to,i,lang);
           moved=true; break;
         }
       }
@@ -589,7 +589,7 @@ function Backgammon({ lang }: { lang: Lang }) {
       const mvs=bgValidMoves(st,st.dice[i]);
       const mv=mvs.find(m=>m.from===st.selected&&m.to===idx);
       if(mv){
-        let ns=applyBgMove(st,mv.from,mv.to,i);
+        let ns=applyBgMove(st,mv.from,mv.to,i,lang);
         if(ns.winner){ setSt(ns); return; }
         const remaining=ns.dice.filter((_,j)=>!ns.usedDice[j]);
         if(!remaining.length){ endTurn({...ns,selected:null}); return; }
@@ -620,7 +620,7 @@ function Backgammon({ lang }: { lang: Lang }) {
       const mvs=bgValidMoves(st,st.dice[i]);
       const mv=mvs.find(m=>m.from===from&&m.to==="off");
       if(mv){
-        let ns=applyBgMove(st,mv.from,mv.to,i);
+        let ns=applyBgMove(st,mv.from,mv.to,i,lang);
         if(ns.winner){ setSt(ns); return; }
         const remaining=ns.dice.filter((_,j)=>!ns.usedDice[j]);
         if(!remaining.length){ endTurn({...ns,selected:null}); return; }
