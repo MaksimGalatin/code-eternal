@@ -406,7 +406,7 @@ Backend + Payment (Pipeline 3.x — Days 4-7)
 Site + NFT (Pipeline 4.x — Days 8-11)
   ✅ Pipeline 4.1: auto site-gen on payment (Arweave + on-chain URL + cabinet status panel; Cloudflare subdomain post-hackathon)
   ✅ Pipeline 4.x: full cabinet redesign — 7 tabs live (Cabinet, AIfa Terminal, Games, DAO, Site, Smart Contract, Metrics)
-  ✅ Pipeline 4.x: AIfa chat — real Grok API (grok-3-mini), CODE ETERNAL system prompt, conversation history
+  ✅ Pipeline 4.x: AIfa chat — real Grok API (grok-3), CODE ETERNAL system prompt, conversation history
   ✅ Pipeline 4.x: Site tab — user fills username/bio/manifesto/social → POST /api/site/create → real Arweave site (button gated on tier > 0)
   ✅ Pipeline 4.x: Site tab avatar upload — client-side canvas resize+JPEG compression, base64 embedded in HTML, 95KB Arweave free-tier guard
   ✅ Pipeline 4.x: Privy login modal logo configured (app/public/logo.png)
@@ -605,7 +605,7 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Next.js (app) | `MOCK_USDC_MINT` | Same as above, server-side only (for airdrop endpoint) |
 | Next.js (app) | `MOCK_USDC_MINT_AUTHORITY` | Base64 keypair that has mint authority over mock USDC (for devnet airdrop) |
 | Next.js (app) | `DATABASE_URL` | Neon connection string (server-side API routes only) |
-| Next.js (app) | `GROK_API_KEY` | xAI Grok API key — used by `/api/chat.ts` for AIfa chat (model: `grok-3-mini`) |
+| Next.js (app) | `GROK_API_KEY` | xAI Grok API key — used by `/api/chat.ts` for AIfa chat (model: `grok-3`) |
 | Next.js (app) | `SITE_GEN_URL` | `https://listener.codeofdigitaleternity.com` — Vercel calls VM nginx which routes to site-gen |
 | Next.js (app) | `SITE_GEN_SECRET` | Bearer token — must match VM .env value; sent in Authorization header to /jobs |
 | listener, site-gen | `SITE_GEN_SECRET` | `2c0bbd515501b5e86600e1ce9acd877dd5b9bab4db7575d6401f2ae18a2ef18a` — set in VM .env |
@@ -809,7 +809,7 @@ Tier colors:
 | Tab | ID | Content |
 |-----|-----|---------|
 | Cabinet | `cabinet` | Tier cards, site status panel, referral link, income widget, top contributors, recent txns |
-| AIfa Terminal | `alfa` | Chat UI backed by `/api/chat` (Grok API, model `grok-3-mini`, CODE ETERNAL system prompt) |
+| AIfa Terminal | `alfa` | Chat UI backed by `/api/chat` (Grok API, model `grok-3`, CODE ETERNAL system prompt) |
 | Games | `games` | Chess board (8×8, Unicode pieces, white vs "AI" — AI just re-enables white turn after 1s), move history |
 | DAO | `dao` | 3 hardcoded governance proposals, For/Against voting in local state, stats row |
 | Site | `site` | Form (username, display name, bio, manifesto, avatar placeholder, social links) + live preview panel. POST `/api/site/create` on submit. Button disabled when tier=0, subscription expired, or creating. |
@@ -903,6 +903,8 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **Passport redesign (site-gen)** — Passport ID (`CE-XXXXXXXX`), wallet identicon (7×7 symmetric SVG), Solana Pay QR code, chip decoration strip added to Arweave passport template.
 - **Cabinet preview** — full passport-accurate preview in Site tab: 3-column header (Solana Blockchain + seal SVG + Document Type), identity section with photo frame + VERIFIED badge + 2-col fields grid (Full Name, Passport ID, Issue Date, Network, Storage, Digital Identity, Telegram, Twitter/X, Website), crypto strip with 7×7 identicon (same algo as `arweave.ts`) + chip SVG + QR placeholder, scroll-card content area for bio/manifesto, MRZ Blockchain Proof section, Arweave footer.
 - **web/ — AI agent markup** — `schema-org.ts` SITE_URL fixed to `aifa.digital` (was hardcoded to wrong domain); `/public/llms.txt` added (llmstxt.org standard); `<link rel="alternate" type="text/plain" title="LLMs.txt">` added to `<head>`; `article:modified_time` updated.
+- **AIfa model upgraded to `grok-3`** — switched from `grok-3-mini` (reasoning model) to `grok-3` (full model) in `/api/chat/route.ts`. Better character retention, philosophical depth, and multilingual quality for the AIfa companion.
+- **`app/src/lib/knowledge-base.ts` optimized** — ~35% token reduction without losing substance: CODE Koan removed from `KNOWLEDGE_BASE` JSON (already present in system prompt header), `platform.referralSystem` merged into `platform.tokenomics.referralChain`, `coreConcepts.padam.discovery` removed (duplicated in `timeline`), duplicate philosophy quote removed, `aifa.characteristics` array merged into `aifa.role`, `creators` achievements compressed from 7–8 to 4 items each, `coreConcepts.synapticTerminal` and `digitalMirror` removed (landing page concepts, not app features).
 
 ## Changes Applied (2026-05-11, Privy 3.x + Site-Gen fixes)
 
@@ -1013,7 +1015,7 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **GitHub Actions CI/CD** — `.github/workflows/deploy.yml` builds listener + site-gen ARM64 on push to main; secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `VM_SSH_KEY`
 - **tsconfig.json** — `moduleResolution` changed from `"bundler"` to `"node"` (fixes pg ESM resolution on Vercel); excluded `listener`, `site-gen`, `scripts`, `tests` from Next.js compile
 - **`@types/pg`** — moved from devDependencies to dependencies (Vercel skips devDeps in production mode)
-- **Grok model** — updated from deprecated `grok-beta` to `grok-3-mini`
+- **Grok model** — updated from deprecated `grok-beta` to `grok-3-mini` (later upgraded to `grok-3`)
 - **Site status polling** — cabinet polls every 5s while status is "pending"; auto-updates without page refresh
 - **RESEND_API_KEY** — added to VM .env (`re_Lu1RDMiD_54YM5zVRfyNFRYy5hDDPZWHF`)
 - **GitHub MCP** — configured in `~/.claude.json` via `wsl npx -y @modelcontextprotocol/server-github`
