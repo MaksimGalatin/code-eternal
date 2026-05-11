@@ -174,6 +174,7 @@ function BuyPageInner() {
         const registerResult = await signAndSendTransaction({
           transaction: registerTx.serialize({ requireAllSignatures: false }),
           wallet,
+          chain: "solana:devnet",
         });
         const registerSig = bs58.encode(registerResult.signature);
         await connection.confirmTransaction({ signature: registerSig, blockhash, lastValidBlockHeight }, "confirmed");
@@ -201,6 +202,7 @@ function BuyPageInner() {
       const payResult = await signAndSendTransaction({
         transaction: payTx.serialize({ requireAllSignatures: false }),
         wallet,
+        chain: "solana:devnet",
       });
       const sig = bs58.encode(payResult.signature);
       const confirmation = await connection.confirmTransaction({ signature: sig, blockhash: payBlockhash, lastValidBlockHeight: payLVBH }, "confirmed");
