@@ -915,7 +915,7 @@ function CabinetPage() {
                           }}
                           placeholder="yourname"
                           style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
-                        <span style={{ flexShrink: 0, padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.aifa.digital</span>
+                        <span style={{ flexShrink: 0, padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.codeofdigitaleternity.com</span>
                       </div>
                       {usernameErr && <div style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{usernameErr}</div>}
                     </div>
@@ -1025,7 +1025,7 @@ function CabinetPage() {
                         <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444" }} />
                         <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#f59e0b" }} />
                         <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#10B981" }} />
-                        <span style={{ fontSize: "11px", color: "rgb(107,114,128)", marginLeft: "6px" }}>{siteUsername || "username"}.aifa.digital</span>
+                        <span style={{ fontSize: "11px", color: "rgb(107,114,128)", marginLeft: "6px" }}>{siteUsername || "username"}.codeofdigitaleternity.com</span>
                       </div>
                       {/* Preview content */}
                       <div style={{ padding: "24px", minHeight: "300px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden", wordBreak: "break-word" }}>
