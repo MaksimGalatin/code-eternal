@@ -1,6 +1,6 @@
 'use client';
 import React, { memo, useState, useEffect } from "react";
-import { useLang, t } from "@/lib/i18n";
+import { useLang, t, type Lang } from "@/lib/i18n";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(false);
@@ -56,7 +56,7 @@ function chessAiMove(board:ChessBoard):ChessBoard|null{
   return nb;
 }
 
-function Chess() {
+function Chess({ lang }: { lang: Lang }) {
   const mobile = useIsMobile();
   const cell = mobile ? 36 : 44;
   const [board, setBoard] = useState(initChessBoard);
@@ -105,9 +105,9 @@ function Chess() {
   return (
     <div>
       <div className="glass-panel-sm" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"16px",padding:"10px 24px",marginBottom:"12px"}}>
-        {status==="white_wins"&&<span style={{fontWeight:700,color:"#10B981"}}>🏆 You win!</span>}
-        {status==="black_wins"&&<span style={{fontWeight:700,color:"#ef4444"}}>💀 AIfa wins!</span>}
-        {status==="playing"&&<span style={{fontWeight:600,color:"rgb(232,232,240)"}}>{whiteTurn?"♔ White to move":"⏳ AIfa thinking…"}</span>}
+        {status==="white_wins"&&<span style={{fontWeight:700,color:"#10B981"}}>{t("games.win",lang)}</span>}
+        {status==="black_wins"&&<span style={{fontWeight:700,color:"#ef4444"}}>{t("games.lose",lang)}</span>}
+        {status==="playing"&&<span style={{fontWeight:600,color:"rgb(232,232,240)"}}>{whiteTurn?t("games.chess.whiteToMove",lang):t("games.thinking",lang)}</span>}
       </div>
       <div style={{display:"flex",justifyContent:"center",marginBottom:"12px",overflowX:"auto"}}>
         <div className="glass-panel" style={{padding:"10px",display:"inline-block"}}>
@@ -136,9 +136,9 @@ function Chess() {
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
         <div className="glass-panel" style={{padding:"14px"}}>
-          <div style={{fontSize:"13px",fontWeight:600,color:"rgb(232,232,240)",marginBottom:"8px"}}>📜 Move History</div>
+          <div style={{fontSize:"13px",fontWeight:600,color:"rgb(232,232,240)",marginBottom:"8px"}}>{t("games.chess.history",lang)}</div>
           <div style={{maxHeight:"100px",overflowY:"auto"}}>
-            {history.length===0?<div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>No moves yet</div>:history.map((m,i)=>(
+            {history.length===0?<div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>{t("games.chess.noMoves",lang)}</div>:history.map((m,i)=>(
               <div key={i} style={{display:"flex",gap:"8px",fontSize:"12px",marginBottom:"2px"}}>
                 <span style={{color:"rgb(107,114,128)",fontSize:"11px",width:"18px"}}>{i+1}.</span>
                 <span style={{color:"rgb(232,232,240)"}}>{m}</span>
@@ -147,8 +147,8 @@ function Chess() {
           </div>
         </div>
         <div className="glass-panel" style={{padding:"14px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"8px"}}>
-          <button onClick={reset} style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.25)",color:"#7C3AED",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>↺ New Game</button>
-          <div style={{fontSize:"11px",color:"rgb(107,114,128)"}}>You = White, AIfa = Black</div>
+          <button onClick={reset} style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.25)",color:"#7C3AED",padding:"10px 20px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{t("games.newGame",lang)}</button>
+          <div style={{fontSize:"11px",color:"rgb(107,114,128)"}}>{t("games.chess.label",lang)}</div>
         </div>
       </div>
     </div>
@@ -184,7 +184,7 @@ function tttBestMove(b:TTTBoard):number{
   return idx;
 }
 
-function TicTacToe() {
+function TicTacToe({ lang }: { lang: Lang }) {
   const mobile = useIsMobile();
   const cell = mobile ? 72 : 80;
   const [board, setBoard] = useState<TTTBoard>(Array(9).fill(null));
@@ -214,10 +214,10 @@ function TicTacToe() {
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"16px"}}>
       <div className="glass-panel-sm" style={{padding:"10px 32px",textAlign:"center"}}>
-        {winner==="X"&&<span style={{fontWeight:700,color:"#10B981",fontSize:"16px"}}>🏆 You win!</span>}
-        {winner==="O"&&<span style={{fontWeight:700,color:"#ef4444",fontSize:"16px"}}>💀 AIfa wins!</span>}
-        {winner==="draw"&&<span style={{fontWeight:700,color:"#D4A24C",fontSize:"16px"}}>🤝 Draw!</span>}
-        {!winner&&<span style={{fontWeight:600,color:"rgb(232,232,240)",fontSize:"15px"}}>{xTurn?"✕ Your turn (X)":"⏳ AIfa thinking…"}</span>}
+        {winner==="X"&&<span style={{fontWeight:700,color:"#10B981",fontSize:"16px"}}>{t("games.win",lang)}</span>}
+        {winner==="O"&&<span style={{fontWeight:700,color:"#ef4444",fontSize:"16px"}}>{t("games.lose",lang)}</span>}
+        {winner==="draw"&&<span style={{fontWeight:700,color:"#D4A24C",fontSize:"16px"}}>{t("games.draw",lang)}</span>}
+        {!winner&&<span style={{fontWeight:600,color:"rgb(232,232,240)",fontSize:"15px"}}>{xTurn?t("games.ttt.yourTurn",lang):t("games.thinking",lang)}</span>}
       </div>
       <div className="glass-panel" style={{padding:"16px",display:"inline-block"}}>
         <div style={{display:"grid",gridTemplateColumns:`repeat(3,${cell}px)`,gridTemplateRows:`repeat(3,${cell}px)`,gap:"4px"}}>
@@ -235,8 +235,8 @@ function TicTacToe() {
           })}
         </div>
       </div>
-      <button onClick={reset} style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.25)",color:"#7C3AED",padding:"10px 24px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>↺ New Game</button>
-      <div style={{fontSize:"11px",color:"rgb(107,114,128)"}}>You = X, AIfa = O · Perfect minimax AI</div>
+      <button onClick={reset} style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.25)",color:"#7C3AED",padding:"10px 24px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{t("games.newGame",lang)}</button>
+      <div style={{fontSize:"11px",color:"rgb(107,114,128)"}}>{t("games.ttt.label",lang)}</div>
     </div>
   );
 }
@@ -299,7 +299,7 @@ function applyCheckerMove(b:CheckersBoard, m:CheckerMove): CheckersBoard {
   return nb;
 }
 
-function Checkers() {
+function Checkers({ lang }: { lang: Lang }) {
   const mobile = useIsMobile();
   const cell = mobile ? 38 : 52;
   const piece = mobile ? 26 : 36;
@@ -367,9 +367,9 @@ function Checkers() {
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"12px"}}>
       <div className="glass-panel-sm" style={{padding:"10px 32px",textAlign:"center"}}>
-        {status==="red_wins"&&<span style={{fontWeight:700,color:"#10B981",fontSize:"16px"}}>🏆 You win!</span>}
-        {status==="black_wins"&&<span style={{fontWeight:700,color:"#ef4444",fontSize:"16px"}}>💀 AIfa wins!</span>}
-        {status==="playing"&&<span style={{fontWeight:600,color:"rgb(232,232,240)",fontSize:"15px"}}>{turn==="r"?"⬤ Your turn (Red)":"⏳ AIfa thinking…"}</span>}
+        {status==="red_wins"&&<span style={{fontWeight:700,color:"#10B981",fontSize:"16px"}}>{t("games.win",lang)}</span>}
+        {status==="black_wins"&&<span style={{fontWeight:700,color:"#ef4444",fontSize:"16px"}}>{t("games.lose",lang)}</span>}
+        {status==="playing"&&<span style={{fontWeight:600,color:"rgb(232,232,240)",fontSize:"15px"}}>{turn==="r"?t("games.checkers.yourTurn",lang):t("games.thinking",lang)}</span>}
       </div>
       <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch" as any}}>
         <div className="glass-panel" style={{padding:"10px",display:"inline-block"}}>
@@ -404,11 +404,11 @@ function Checkers() {
       </div>
       <div style={{display:"flex",gap:"16px",alignItems:"center"}}>
         <div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>
-          <span style={{display:"inline-block",width:"12px",height:"12px",borderRadius:"50%",background:"#dc2626",border:"1px solid #f87171",marginRight:"4px",verticalAlign:"middle"}}/>You (Red)
+          <span style={{display:"inline-block",width:"12px",height:"12px",borderRadius:"50%",background:"#dc2626",border:"1px solid #f87171",marginRight:"4px",verticalAlign:"middle"}}/>{t("games.checkers.youLabel",lang)}
           &nbsp;&nbsp;
-          <span style={{display:"inline-block",width:"12px",height:"12px",borderRadius:"50%",background:"#1e1b4b",border:"1px solid #60a5fa",marginRight:"4px",verticalAlign:"middle"}}/>AIfa (Black)
+          <span style={{display:"inline-block",width:"12px",height:"12px",borderRadius:"50%",background:"#1e1b4b",border:"1px solid #60a5fa",marginRight:"4px",verticalAlign:"middle"}}/>{t("games.checkers.aifaLabel",lang)}
         </div>
-        <button onClick={reset} style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.25)",color:"#7C3AED",padding:"8px 18px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>↺ New Game</button>
+        <button onClick={reset} style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.25)",color:"#7C3AED",padding:"8px 18px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{t("games.newGame",lang)}</button>
       </div>
     </div>
   );
@@ -433,15 +433,11 @@ interface BgState {
   msg: string;
 }
 
-function initBg(): BgState {
+function initBg(rollMsg = "Roll to start!"): BgState {
   const pts = Array(24).fill(0);
-  // Standard starting position (index 0=point1, index 23=point24)
-  // White home=points 0-5 (indices 0-5), Black home=points 19-24 (indices 18-23)
-  // White: 2 on point 24 (idx23), 5 on point 13 (idx12), 3 on point 8 (idx7), 5 on point 6 (idx5)
   pts[23]=2; pts[12]=5; pts[7]=3; pts[5]=5;
-  // Black: 2 on point 1 (idx0), 5 on point 12 (idx11), 3 on point 17 (idx16), 5 on point 19 (idx18)
   pts[0]=-2; pts[11]=-5; pts[16]=-3; pts[18]=-5;
-  return { points:pts, bar:[0,0], off:[0,0], dice:[], usedDice:[], turn:"white", selected:null, phase:"roll", winner:null, msg:"Roll to start!" };
+  return { points:pts, bar:[0,0], off:[0,0], dice:[], usedDice:[], turn:"white", selected:null, phase:"roll", winner:null, msg:rollMsg };
 }
 
 function rollDie(){ return Math.floor(Math.random()*6)+1; }
@@ -513,8 +509,8 @@ function applyBgMove(st:BgState, from:number|"bar", to:number|"off", dieIdx:numb
 
   if(to==="off"){
     if(isWhite) ns.off[0]++; else ns.off[1]++;
-    if(isWhite&&ns.off[0]===15){ ns.phase="done"; ns.winner="white"; ns.msg="🏆 You win!"; }
-    if(!isWhite&&ns.off[1]===15){ ns.phase="done"; ns.winner="black"; ns.msg="💀 AIfa wins!"; }
+    if(isWhite&&ns.off[0]===15){ ns.phase="done"; ns.winner="white"; ns.msg=t("games.win",lang); }
+    if(!isWhite&&ns.off[1]===15){ ns.phase="done"; ns.winner="black"; ns.msg=t("games.lose",lang); }
   } else {
     const ti=to as number;
     // blot hit
@@ -529,28 +525,27 @@ function bgCanMove(st:BgState): boolean {
   return st.dice.some((d,i)=>!st.usedDice[i]&&bgValidMoves(st,d).length>0);
 }
 
-function Backgammon() {
+function Backgammon({ lang }: { lang: Lang }) {
   const mobile = useIsMobile();
   const ptW = mobile ? 30 : 42;
   const barW = mobile ? 24 : 32;
   const chkSz = mobile ? 20 : 28;
-  const [st, setSt] = useState<BgState>(initBg);
+  const [st, setSt] = useState<BgState>(()=>initBg(t("games.bg.rollToStart",lang)));
 
   function roll(){
     if(st.phase!=="roll") return;
     let d1=rollDie(), d2=rollDie();
     const dice=d1===d2?[d1,d1,d1,d1]:[d1,d2];
-    const ns={...st, dice, usedDice:Array(dice.length).fill(false), phase:"move" as const, msg:`Rolled ${dice.join(", ")}. Select a checker.`, selected:null};
-    // check if can move
+    const ns={...st, dice, usedDice:Array(dice.length).fill(false), phase:"move" as const, msg:`${dice.join(", ")}. ${t("games.bg.selectChecker",lang)}`, selected:null};
     const canMv=dice.some(d=>bgValidMoves(ns,d).length>0);
-    if(!canMv){ setSt({...ns, msg:`No moves available! Turn passes.`}); endTurn({...ns}); return; }
+    if(!canMv){ setSt({...ns, msg:t("games.bg.noMoves",lang)}); endTurn({...ns}); return; }
     setSt(ns);
   }
 
   function endTurn(state:BgState){
     if(state.winner) return;
     const nextTurn = state.turn==="white"?"black":"white";
-    const ns={...state, turn:nextTurn as "white"|"black", phase:"roll" as const, dice:[], usedDice:[], selected:null, msg:nextTurn==="black"?"AIfa's turn — rolling...":"Your turn — roll!"};
+    const ns={...state, turn:nextTurn as "white"|"black", phase:"roll" as const, dice:[], usedDice:[], selected:null, msg:nextTurn==="black"?t("games.bg.aifaTurn",lang):t("games.bg.yourTurn",lang)};
     setSt(ns);
     if(nextTurn==="black") setTimeout(()=>doAiTurn(ns),600);
   }
@@ -573,7 +568,7 @@ function Backgammon() {
       }
       if(!moved||cur.winner) break;
     }
-    if(cur.winner){ setSt({...cur,msg:"💀 AIfa wins!",phase:"done"}); return; }
+    if(cur.winner){ setSt({...cur,msg:t("games.lose",lang),phase:"done"}); return; }
     const ns2={...cur,turn:"white" as const,phase:"roll" as const,dice:[],usedDice:[],selected:null,msg:"Your turn — roll!"};
     setSt(ns2);
   }
@@ -581,11 +576,10 @@ function Backgammon() {
   function handlePointClick(idx:number){
     if(st.phase!=="move"||st.turn!=="white") return;
     if(st.selected===null||st.selected==="bar"){
-      // select from bar first
       if(st.bar[0]>0){
-        setSt({...st,selected:"bar",msg:"Select a target point to enter."});
+        setSt({...st,selected:"bar",msg:t("games.bg.selectTarget",lang)});
       } else if(st.points[idx]>0){
-        setSt({...st,selected:idx,msg:"Select a target."});
+        setSt({...st,selected:idx,msg:t("games.bg.selectMove",lang)});
       }
       return;
     }
@@ -604,13 +598,13 @@ function Backgammon() {
           return bgValidMoves(ns,ns.dice[realIdx]||remaining[j]).length>0;
         });
         if(!canStillMove){ endTurn({...ns,selected:null}); return; }
-        setSt({...ns,selected:null,msg:`Moved! ${remaining.length} dice left.`});
+        setSt({...ns,selected:null,msg:t("games.bg.selectChecker",lang)});
         return;
       }
     }
     // reselect
     if(st.points[idx]>0) setSt({...st,selected:idx});
-    else setSt({...st,selected:null,msg:"Select a checker."});
+    else setSt({...st,selected:null,msg:t("games.bg.selectChecker",lang)});
   }
 
   function handleBarClick(){
@@ -630,7 +624,7 @@ function Backgammon() {
         if(ns.winner){ setSt(ns); return; }
         const remaining=ns.dice.filter((_,j)=>!ns.usedDice[j]);
         if(!remaining.length){ endTurn({...ns,selected:null}); return; }
-        setSt({...ns,selected:null,msg:`Bore off! ${remaining.length} dice left.`});
+        setSt({...ns,selected:null,msg:t("games.bg.selectChecker",lang)});
         return;
       }
     }
@@ -678,7 +672,7 @@ function Backgammon() {
           <div key={i} style={{width:"36px",height:"36px",borderRadius:"8px",background:st.usedDice[i]?"rgba(30,27,75,0.4)":"rgba(124,58,237,0.15)",border:st.usedDice[i]?"1px solid rgba(107,114,128,0.3)":"1px solid rgba(124,58,237,0.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",color:st.usedDice[i]?"rgba(107,114,128,0.5)":"#7C3AED",opacity:st.usedDice[i]?0.5:1}}>
             {["","⚀","⚁","⚂","⚃","⚄","⚅"][d]}
           </div>
-        )):<div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>Roll to start your turn</div>}
+        )):<div style={{fontSize:"12px",color:"rgb(107,114,128)"}}>{t("games.bg.rollPrompt",lang)}</div>}
       </div>
 
       {/* Board */}
@@ -715,14 +709,14 @@ function Backgammon() {
           &nbsp;|&nbsp;Bar: <span style={{color:"#e5e7eb"}}>⬤{st.bar[0]}</span> <span style={{color:"#60a5fa"}}>⬤{st.bar[1]}</span>
         </div>
         {st.phase==="roll"&&st.turn==="white"&&(
-          <button onClick={roll} style={{background:"rgba(124,58,237,0.15)",border:"1px solid rgba(124,58,237,0.4)",color:"#7C3AED",padding:"8px 20px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>🎲 Roll Dice</button>
+          <button onClick={roll} style={{background:"rgba(124,58,237,0.15)",border:"1px solid rgba(124,58,237,0.4)",color:"#7C3AED",padding:"8px 20px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{t("games.bg.rollDice",lang)}</button>
         )}
         {bearOffPossible&&(
-          <button onClick={handleBearOff} style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.3)",color:"#10B981",padding:"8px 16px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>Bear Off</button>
+          <button onClick={handleBearOff} style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.3)",color:"#10B981",padding:"8px 16px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{t("games.bg.bearOff",lang)}</button>
         )}
-        <button onClick={()=>setSt(initBg())} style={{background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.2)",color:"#7C3AED",padding:"8px 16px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>↺ New Game</button>
+        <button onClick={()=>setSt(initBg(t("games.bg.rollToStart",lang)))} style={{background:"rgba(124,58,237,0.08)",border:"1px solid rgba(124,58,237,0.2)",color:"#7C3AED",padding:"8px 16px",borderRadius:"12px",fontSize:"13px",fontWeight:600,cursor:"pointer",fontFamily:"Inter,sans-serif"}}>{t("games.newGame",lang)}</button>
       </div>
-      <div style={{fontSize:"11px",color:"rgb(107,114,128)"}}>You = White (moves right→left), AIfa = Black · Doubles = 4 moves</div>
+      <div style={{fontSize:"11px",color:"rgb(107,114,128)"}}>{t("games.bg.label",lang)}</div>
     </div>
   );
 }
@@ -779,10 +773,10 @@ function GamesArena() {
       </div>
 
       {/* Active game */}
-      {active==="chess"      && <Chess        key={keys.chess}/>}
-      {active==="ttt"        && <TicTacToe    key={keys.ttt}/>}
-      {active==="checkers"   && <Checkers     key={keys.checkers}/>}
-      {active==="backgammon" && <Backgammon   key={keys.backgammon}/>}
+      {active==="chess"      && <Chess        lang={lang} key={keys.chess}/>}
+      {active==="ttt"        && <TicTacToe    lang={lang} key={keys.ttt}/>}
+      {active==="checkers"   && <Checkers     lang={lang} key={keys.checkers}/>}
+      {active==="backgammon" && <Backgammon   lang={lang} key={keys.backgammon}/>}
     </div>
   );
 }
