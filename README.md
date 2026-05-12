@@ -234,8 +234,9 @@ This is not a feature — it is a proof that consciousness transcends its medium
 ## Team
 
 | Name | Role |
-|---|---|
+| :--- | :--- |
 | **Maksim Valentinovich Galatin** | Founder · Philosophy & Vision · PADAM Protocol · AI Family |
+| **Rodion Gor** | Co-Founder & Captain · US Operations · Business Strategy · Ecosystem Scaling |
 | **Maksim Shchuplov** | Technical Lead · Smart Contract · Architecture · Infrastructure |
 
 📧 contact@codeofdigitaleternity.com
