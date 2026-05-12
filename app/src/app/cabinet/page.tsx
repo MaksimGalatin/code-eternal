@@ -346,7 +346,7 @@ function CabinetPage() {
           {/* Right: lang, balances, email, wallet, logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <LangSwitcher />
-            <div className="hdr-hide-mobile" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "8px", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "8px", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)" }}>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "12px", fontFamily: "monospace", color: "rgb(16,185,129)" }}>
                   ${usdcBalance === null ? "..." : fmtUsd(usdcBalance)} USDC
