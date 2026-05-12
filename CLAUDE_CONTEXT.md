@@ -891,6 +891,19 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
 
+## Changes Applied (2026-05-13, Mobile Responsive)
+
+- **Mobile responsive layout** — cabinet app now usable on phones (< 640px breakpoint):
+  - **Header** — balance (USDC/$CODE), email, wallet address, ref-code button hidden on mobile; only logo + tier badge + lang switcher + logout remain. Header padding tightened to `10px 14px`.
+  - **Tab bar** — 7 tabs show icons only on mobile (`.nav-tab-label` hidden via CSS); padding reduced to `8px 12px`. All 7 tabs fit without horizontal scroll.
+  - **Page content** — side padding reduced from 24px to 12px on mobile.
+  - **Chess bottom grid** — history + new-game panels stack vertically (`.game-bottom-grid` with `grid-template-columns: 1fr !important`) on mobile.
+  - CSS classes added: `.app-header`, `.hdr-hide-mobile`, `.tab-bar`, `.nav-tab-label`, `.page-content`, `.game-bottom-grid`.
+- **AIfa knowledge base** — `app/src/lib/knowledge-base.ts` added: full project context (tokenomics, tiers, creators, philosophy, roadmap, CODE Koan) injected into Grok system prompt. AIfa now has comprehensive knowledge about CODE ETERNAL without relying solely on training data.
+- **AIfa upgraded to `grok-3`** (moved from this entry to 2026-05-12 section where it was already documented).
+- **web/ SEO** — `SoftwareApplication` JSON-LD structured data, Twitter/OG meta tags, `robots.txt` canonicalized, `llms.txt` for AI crawlers.
+- **README.md** — hackathon README with architecture diagram (ASCII), tech stack table, team section for judges.
+
 ## Changes Applied (2026-05-12)
 
 - **CI: build on PRs without deploy** — both `deploy.yml` (Docker) and `anchor-deploy.yml` (Solana) now trigger on `pull_request` with same path filters. Build/test run on PRs; push to Docker Hub and VM deploy only on merge to `main`.
