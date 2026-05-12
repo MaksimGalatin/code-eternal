@@ -37,6 +37,7 @@ body {
   color: rgb(139,139,158);
   border: 1px solid rgba(42,42,58,0.5);
   backdrop-filter: blur(8px);
+  min-height: 44px; /* iOS recommended touch target */
 }
 .nav-tab:hover { color: rgb(200,200,215); border-color: rgba(124,58,237,0.35); }
 .nav-tab-active {
@@ -89,8 +90,24 @@ body {
 .tx-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 0; border-bottom: 1px solid rgba(42,42,58,0.5); font-size: 13px;
+  min-width: 0;
 }
 .tx-row:last-child { border-bottom: none; }
+.tx-row > * { min-width: 0; }
+
+/* Social links grid — 3 col desktop, 1 col mobile */
+.social-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+
+/* Income + Tier panels side-by-side, stack on mobile */
+.main-cols-flex { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.main-cols-flex > * { min-width: 0; }
+
+/* Username domain suffix */
+.username-suffix {
+  flex-shrink: 1; padding: 11px 14px; color: rgb(107,114,128); font-size: 13px;
+  border-left: 1px solid rgb(42,42,58); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 260px;
+}
 
 .badge {
   display: inline-block; border-radius: 20px; padding: 3px 10px;
@@ -165,6 +182,22 @@ body {
 
   /* Chess/game bottom row: stack panels */
   .game-bottom-grid { grid-template-columns: 1fr !important; }
+
+  /* Social links: 1 column on mobile */
+  .social-grid { grid-template-columns: 1fr !important; }
+
+  /* Income + Tier panels: stack vertically */
+  .main-cols-flex { flex-direction: column !important; }
+  .main-cols-flex > .glass-panel { flex: none !important; width: 100% !important; }
+
+  /* Username suffix: truncate when viewport is narrow */
+  .username-suffix { max-width: 120px; font-size: 12px; }
+
+  /* Contributor cards: 2 columns on mobile instead of 3 */
+  .contributor-card { flex: 0 0 calc(50% - 8px) !important; }
+
+  /* Empty state panels: reduce padding */
+  .site-empty-panel { padding: 28px 20px !important; }
 }
 
 @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }

@@ -38,7 +38,7 @@ function DaoTab() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", marginBottom: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(90px,1fr))", gap: "12px", marginBottom: "20px" }}>
         {[
           { val: proposals.length, label: "Proposals", icon: "📊", color: "#7C3AED" },
           { val: proposals.filter(p=>p.status==="active").length, label: "Active", icon: "🟢", color: "#10B981" },

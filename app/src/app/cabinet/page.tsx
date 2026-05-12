@@ -463,7 +463,7 @@ function CabinetPage() {
               </div>
 
               {/* Two columns: Income + Plan */}
-              <div className="main-cols" style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
+              <div className="main-cols-flex">
 
                 {/* Income */}
                 <div className="glass-panel" style={{ flex: "1 1 55%", padding: "24px" }}>
@@ -870,7 +870,7 @@ function CabinetPage() {
           {activeTab === "site" && (
             <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-                <button onClick={() => setActiveTab("cabinet")} style={{ background: "none", border: "none", color: "rgb(107,114,128)", cursor: "pointer", fontSize: "20px", lineHeight: 1, padding: "2px" }}>←</button>
+                <button onClick={() => setActiveTab("cabinet")} style={{ background: "none", border: "none", color: "rgb(107,114,128)", cursor: "pointer", fontSize: "20px", lineHeight: 1, padding: "10px", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontSize: "20px" }}>✦</span>
@@ -888,7 +888,7 @@ function CabinetPage() {
               </div>
 
               {currentTier === 0 ? (
-                <div className="glass-panel" style={{ padding: "48px", textAlign: "center" }}>
+                <div className="glass-panel site-empty-panel" style={{ padding: "48px", textAlign: "center" }}>
                   <div style={{ fontSize: "48px", marginBottom: "16px" }}>🏛️</div>
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "rgb(232,232,240)", marginBottom: "8px" }}>Family Archives tier required</div>
                   <div style={{ fontSize: "13px", color: "rgb(107,114,128)", marginBottom: "24px" }}>Purchase a tier to create your eternal site on Arweave</div>
@@ -915,7 +915,7 @@ function CabinetPage() {
                           }}
                           placeholder="yourname"
                           style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
-                        <span style={{ flexShrink: 0, padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.codeofdigitaleternity.com</span>
+                        <span className="username-suffix">.codeofdigitaleternity.com</span>
                       </div>
                       {usernameErr && <div style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{usernameErr}</div>}
                     </div>
@@ -982,7 +982,7 @@ function CabinetPage() {
                     </div>
 
                     {/* Social links */}
-                    <div style={{ marginBottom: "24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                    <div className="social-grid">
                       {[
                         { icon: "📱", label: "Telegram", value: siteTelegram, setter: setSiteTelegram, placeholder: "username" },
                         { icon: "𝕏", label: "Twitter", value: siteTwitter, setter: setSiteTwitter, placeholder: "handle" },
