@@ -320,7 +320,7 @@ function CabinetPage() {
       <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <header style={{
+        <header className="app-header" style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 24px", borderBottom: "1px solid rgb(26,26,46)",
           background: "rgba(10,10,15,0.8)", backdropFilter: "blur(10px)",
@@ -346,7 +346,7 @@ function CabinetPage() {
           {/* Right: lang, balances, email, wallet, logout */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <LangSwitcher />
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "8px", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)" }}>
+            <div className="hdr-hide-mobile" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "8px", background: "rgb(19,19,28)", border: "1px solid rgb(42,42,58)" }}>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "12px", fontFamily: "monospace", color: "rgb(16,185,129)" }}>
                   ${usdcBalance === null ? "..." : fmtUsd(usdcBalance)} USDC
@@ -355,15 +355,15 @@ function CabinetPage() {
               </div>
             </div>
             {email && (
-              <span style={{ fontSize: "12px", color: "rgb(139,139,158)" }}>{email}</span>
+              <span className="hdr-hide-mobile" style={{ fontSize: "12px", color: "rgb(139,139,158)" }}>{email}</span>
             )}
             {wallet && (
-              <span style={{ fontSize: "12px", fontFamily: "monospace", padding: "4px 8px", borderRadius: "6px", background: "rgb(19,19,28)", color: "rgb(6,182,212)" }}>
+              <span className="hdr-hide-mobile" style={{ fontSize: "12px", fontFamily: "monospace", padding: "4px 8px", borderRadius: "6px", background: "rgb(19,19,28)", color: "rgb(6,182,212)" }}>
                 {shortWallet(wallet.address)}
               </span>
             )}
             {myRefCode && (
-              <button className="copy-btn" onClick={copyRef} style={{ padding: "5px 10px", fontSize: "11px" }}>
+              <button className="copy-btn hdr-hide-mobile" onClick={copyRef} style={{ padding: "5px 10px", fontSize: "11px" }}>
                 <ICopy /> {copied ? t("cabinet.income.copied", lang) : `ref:${myRefCode}`}
               </button>
             )}
@@ -392,7 +392,7 @@ function CabinetPage() {
         )}
 
         {/* ── Tab bar ────────────────────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as any, background: "transparent", position: "relative", zIndex: 10 }}>
+        <div className="tab-bar" style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as any, background: "transparent", position: "relative", zIndex: 10 }}>
           {TABS.map(tab => {
             const locked = false;
             return (
@@ -402,14 +402,14 @@ function CabinetPage() {
                 onClick={() => !locked && setActiveTab(tab.id)}
               >
                 {tab.icon}
-                {t(tab.labelKey as any, lang)}
+                <span className="nav-tab-label">{t(tab.labelKey as any, lang)}</span>
               </button>
             );
           })}
         </div>
 
         {/* ── Page content ───────────────────────────────────────────────── */}
-        <div style={{ padding: "0 24px 32px", position: "relative", zIndex: 10 }}>
+        <div className="page-content" style={{ padding: "0 24px 32px", position: "relative", zIndex: 10 }}>
 
           {/* ══════════ CABINET TAB ══════════ */}
           {activeTab === "cabinet" && (

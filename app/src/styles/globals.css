@@ -150,5 +150,22 @@ body {
   .contributor-card { flex: 0 0 100%; }
 }
 
+@media (max-width: 640px) {
+  /* Header: hide verbose elements, shrink padding */
+  .app-header { padding: 10px 14px !important; }
+  .hdr-hide-mobile { display: none !important; }
+
+  /* Tab bar: icons only */
+  .tab-bar { padding: 8px 12px !important; gap: 6px !important; }
+  .nav-tab { padding: 9px 11px; gap: 0; justify-content: center; }
+  .nav-tab-label { display: none; }
+
+  /* Page content: tighter padding */
+  .page-content { padding: 0 12px 32px !important; }
+
+  /* Chess/game bottom row: stack panels */
+  .game-bottom-grid { grid-template-columns: 1fr !important; }
+}
+
 @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }

@@ -134,7 +134,7 @@ function Chess({ lang }: { lang: Lang }) {
           ))}
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
+      <div className="game-bottom-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>
         <div className="glass-panel" style={{padding:"14px"}}>
           <div style={{fontSize:"13px",fontWeight:600,color:"rgb(232,232,240)",marginBottom:"8px"}}>{t("games.chess.history",lang)}</div>
           <div style={{maxHeight:"100px",overflowY:"auto"}}>
