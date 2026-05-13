@@ -15,6 +15,11 @@ const DIST_PIE = [
 ];
 
 function shortWallet(a: string) { return `${a.slice(0,4)}…${a.slice(-4)}`; }
+function fmtCode(n: number) {
+  if (n >= 1_000_000) return `${(n/1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `${(n/1_000).toFixed(1)}K`;
+  return n.toLocaleString();
+}
 
 const r = 70, cx = 100, cy = 100, sw = 28;
 const circ = 2 * Math.PI * r;
@@ -33,7 +38,10 @@ function MetricsTab({ recentTxns }: Props) {
   const [M, setM] = useState<MetricsData|null>(null);
 
   useEffect(() => {
-    fetch("/api/stats/metrics").then(r => r.json()).then(setM).catch(() => {});
+    const load = () => fetch("/api/stats/metrics").then(r => r.json()).then(setM).catch(() => {});
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
   }, []);
 
   const hist = M?.burnHistory ?? Array.from({length:12},(_,i)=>({month:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],amount:0}));
@@ -43,9 +51,9 @@ function MetricsTab({ recentTxns }: Props) {
   const fillPts = `0,${H} ${sparkPts} ${W},${H}`;
 
   const STAT_CARDS = [
-    { icon: "🔥", label: "Burned $CODE",        val: M ? `${(M.burnedCode/1000000).toFixed(3).replace(/\.?0+$/,"")} M` : "—", color: "#fb923c", desc: "Permanently removed from circulation" },
-    { icon: "⚡", label: "Total Transactions",  val: M ? M.totalTransactions.toString() : "—",                              color: "#818cf8", desc: "On Solana blockchain" },
-    { icon: "👥", label: "Active Wallets",      val: M ? M.activeWallets.toString() : "—",                                  color: "#06b6d4", desc: "Unique addresses" },
+    { icon: "🔥", label: "Burned $CODE",        val: M ? fmtCode(M.burnedCode) : "—",                                        color: "#fb923c", desc: "Permanently removed from circulation" },
+    { icon: "⚡", label: "Total Payments",      val: M ? M.totalTransactions.toString() : "—",                              color: "#818cf8", desc: "Burn events on-chain" },
+    { icon: "👥", label: "Total Members",       val: M ? M.activeWallets.toString() : "—",                                  color: "#06b6d4", desc: "Active subscribers" },
     { icon: "🏦", label: "Treasury Balance",    val: M ? `$${M.treasuryUsdc.toLocaleString()}` : "—",                       color: "#D4A24C", desc: "USDC in DAO treasury" },
     { icon: "💎", label: "Avg Fee",             val: M ? `${M.avgFee}` : "—",                                               color: "#a78bfa", desc: "SOL per transaction" },
     { icon: "📡", label: "Current Slot",        val: M ? `#${M.currentSlot.toLocaleString()}` : "—",                        color: "#38bdf8", desc: "Solana devnet" },
