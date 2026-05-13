@@ -61,7 +61,8 @@ export async function GET(req: Request) {
       locked,
       recent: recentRes.rows,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("referrals/income error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

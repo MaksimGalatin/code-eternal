@@ -14,7 +14,8 @@ export async function GET() {
       activeMembers: Number(usersRes.rows[0].cnt),
       sitesCreated: Number(sitesRes.rows[0].cnt),
     }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("overview error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

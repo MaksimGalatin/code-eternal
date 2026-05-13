@@ -608,8 +608,8 @@ No AWS Secrets Manager (AWS infrastructure removed).
 | Next.js (app) | `GROK_API_KEY` | xAI Grok API key — used by `/api/chat.ts` for AIfa chat (model: `grok-3`) |
 | Next.js (app) | `SITE_GEN_URL` | `https://listener.codeofdigitaleternity.com` — Vercel calls VM nginx which routes to site-gen |
 | Next.js (app) | `SITE_GEN_SECRET` | Bearer token — must match VM .env value; sent in Authorization header to /jobs |
-| listener, site-gen | `SITE_GEN_SECRET` | `2c0bbd515501b5e86600e1ce9acd877dd5b9bab4db7575d6401f2ae18a2ef18a` — set in VM .env |
-| listener | `RESEND_API_KEY` | `re_Lu1RDMiD_54YM5zVRfyNFRYy5hDDPZWHF` — set in VM .env |
+| listener, site-gen | `SITE_GEN_SECRET` | 64-char hex token — set in VM .env at `/opt/code-eternal/.env` |
+| listener | `RESEND_API_KEY` | From resend.com dashboard — set in VM .env at `/opt/code-eternal/.env` |
 | GitHub Actions (anchor-deploy.yml) | `BACKEND_PRIVATE_KEY` | Base64 private key of `96JwAJL2...` — for test runner to sign update_site_url txs |
 | GitHub Actions (anchor-deploy.yml) | `DEPLOY_KEYPAIR` | JSON array of upgrade authority keypair (`7GJm1GVk...`) — for `solana program deploy` |
 
@@ -1030,7 +1030,7 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **`@types/pg`** — moved from devDependencies to dependencies (Vercel skips devDeps in production mode)
 - **Grok model** — updated from deprecated `grok-beta` to `grok-3-mini` (later upgraded to `grok-3`)
 - **Site status polling** — cabinet polls every 5s while status is "pending"; auto-updates without page refresh
-- **RESEND_API_KEY** — added to VM .env (`re_Lu1RDMiD_54YM5zVRfyNFRYy5hDDPZWHF`)
+- **RESEND_API_KEY** — added to VM .env (see resend.com dashboard for current key)
 - **GitHub MCP** — configured in `~/.claude.json` via `wsl npx -y @modelcontextprotocol/server-github`
 
 ## Security Fixes Applied (2026-04-19)

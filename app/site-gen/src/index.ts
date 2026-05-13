@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { timingSafeEqual } from "crypto";
 import express from "express";
 import { logger } from "./utils/logger";
 import { generateAndDeploy } from "./utils/arweave";
@@ -23,7 +24,12 @@ app.post("/jobs", async (req, res) => {
     logger.error("SITE_GEN_SECRET not configured — rejecting request");
     return res.status(500).json({ error: "Service misconfigured" });
   }
-  if (req.headers.authorization !== `Bearer ${secret}`) {
+  const provided = req.headers.authorization ?? "";
+  const expected = `Bearer ${secret}`;
+  const safeEqual =
+    provided.length === expected.length &&
+    timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  if (!safeEqual) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

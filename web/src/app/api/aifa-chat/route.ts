@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 
 const MAX_MESSAGES = 20;
 
@@ -37,8 +38,8 @@ async function getGrokResponse(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Grok API error: ${response.status} - ${errorText}`);
+    console.error("Grok API error:", response.status);
+    throw new Error("upstream_error");
   }
 
   const data = await response.json();
@@ -59,6 +60,10 @@ function trimConversation(messages: Array<{ role: string; content: string }>) {
 }
 
 export async function POST(request: NextRequest) {
+  if (rateLimit(getIp(request), 10, 60_000) !== null) {
+    return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
+  }
+
   try {
     const { message, history = [] } = await request.json();
 
@@ -95,10 +100,8 @@ export async function POST(request: NextRequest) {
       provider: "grok",
     });
   } catch (error) {
-    console.error("AIfa chat error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to process message";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error("AIfa chat error:", error instanceof Error ? error.message : error);
+    return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 500 });
   }
 }
 

@@ -22,7 +22,8 @@ export async function GET() {
       amountUsdc: TIER_PRICE[r.tier] ?? 0,
     }));
     return NextResponse.json({ contributors }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("top-contributors error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

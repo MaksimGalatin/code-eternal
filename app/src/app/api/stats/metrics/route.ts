@@ -36,7 +36,8 @@ export async function GET() {
       avgFee: 0.00025, currentSlot: 14,
       burnHistory,
     }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    console.error("metrics error:", e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
