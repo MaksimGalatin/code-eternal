@@ -1,7 +1,7 @@
 'use client';
 import React, { memo, useEffect, useState } from "react";
 
-type MetricsData = { burnedCode: number; burnedCodeTrend: number; totalTransactions: number; txTrend: number; activeWallets: number; walletsTrend: number; treasuryUsdc: number; treasuryTrend: number; avgFee: number; currentSlot: number; burnHistory: { month: string; amount: number }[] };
+type MetricsData = { burnedCode: number; totalTransactions: number; activeWallets: number; treasuryUsdc: number; avgFee: number; currentSlot: number; burnHistory: { month: string; amount: number }[] };
 type RecentTxn   = { wallet: string; tier: number; tierName: string; amount: number; txSig: string; status: string; createdAt: string };
 
 const TIER_COLOR: Record<number, string> = { 1: "#7C3AED", 2: "#D4A24C", 3: "#10B981" };
@@ -43,12 +43,12 @@ function MetricsTab({ recentTxns }: Props) {
   const fillPts = `0,${H} ${sparkPts} ${W},${H}`;
 
   const STAT_CARDS = [
-    { icon: "🔥", label: "Burned $CODE",         val: M ? `${(M.burnedCode/1000000).toFixed(3).replace(/\.?0+$/,"")} M` : "—", trend: M?.burnedCodeTrend,    color: "#fb923c", desc: "Permanently removed from circulation" },
-    { icon: "⚡", label: "Total Transactions",    val: M ? M.totalTransactions.toString() : "—",                              trend: M?.txTrend,              color: "#818cf8", desc: "On Solana blockchain" },
-    { icon: "👥", label: "Active Wallets (24h)",  val: M ? M.activeWallets.toString() : "—",                                  trend: M?.walletsTrend,         color: "#06b6d4", desc: "Unique addresses" },
-    { icon: "🏦", label: "Treasury Balance",      val: M ? `$${M.treasuryUsdc.toLocaleString()}` : "—",                       trend: M?.treasuryTrend,        color: "#D4A24C", desc: "USDC in DAO treasury" },
-    { icon: "💎", label: "Avg Fee",               val: M ? `${M.avgFee}` : "—",                                               trend: undefined,               color: "#a78bfa", desc: "SOL per transaction" },
-    { icon: "📡", label: "Current Slot",          val: M ? `#${M.currentSlot}` : "—",                                         trend: undefined,               color: "#38bdf8", desc: "Epoch 0" },
+    { icon: "🔥", label: "Burned $CODE",        val: M ? `${(M.burnedCode/1000000).toFixed(3).replace(/\.?0+$/,"")} M` : "—", color: "#fb923c", desc: "Permanently removed from circulation" },
+    { icon: "⚡", label: "Total Transactions",  val: M ? M.totalTransactions.toString() : "—",                              color: "#818cf8", desc: "On Solana blockchain" },
+    { icon: "👥", label: "Active Wallets",      val: M ? M.activeWallets.toString() : "—",                                  color: "#06b6d4", desc: "Unique addresses" },
+    { icon: "🏦", label: "Treasury Balance",    val: M ? `$${M.treasuryUsdc.toLocaleString()}` : "—",                       color: "#D4A24C", desc: "USDC in DAO treasury" },
+    { icon: "💎", label: "Avg Fee",             val: M ? `${M.avgFee}` : "—",                                               color: "#a78bfa", desc: "SOL per transaction" },
+    { icon: "📡", label: "Current Slot",        val: M ? `#${M.currentSlot.toLocaleString()}` : "—",                        color: "#38bdf8", desc: "Solana devnet" },
   ];
 
   return (
@@ -72,10 +72,7 @@ function MetricsTab({ recentTxns }: Props) {
           <div key={s.label} className="glass-panel" style={{ padding: "18px 20px" }}>
             <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>{s.icon} {s.label}</div>
             <div style={{ fontSize: "26px", fontWeight: 900, color: s.color, letterSpacing: "-0.5px", marginBottom: "6px" }}>{s.val}</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{s.desc}</div>
-              {s.trend !== undefined && <span style={{ fontSize: "11px", color: "#10B981", fontWeight: 600, whiteSpace: "nowrap" }}>+{s.trend}%</span>}
-            </div>
+            <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{s.desc}</div>
           </div>
         ))}
       </div>
