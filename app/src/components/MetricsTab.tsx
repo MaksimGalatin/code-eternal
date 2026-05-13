@@ -15,6 +15,13 @@ const DIST_PIE = [
 ];
 
 function shortWallet(a: string) { return `${a.slice(0,4)}…${a.slice(-4)}`; }
+function valSize(v: string) {
+  const n = v.length;
+  if (n <= 4) return "26px";
+  if (n <= 7) return "22px";
+  if (n <= 10) return "18px";
+  return "14px";
+}
 function fmtCode(n: number) {
   if (n >= 1_000_000) return `${(n/1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n/1_000).toFixed(1)}K`;
@@ -79,7 +86,7 @@ function MetricsTab({ recentTxns }: Props) {
         {STAT_CARDS.map(s => (
           <div key={s.label} className="glass-panel" style={{ padding: "18px 20px", minWidth: 0 }}>
             <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.icon} {s.label}</div>
-            <div style={{ fontSize: "22px", fontWeight: 900, color: s.color, letterSpacing: "-0.5px", marginBottom: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.val}</div>
+            <div style={{ fontSize: valSize(s.val), fontWeight: 900, color: s.color, letterSpacing: "-0.5px", marginBottom: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.val}</div>
             <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{s.desc}</div>
           </div>
         ))}
