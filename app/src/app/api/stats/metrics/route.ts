@@ -44,8 +44,8 @@ export async function GET() {
   try {
     const [burnedRes, txRes, walletsRes, histRes, treasuryUsdc, currentSlot] = await Promise.all([
       db.query(`SELECT COALESCE(SUM(amount),0) as total FROM burn_events`),
-      db.query(`SELECT COUNT(*) as total FROM site_generation_jobs WHERE status='done'`),
-      db.query(`SELECT COUNT(DISTINCT wallet) as total FROM users`),
+      db.query(`SELECT COUNT(*) as total FROM burn_events`),
+      db.query(`SELECT COUNT(DISTINCT wallet) as total FROM users WHERE tier > 0`),
       db.query(`
         SELECT to_char(date_trunc('month', created_at),'Mon') as month,
                COALESCE(SUM(amount * 100),0) as amount
