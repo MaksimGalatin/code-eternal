@@ -75,11 +75,11 @@ function MetricsTab({ recentTxns }: Props) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: "14px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "14px", marginBottom: "24px" }}>
         {STAT_CARDS.map(s => (
-          <div key={s.label} className="glass-panel" style={{ padding: "18px 20px" }}>
-            <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>{s.icon} {s.label}</div>
-            <div style={{ fontSize: "26px", fontWeight: 900, color: s.color, letterSpacing: "-0.5px", marginBottom: "6px" }}>{s.val}</div>
+          <div key={s.label} className="glass-panel" style={{ padding: "18px 20px", minWidth: 0 }}>
+            <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.icon} {s.label}</div>
+            <div style={{ fontSize: "22px", fontWeight: 900, color: s.color, letterSpacing: "-0.5px", marginBottom: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.val}</div>
             <div style={{ fontSize: "11px", color: "rgb(107,114,128)" }}>{s.desc}</div>
           </div>
         ))}
