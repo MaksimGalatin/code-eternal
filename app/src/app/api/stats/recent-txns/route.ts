@@ -23,7 +23,8 @@ export async function GET() {
       createdAt: r.created_at as string,
     }));
     return NextResponse.json({ txns }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    console.error("recent-txns error:", e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

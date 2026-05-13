@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { nanoid } from "nanoid";
 import { PublicKey } from "@solana/web3.js";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 
 function isValidEmail(email: string): boolean {
   const at = email.indexOf("@");
@@ -12,6 +13,10 @@ function isValidEmail(email: string): boolean {
 }
 
 export async function POST(req: Request) {
+  if (rateLimit(getIp(req), 5, 60_000) !== null) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const body = await req.json();
   const { wallet, email, refCode } = body as {
     wallet?: string;

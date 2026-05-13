@@ -7,6 +7,15 @@ import { PublicKey } from "@solana/web3.js";
 
 const REGEN_LIMIT: Record<number, number> = { 1: 1, 2: 5, 3: 10 };
 
+const RESERVED_USERNAMES = new Set([
+  "admin", "administrator", "support", "help", "mail", "email", "blog", "api",
+  "www", "app", "web", "login", "logout", "register", "signup", "account",
+  "about", "contact", "home", "index", "root", "system", "mod", "moderator",
+  "staff", "team", "official", "info", "news", "media", "press", "billing",
+  "security", "privacy", "legal", "terms", "tos", "faq", "docs", "status",
+  "null", "undefined", "test", "demo", "dev", "staging", "prod", "cdn",
+]);
+
 const SITE_GEN_URL = process.env.SITE_GEN_URL || "http://site-gen:3002";
 const SITE_GEN_SECRET = process.env.SITE_GEN_SECRET;
 
@@ -107,9 +116,13 @@ export async function POST(req: Request) {
     // Check username availability before any regen-limit accounting so a taken
     // username never costs the user one of their limited site-creation attempts.
     if (username) {
+      const usernameLower = username.toLowerCase();
+      if (RESERVED_USERNAMES.has(usernameLower)) {
+        return NextResponse.json({ error: "username_reserved" }, { status: 409 });
+      }
       const taken = await client.query(
         "SELECT 1 FROM users WHERE username = $1 AND wallet != $2 LIMIT 1",
-        [username.toLowerCase(), wallet]
+        [usernameLower, wallet]
       );
       if (taken.rows.length > 0) {
         return NextResponse.json({ error: "username_taken" }, { status: 409 });

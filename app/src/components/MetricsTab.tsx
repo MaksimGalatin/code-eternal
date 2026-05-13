@@ -67,7 +67,7 @@ function MetricsTab({ recentTxns }: Props) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "14px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: "14px", marginBottom: "24px" }}>
         {STAT_CARDS.map(s => (
           <div key={s.label} className="glass-panel" style={{ padding: "18px 20px" }}>
             <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>{s.icon} {s.label}</div>

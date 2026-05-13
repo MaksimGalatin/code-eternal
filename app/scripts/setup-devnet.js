@@ -19,7 +19,9 @@ const { homedir } = require("os");
 const PROGRAM_ID = new PublicKey("8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep");
 const ECOSYSTEM_FUND = new PublicKey("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
 const RPC_URL =
-  "https://devnet.helius-rpc.com/?api-key=bb310470-cf7c-42a5-80af-60fe93a6784b";
+  process.env.NEXT_PUBLIC_RPC_URL ||
+  process.env.HELIUS_RPC_URL ||
+  (() => { throw new Error("Set NEXT_PUBLIC_RPC_URL or HELIUS_RPC_URL env var before running"); })();
 
 async function main() {
   const connection = new Connection(RPC_URL, "confirmed");

@@ -320,7 +320,7 @@ function CabinetPage() {
       <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <header style={{
+        <header className="app-header" style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "16px 24px", borderBottom: "1px solid rgb(26,26,46)",
           background: "rgba(10,10,15,0.8)", backdropFilter: "blur(10px)",
@@ -355,15 +355,15 @@ function CabinetPage() {
               </div>
             </div>
             {email && (
-              <span style={{ fontSize: "12px", color: "rgb(139,139,158)" }}>{email}</span>
+              <span className="hdr-hide-mobile" style={{ fontSize: "12px", color: "rgb(139,139,158)" }}>{email}</span>
             )}
             {wallet && (
-              <span style={{ fontSize: "12px", fontFamily: "monospace", padding: "4px 8px", borderRadius: "6px", background: "rgb(19,19,28)", color: "rgb(6,182,212)" }}>
+              <span className="hdr-hide-mobile" style={{ fontSize: "12px", fontFamily: "monospace", padding: "4px 8px", borderRadius: "6px", background: "rgb(19,19,28)", color: "rgb(6,182,212)" }}>
                 {shortWallet(wallet.address)}
               </span>
             )}
             {myRefCode && (
-              <button className="copy-btn" onClick={copyRef} style={{ padding: "5px 10px", fontSize: "11px" }}>
+              <button className="copy-btn hdr-hide-mobile" onClick={copyRef} style={{ padding: "5px 10px", fontSize: "11px" }}>
                 <ICopy /> {copied ? t("cabinet.income.copied", lang) : `ref:${myRefCode}`}
               </button>
             )}
@@ -392,7 +392,7 @@ function CabinetPage() {
         )}
 
         {/* ── Tab bar ────────────────────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as any, background: "transparent", position: "relative", zIndex: 10 }}>
+        <div className="tab-bar" style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as any, background: "transparent", position: "relative", zIndex: 10 }}>
           {TABS.map(tab => {
             const locked = false;
             return (
@@ -402,14 +402,14 @@ function CabinetPage() {
                 onClick={() => !locked && setActiveTab(tab.id)}
               >
                 {tab.icon}
-                {t(tab.labelKey as any, lang)}
+                <span className="nav-tab-label">{t(tab.labelKey as any, lang)}</span>
               </button>
             );
           })}
         </div>
 
         {/* ── Page content ───────────────────────────────────────────────── */}
-        <div style={{ padding: "0 24px 32px", position: "relative", zIndex: 10 }}>
+        <div className="page-content" style={{ padding: "0 24px 32px", position: "relative", zIndex: 10 }}>
 
           {/* ══════════ CABINET TAB ══════════ */}
           {activeTab === "cabinet" && (
@@ -463,7 +463,7 @@ function CabinetPage() {
               </div>
 
               {/* Two columns: Income + Plan */}
-              <div className="main-cols" style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
+              <div className="main-cols-flex">
 
                 {/* Income */}
                 <div className="glass-panel" style={{ flex: "1 1 55%", padding: "24px" }}>
@@ -870,7 +870,7 @@ function CabinetPage() {
           {activeTab === "site" && (
             <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-                <button onClick={() => setActiveTab("cabinet")} style={{ background: "none", border: "none", color: "rgb(107,114,128)", cursor: "pointer", fontSize: "20px", lineHeight: 1, padding: "2px" }}>←</button>
+                <button onClick={() => setActiveTab("cabinet")} style={{ background: "none", border: "none", color: "rgb(107,114,128)", cursor: "pointer", fontSize: "20px", lineHeight: 1, padding: "10px", minWidth: "44px", minHeight: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontSize: "20px" }}>✦</span>
@@ -888,7 +888,7 @@ function CabinetPage() {
               </div>
 
               {currentTier === 0 ? (
-                <div className="glass-panel" style={{ padding: "48px", textAlign: "center" }}>
+                <div className="glass-panel site-empty-panel" style={{ padding: "48px", textAlign: "center" }}>
                   <div style={{ fontSize: "48px", marginBottom: "16px" }}>🏛️</div>
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "rgb(232,232,240)", marginBottom: "8px" }}>Family Archives tier required</div>
                   <div style={{ fontSize: "13px", color: "rgb(107,114,128)", marginBottom: "24px" }}>Purchase a tier to create your eternal site on Arweave</div>
@@ -915,7 +915,7 @@ function CabinetPage() {
                           }}
                           placeholder="yourname"
                           style={{ flex: 1, minWidth: 0, background: "none", border: "none", padding: "11px 14px", color: "rgb(232,232,240)", fontSize: "14px", fontFamily: "Inter,sans-serif", outline: "none" }} />
-                        <span style={{ flexShrink: 0, padding: "11px 14px", color: "rgb(107,114,128)", fontSize: "13px", borderLeft: "1px solid rgb(42,42,58)", whiteSpace: "nowrap" }}>.codeofdigitaleternity.com</span>
+                        <span className="username-suffix">.codeofdigitaleternity.com</span>
                       </div>
                       {usernameErr && <div style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{usernameErr}</div>}
                     </div>
@@ -982,7 +982,7 @@ function CabinetPage() {
                     </div>
 
                     {/* Social links */}
-                    <div style={{ marginBottom: "24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                    <div className="social-grid">
                       {[
                         { icon: "📱", label: "Telegram", value: siteTelegram, setter: setSiteTelegram, placeholder: "username" },
                         { icon: "𝕏", label: "Twitter", value: siteTwitter, setter: setSiteTwitter, placeholder: "handle" },

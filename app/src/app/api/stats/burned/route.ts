@@ -9,7 +9,8 @@ export async function GET() {
     const totalRaw = Number(rows[0].total);
     const txs = Number(rows[0].txs);
     return NextResponse.json({ totalUsdc: totalRaw / 1_000_000, txs }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    console.error("burned error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
