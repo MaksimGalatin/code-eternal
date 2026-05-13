@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     if (username) {
       const usernameLower = username.toLowerCase();
       if (RESERVED_USERNAMES.has(usernameLower)) {
-        return NextResponse.json({ error: "username_reserved" }, { status: 409 });
+        return NextResponse.json({ error: "username_taken" }, { status: 409 });
       }
       const taken = await client.query(
         "SELECT 1 FROM users WHERE username = $1 AND wallet != $2 LIMIT 1",

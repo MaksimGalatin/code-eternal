@@ -891,6 +891,19 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
 
+## Changes Applied (2026-05-13, Security Fixes)
+
+- **Secrets rotated** — Helius API key (`bb310470-...` → `83fc4fd7-...`) and SITE_GEN_SECRET rotated; updated in VM `.env`, Vercel env vars, and containers restarted. Resend/Neon/Vercel tokens were already invalid.
+- **CLAUDE_CONTEXT.md secrets redacted** — SITE_GEN_SECRET and RESEND_API_KEY literal values removed from documentation; replaced with descriptions.
+- **Helius key removed from code** — `app/Dockerfile` ARG default removed (now required `--build-arg`); `app/scripts/setup-devnet.js` reads from env var; `app/.env.local.example` uses placeholder.
+- **web/api/aifa-chat rate limiting** — 10 req/min per IP added; generic error responses (no upstream Grok error details leaked); new `web/src/lib/rateLimit.ts`.
+- **DB error messages suppressed** — 7 routes (`stats/metrics`, `stats/overview`, `stats/top-contributors`, `stats/burned`, `stats/recent-txns`, `referrals/income`, `referrals/chain`) now return `"Internal server error"` instead of raw PostgreSQL error messages.
+- **web/ security headers** — CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, Permissions-Policy added to `web/next.config.ts`; `reactStrictMode: true` enabled; `typescript.ignoreBuildErrors` kept (web/ has unresolved TS errors).
+- **Rate limit on /api/users/register** — 5 req/min per IP added.
+- **Timing attack fix in site-gen** — SITE_GEN_SECRET comparison changed from `!==` to `crypto.timingSafeEqual()`.
+- **Reserved username blocklist** — 32 reserved names (admin, api, www, support, etc.) blocked in `/api/site/create`.
+- **Newsletter emails scrubbed** — `web/data/newsletter.json` cleared (GDPR; Vercel filesystem is read-only anyway).
+
 ## Changes Applied (2026-05-13, Mobile Responsive)
 
 - **Mobile responsive layout** — cabinet app now usable on phones (< 640px breakpoint):
