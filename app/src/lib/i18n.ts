@@ -183,6 +183,18 @@ export const translations = {
     "site.latinOnly": "Latin characters only: a–z, 0–9, _ and –",
     "site.errorFailed": "Failed to create site. Please try again.",
     "site.errorNetwork": "Network error. Check your connection and retry.",
+
+    // Games — leaderboard & rewards
+    "games.leaderboard.toggle": "🏆 Leaderboard",
+    "games.leaderboard.title": "Top 100 — All-Time Leaders",
+    "games.leaderboard.empty": "No wins recorded yet. Be the first!",
+    "games.leaderboard.loading": "Loading...",
+    "games.leaderboard.rank": "#",
+    "games.leaderboard.wins": "Wins",
+    "games.leaderboard.tokens": "$CODE",
+    "games.reward.label": "Code Token Reward",
+    "games.chess.check": "♚ Check!",
+    "games.noWallet": "Sign in to earn $CODE tokens",
   },
 
   ru: {
@@ -364,6 +376,18 @@ export const translations = {
     "site.latinOnly": "Только латинские символы: a–z, 0–9, _ и –",
     "site.errorFailed": "Не удалось создать сайт. Попробуйте ещё раз.",
     "site.errorNetwork": "Ошибка сети. Проверьте соединение и повторите.",
+
+    // Games — leaderboard & rewards
+    "games.leaderboard.toggle": "🏆 Таблица лидеров",
+    "games.leaderboard.title": "Топ 100 — Рекорды",
+    "games.leaderboard.empty": "Побед пока нет. Станьте первым!",
+    "games.leaderboard.loading": "Загрузка...",
+    "games.leaderboard.rank": "#",
+    "games.leaderboard.wins": "Победы",
+    "games.leaderboard.tokens": "$CODE",
+    "games.reward.label": "Награда за победу",
+    "games.chess.check": "♚ Шах!",
+    "games.noWallet": "Войдите, чтобы зарабатывать $CODE",
   },
 
   es: {
@@ -545,6 +569,18 @@ export const translations = {
     "site.latinOnly": "Solo caracteres latinos: a–z, 0–9, _ y –",
     "site.errorFailed": "No se pudo crear el sitio. Inténtalo de nuevo.",
     "site.errorNetwork": "Error de red. Comprueba tu conexión y reintenta.",
+
+    // Games — leaderboard & rewards
+    "games.leaderboard.toggle": "🏆 Clasificación",
+    "games.leaderboard.title": "Top 100 — Líderes",
+    "games.leaderboard.empty": "Aún no hay victorias. ¡Sé el primero!",
+    "games.leaderboard.loading": "Cargando...",
+    "games.leaderboard.rank": "#",
+    "games.leaderboard.wins": "Victorias",
+    "games.leaderboard.tokens": "$CODE",
+    "games.reward.label": "Premio de Tokens",
+    "games.chess.check": "♚ ¡Jaque!",
+    "games.noWallet": "Inicia sesión para ganar $CODE",
   },
 
   zh: {
@@ -726,6 +762,18 @@ export const translations = {
     "site.latinOnly": "仅限拉丁字符：a–z、0–9、_ 和 –",
     "site.errorFailed": "创建站点失败，请重试。",
     "site.errorNetwork": "网络错误，请检查连接后重试。",
+
+    // Games — leaderboard & rewards
+    "games.leaderboard.toggle": "🏆 排行榜",
+    "games.leaderboard.title": "前100名 — 历史排名",
+    "games.leaderboard.empty": "暂无胜利记录，成为第一个！",
+    "games.leaderboard.loading": "加载中...",
+    "games.leaderboard.rank": "#",
+    "games.leaderboard.wins": "胜场",
+    "games.leaderboard.tokens": "$CODE",
+    "games.reward.label": "代币奖励",
+    "games.chess.check": "♚ 将军！",
+    "games.noWallet": "登录以赚取 $CODE 代币",
   },
 } as const;
 

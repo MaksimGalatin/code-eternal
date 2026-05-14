@@ -1214,7 +1214,7 @@ function CabinetPage() {
           {activeTab === "metrics" && <MetricsTab recentTxns={recentTxns} />}
 
           {/* ══════════ GAMES TAB ══════════ */}
-          {activeTab === "games" && <GamesArena />}
+          {activeTab === "games" && <GamesArena wallet={wallet?.address} />}
 
           {/* ══════════ DAO TAB ══════════ */}
           {activeTab === "dao" && <DaoTab />}

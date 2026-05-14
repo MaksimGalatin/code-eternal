@@ -891,6 +891,26 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
 
+## Changes Applied (2026-05-14, Games Upgrade)
+
+- **chess.js integrated** — `chess.js ^1.3.0` added to `app/package.json`. Chess component now uses chess.js for full legal-move validation (check, en passant, castling, promotion). AI uses Minimax + Alpha-Beta pruning at depth 3 with piece-square table evaluation; creates a fresh `Chess(fen)` instance for each AI search to avoid state corruption.
+- **Checkers AI upgraded to Minimax depth 5** — `checkersMinimax()` with alpha-beta pruning, captures-first move ordering, and positional evaluation (king value 2×, advancement bonus, center bonus). Multi-jump chains handled correctly via `getCheckerJumps()`.
+- **Backgammon AI upgraded to scoring heuristic** — `scoreBgMove()` scores each candidate move: prefers blot hits (+150), making points (+60), penalizes leaving blots (-40), and reduces pip count. Replaces random move selection.
+- **Tic-Tac-Toe** — minimax unchanged (already perfect).
+- **`game_wins` DB table** — migration at `app/scripts/migrate-games.sql`. Run: `DATABASE_URL='...' node app/scripts/run-migrate-games.js`. Schema: `(id, wallet, game_type, tokens_earned, session_id UNIQUE, created_at)`.
+- **`POST /api/games/reward`** — records a verified win. Deduplicates by `session_id` (ON CONFLICT DO NOTHING). Returns `{ok, rewarded, tokens}`. Rate-limited 15/min per IP. Validates wallet regex, gameType whitelist, sessionId length.
+- **`GET /api/games/leaderboard?game=chess`** — returns top 100 wallets ranked by wins then tokens for the specified game. No auth required.
+- **Leaderboard UI** — `<Leaderboard gameType lang />` component lazily fetches on first reveal. Toggleable per-game via "🏆 Leaderboard" button. Shows rank medals (🥇🥈🥉), shortened wallet, wins, and $CODE earned.
+- **Reward Toast** — fixed-position overlay (bottom-right) animates in on win, auto-dismisses after 4s. Only fires if `rewarded.current` is false (one reward per game session).
+- **Token reward amounts** — Tic-Tac-Toe +1, Checkers +5, Chess +35, Backgammon +35. Displayed in game selector tabs and rewards legend.
+- **`GamesArena` now accepts `wallet?: string` prop** — cabinet passes `wallet?.address`. If wallet missing, games still work but rewards are silently skipped.
+- **i18n** — new keys added to all 4 languages: `games.leaderboard.*`, `games.reward.label`, `games.chess.check`, `games.noWallet`.
+
+### One-Time DB Migration Required
+```bash
+wsl -e bash -c "cd /mnt/c/Users/Maksim/projects/code-eternal/app && DATABASE_URL='<NEON_URL>' node scripts/run-migrate-games.js"
+```
+
 ## Changes Applied (2026-05-13, Security Fixes)
 
 - **Secrets rotated** — Helius API key (`bb310470-...` → `83fc4fd7-...`) and SITE_GEN_SECRET rotated; updated in VM `.env`, Vercel env vars, and containers restarted. Resend/Neon/Vercel tokens were already invalid.
