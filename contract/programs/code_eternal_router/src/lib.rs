@@ -7,7 +7,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep");
+declare_id!("6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ");
 
 #[program]
 pub mod code_eternal_router {
