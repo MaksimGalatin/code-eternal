@@ -1,0 +1,30 @@
+name: Deploy App to Vercel Dev
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'app/src/**'
+      - 'app/public/**'
+      - 'app/package.json'
+      - 'app/next.config.*'
+      - 'app/tailwind.config.*'
+      - 'app/tsconfig.json'
+  workflow_dispatch:
+
+jobs:
+  deploy-vercel-dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Vercel Dev (production)
+        working-directory: ./app
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: team_iNXQxvTVpuw5xoVdOQKhevnD
+          VERCEL_PROJECT_ID: prj_z5KSp1EanIHCRzwPTxcshwSCRzk1
