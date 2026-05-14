@@ -69,7 +69,8 @@ code-eternal/
 - Squarespace — landing page (live)
 - Next.js 16 + TypeScript + Tailwind — app (`app/src/` directory)
 - **Vercel** — hosting for Next.js app (moved from Hetzner 2026-05-09, auto-deploys on push to main)
-  - Project: `app.codeofdigitaleternity.com` (ID: `prj_DrlUafVTqw3AGdxG8wiLrr92RG1r`)
+  - **Prod** project: `app.codeofdigitaleternity.com` (ID: `prj_DrlUafVTqw3AGdxG8wiLrr92RG1r`) — production branch: `main` ← frozen, never touch
+  - **Dev** project: `dev.app.codeofdigitaleternity.com` (ID: `prj_z5KSp1EanIHCRzwPTxcshwSCRzk1`) — deploys from `develop` via `.github/workflows/deploy-vercel-dev.yml` (triggers on `app/src/**`, `app/public/**`, `app/package.json`, `app/next.config.*`)
   - Root Directory: `app`, framework: Next.js, Node: 24.x
   - All env vars set via Vercel CLI (see Environment Variables section)
 
@@ -93,16 +94,21 @@ code-eternal/
 
 ### Backend (Hetzner)
 - Hetzner CAX11 ARM64 VM — `128.140.0.118`, Ubuntu 24.04, 4GB RAM, ~$5/month
-- Docker Compose — **3 services: listener, site-gen, nginx** (app moved to Vercel 2026-05-09)
-- `listener` service — Helius webhooks (/webhook/helius) on port 3001
-- `site-gen` service — HTTP job endpoint (/jobs) on port 3002, Arweave upload; protected by `SITE_GEN_SECRET` Bearer token
-- `nginx` — reverse proxy on ports 80/443; routes `/webhook/` → listener:3001, `/jobs` → site-gen:3002, `/health` → site-gen:3002
-- Neon PostgreSQL — external managed database (no local DB on VM)
-- Docker Hub — image registry (`maxshchuplov/` private repos)
-- Cloudflare — DNS + wildcard subdomains
-- **GitHub Actions CI/CD** — two workflows:
-  - `.github/workflows/deploy.yml` — builds listener + site-gen ARM64 images, deploys to VM (triggers on `app/listener/**`, `app/site-gen/**`, `app/docker/**`)
-  - `.github/workflows/anchor-deploy.yml` — builds contract, runs 6 tests on localnet, deploys to devnet (triggers on `contract/**`)
+- Docker Compose — **5 prod services + 2 dev services** on same VM, isolated via Docker profiles
+- **Prod services** (no profile): `listener:latest` port 3001, `site-gen:latest` port 3002, `nginx` 80/443
+- **Dev services** (`--profile dev`): `listener-dev:dev` port 3011, `site-gen-dev:dev` port 3012
+- `nginx` — routes both prod and dev domains; dev domain uses lazy DNS (`resolver 127.0.0.11 valid=10s`) so nginx starts even if dev containers are down
+- nginx dev routing: `/webhook/` → listener-dev:3011, `/jobs` → site-gen-dev:3012 under `dev.listener.codeofdigitaleternity.com`
+- Neon PostgreSQL — external managed database; **prod** uses main branch, **dev** uses `develop` branch (`ep-dark-flower-al6r85gf`)
+- Docker Hub — image registry (`maxshchuplov/` private repos); `:latest` = prod/frozen, `:dev` = dev/active
+- Cloudflare — DNS + wildcard subdomains; `dev.listener.codeofdigitaleternity.com` A → 128.140.0.118
+- SSL certs: prod at `/etc/letsencrypt/live/listener.codeofdigitaleternity.com/`, dev at `/etc/letsencrypt/live/dev.listener.codeofdigitaleternity.com/`
+- **GitHub Actions CI/CD** — 4 workflows on `develop` branch, 2 on `main`:
+  - `main`: `.github/workflows/deploy.yml` — prod listener+site-gen `:latest` (triggers `app/listener/**`, `app/site-gen/**`, `app/docker/**`) ← never runs (main is frozen)
+  - `main`: `.github/workflows/anchor-deploy.yml` — prod contract deploy (`8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep`)
+  - `develop`: `.github/workflows/deploy-dev.yml` — dev listener+site-gen `:dev`, copies docker-compose+nginx to VM (triggers `app/listener/**`, `app/site-gen/**`, `app/docker/**`)
+  - `develop`: `.github/workflows/deploy-vercel-dev.yml` — dev Vercel prod deployment (triggers `app/src/**`, `app/public/**`, `app/package.json`, `app/next.config.*`)
+  - `develop`: `.github/workflows/anchor-deploy-dev.yml` — dev contract deploy (`6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ`)
 
 ### External Services
 - Helius (helius.dev) — Solana RPC + webhooks (free tier)
@@ -279,11 +285,22 @@ pub struct UserState {
 
 ## Hardcoded Pubkeys
 
+### Production (main branch — frozen)
 | Constant | File | Value |
 |----------|------|-------|
-| `BACKEND_AUTHORITY` | `contract/programs/.../update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/credentials.env` as `BACKEND_PRIVATE_KEY` |
+| `BACKEND_AUTHORITY` | `contract/programs/.../update_site_url.rs` | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` — private key in `secrets/prod/credentials.env` as `BACKEND_PRIVATE_KEY` |
 | `ECOSYSTEM_FUND_WALLET` | `contract/programs/.../process_payment.rs` | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` — keypair in `secrets/ecosystem-fund-keypair.json` |
-| Program ID | `contract/programs/.../lib.rs` + `contract/Anchor.toml` | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
+| Program ID (prod) | `contract/programs/.../lib.rs` + `contract/Anchor.toml` (main) | ✅ `8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep` — deployed to Devnet 2026-04-19 |
+
+### Development (develop branch — active)
+| Constant | File | Value |
+|----------|------|-------|
+| `BACKEND_AUTHORITY` | same keypair as prod | `96JwAJL2hn3FHxViqy9oirBdpcDH5rGsvukjTGyiTap4` |
+| `ECOSYSTEM_FUND_WALLET` | same wallet as prod | `CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c` |
+| Program ID (dev) | `contract/programs/.../lib.rs` + `contract/Anchor.toml` (develop) | ✅ `6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ` — deployed to Devnet 2026-05-14 |
+| Dev program keypair | `secrets/dev/program-keypair.json` (gitignored) | pubkey: `6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ` |
+| USDC mint | same as prod | `5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5` |
+| Helius webhook | separate webhook watching dev program ID only | secret in `secrets/dev/credentials.env` |
 
 ---
 
@@ -435,25 +452,47 @@ Hetzner CAX11   ARM64 (Ampere), Ubuntu 24.04, 4GB RAM, 2 vCPU — ~$5/month
                 Path: /opt/code-eternal/
                 Docker Compose: app/docker/docker-compose.yml
 
-Services (Docker Compose) — 3 containers only, app is on Vercel:
+PROD Services (no profile, image tag :latest — frozen at hackathon):
   listener      Helius webhook handler       port 3001 (internal)
   site-gen      Arweave site generator       port 3002 (internal)
   nginx         Reverse proxy                ports 80:80, 443:443 (public)
 
-nginx routing:
-  /webhook/  → listener:3001   (Helius webhooks)
-  /jobs      → site-gen:3002   (Vercel calls this; auth via SITE_GEN_SECRET Bearer token)
-  /health    → site-gen:3002   (health check)
+DEV Services (--profile dev, image tag :dev — active development):
+  listener-dev  Helius webhook handler       port 3011 (internal, env: PORT=3011)
+  site-gen-dev  Arweave site generator       port 3012 (internal, env: PORT=3012)
+  (nginx is shared; dev server blocks added with lazy DNS for resilience)
+
+nginx routing (prod):
+  listener.codeofdigitaleternity.com:
+    /webhook/  → listener:3001   (Helius webhooks)
+    /jobs      → site-gen:3002   (Vercel calls this; auth via SITE_GEN_SECRET Bearer token)
+    /health    → site-gen:3002   (health check)
+
+nginx routing (dev):
+  dev.listener.codeofdigitaleternity.com:
+    /webhook/  → listener-dev:3011
+    /jobs      → site-gen-dev:3012
+    /health    → site-gen-dev:3012
+    (uses resolver 127.0.0.11 + set $upstream variable so nginx starts even without dev containers)
 
 DNS (Cloudflare):
-  app.codeofdigitaleternity.com      → Vercel (CNAME, proxy off) ← Next.js app
-  listener.codeofdigitaleternity.com → 128.140.0.118 (A record, proxy off)
+  app.codeofdigitaleternity.com          → Vercel prod (CNAME, proxy off) ← Next.js app (main)
+  dev.app.codeofdigitaleternity.com      → Vercel dev (CNAME, proxy off) ← Next.js app (develop)
+  listener.codeofdigitaleternity.com     → 128.140.0.118 (A record, proxy off)
+  dev.listener.codeofdigitaleternity.com → 128.140.0.118 (A record, proxy off)
 
 Image registry: Docker Hub (maxshchuplov/code-eternal-*)
-Database: Neon PostgreSQL (external, connection string in .env)
+  :latest = prod frozen (hackathon v1.0), :dev = active dev (updates on develop push)
+Database: Neon PostgreSQL (external)
+  Prod: main branch connection string in /opt/code-eternal/.env
+  Dev:  develop branch connection string in /opt/code-eternal/.env.dev
 
-VM .env file: /opt/code-eternal/.env — persists between CI/CD deployments, never overwritten by GitHub Actions
-GitHub Actions secrets required: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VM_SSH_KEY
+VM env files:
+  /opt/code-eternal/.env      — prod (main branch secrets), never overwritten by CI
+  /opt/code-eternal/.env.dev  — dev (develop branch secrets), never overwritten by CI
+  Local copies: secrets/prod/credentials.env and secrets/dev/credentials.env (gitignored)
+
+GitHub Actions secrets required: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VM_SSH_KEY, VERCEL_TOKEN
 ```
 
 ### VM Setup
