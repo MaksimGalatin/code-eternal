@@ -73,13 +73,11 @@ jobs:
         working-directory: contract
         env:
           DEPLOY_KEYPAIR: ${{ secrets.DEPLOY_KEYPAIR }}
-          DEV_PROGRAM_KEYPAIR: ${{ secrets.DEV_PROGRAM_KEYPAIR }}
         run: |
           echo "$DEPLOY_KEYPAIR" > /tmp/deploy-key.json
-          echo "$DEV_PROGRAM_KEYPAIR" > /tmp/dev-program-key.json
           solana config set --url devnet
           solana program deploy \
-            --program-id /tmp/dev-program-key.json \
+            --program-id 6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ \
             --keypair /tmp/deploy-key.json \
             target/deploy/code_eternal_router.so
-          rm -f /tmp/deploy-key.json /tmp/dev-program-key.json
+          rm -f /tmp/deploy-key.json
