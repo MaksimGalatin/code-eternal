@@ -45,7 +45,9 @@ jobs:
           platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           no-cache: true
-          tags: maxshchuplov/code-eternal-listener:dev
+          tags: |
+            maxshchuplov/code-eternal-listener:dev
+            maxshchuplov/code-eternal-listener:dev-${{ github.sha }}
 
       - name: Build — site-gen:dev
         uses: docker/build-push-action@v5
@@ -54,7 +56,9 @@ jobs:
           platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           no-cache: true
-          tags: maxshchuplov/code-eternal-site-gen:dev
+          tags: |
+            maxshchuplov/code-eternal-site-gen:dev
+            maxshchuplov/code-eternal-site-gen:dev-${{ github.sha }}
 
       - name: Deploy dev containers to VM
         if: github.event_name != 'pull_request'
