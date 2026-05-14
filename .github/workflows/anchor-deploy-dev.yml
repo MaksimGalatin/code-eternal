@@ -1,0 +1,85 @@
+name: Build and Deploy Smart Contract (Dev)
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'contract/**'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'contract/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('contract/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Cache Solana toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/solana
+          key: ${{ runner.os }}-solana-stable
+
+      - name: Install Solana CLI
+        run: |
+          curl -sSfL https://release.anza.xyz/stable/install -o /tmp/sol.sh
+          bash /tmp/sol.sh
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Generate test keypair
+        run: solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json --force
+
+      - name: Build smart contract
+        working-directory: contract
+        run: cargo-build-sbf 2>&1
+
+      - name: Install test dependencies
+        working-directory: contract
+        run: npm install
+
+      - name: Start local validator and run tests
+        working-directory: contract
+        env:
+          BACKEND_PRIVATE_KEY: ${{ secrets.BACKEND_PRIVATE_KEY }}
+        run: |
+          solana-test-validator --reset --quiet \
+            --bpf-program 6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ \
+              target/deploy/code_eternal_router.so &
+          VALIDATOR_PID=$!
+          sleep 8
+          solana config set --url http://127.0.0.1:8899
+          solana airdrop 10 ~/.config/solana/id.json --url http://127.0.0.1:8899
+          npm test
+          kill $VALIDATOR_PID
+
+      - name: Deploy to Devnet (dev program)
+        if: github.event_name != 'pull_request'
+        working-directory: contract
+        env:
+          DEPLOY_KEYPAIR: ${{ secrets.DEPLOY_KEYPAIR }}
+          DEV_PROGRAM_KEYPAIR: ${{ secrets.DEV_PROGRAM_KEYPAIR }}
+        run: |
+          echo "$DEPLOY_KEYPAIR" > /tmp/deploy-key.json
+          echo "$DEV_PROGRAM_KEYPAIR" > /tmp/dev-program-key.json
+          solana config set --url devnet
+          solana program deploy \
+            --program-id /tmp/dev-program-key.json \
+            --keypair /tmp/deploy-key.json \
+            target/deploy/code_eternal_router.so
+          rm -f /tmp/deploy-key.json /tmp/dev-program-key.json
