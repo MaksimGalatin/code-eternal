@@ -60,6 +60,17 @@ jobs:
             maxshchuplov/code-eternal-site-gen:dev
             maxshchuplov/code-eternal-site-gen:dev-${{ github.sha }}
 
+      - name: Copy docker-compose.yml to VM
+        if: github.event_name != 'pull_request'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 128.140.0.118
+          username: root
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "app/docker/docker-compose.yml,app/docker/nginx.conf"
+          target: "/opt/code-eternal/docker/"
+          strip_components: 2
+
       - name: Deploy dev containers to VM
         if: github.event_name != 'pull_request'
         uses: appleboy/ssh-action@v1
