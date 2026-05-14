@@ -1,4 +1,4 @@
-# Hetzner CAX11 — listener + site-gen + nginx
+# Hetzner CAX11 — listener + site-gen + nginx (prod: :latest, dev: :dev)
 services:
   listener:
     image: maxshchuplov/code-eternal-listener:latest
