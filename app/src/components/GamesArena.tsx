@@ -1,6 +1,6 @@
 'use client';
 import React, { memo, useState, useEffect, useRef, useCallback } from "react";
-import { Chess } from "chess.js";
+import { Chess as ChessJS } from "chess.js";
 import { useLang, t, type Lang } from "@/lib/i18n";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -143,7 +143,7 @@ const PST_Q  = [-20,-10,-10,-5,-5,-10,-10,-20, -10,0,0,0,0,0,0,-10, -10,0,5,5,5,
 const PST_K  = [20,30,10,0,0,10,30,20, 20,20,0,0,0,0,20,20, -10,-20,-20,-20,-20,-20,-20,-10, -20,-30,-30,-40,-40,-30,-30,-20, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30];
 const PST_MAP: Record<string, number[]> = { p:PST_P, n:PST_N, b:PST_B, r:PST_R, q:PST_Q, k:PST_K };
 
-function evalChessBoard(chess: Chess): number {
+function evalChessBoard(chess: ChessJS): number {
   if (chess.isCheckmate()) return chess.turn() === "b" ? -60_000 : 60_000;
   if (chess.isStalemate() || chess.isDraw()) return 0;
   let score = 0;
@@ -163,7 +163,7 @@ function evalChessBoard(chess: Chess): number {
 }
 
 function minimaxChess(
-  chess: Chess, depth: number, alpha: number, beta: number, isMax: boolean
+  chess: ChessJS, depth: number, alpha: number, beta: number, isMax: boolean
 ): number {
   if (depth === 0 || chess.isGameOver()) return evalChessBoard(chess);
   // Sort captures first for better alpha-beta pruning
@@ -195,7 +195,7 @@ function minimaxChess(
 
 // Creates a fresh Chess instance from FEN to avoid state corruption during minimax
 function getBestChessMove(fen: string, depth = 3): string | null {
-  const chess = new Chess(fen);
+  const chess = new ChessJS(fen);
   const moves = chess.moves().sort((a, b) =>
     (b.includes("x") || b.includes("+") ? 1 : 0) - (a.includes("x") || a.includes("+") ? 1 : 0)
   );
@@ -218,7 +218,7 @@ function Chess({ lang, onWin }: { lang: Lang; onWin: (tokens: number, sid: strin
   const cell    = mobile ? 36 : 44;
   const sessionId = useRef(genId());
   const rewarded  = useRef(false);
-  const chessRef  = useRef(new Chess());
+  const chessRef  = useRef(new ChessJS());
 
   const [fen,        setFen]        = useState(() => chessRef.current.fen());
   const [selected,   setSelected]   = useState<string | null>(null);
@@ -311,7 +311,7 @@ function Chess({ lang, onWin }: { lang: Lang; onWin: (tokens: number, sid: strin
   }
 
   function reset() {
-    chessRef.current = new Chess();
+    chessRef.current = new ChessJS();
     sessionId.current = genId();
     rewarded.current  = false;
     setFen(chessRef.current.fen());
