@@ -193,6 +193,9 @@ function BuyPageInner() {
       const ref2StatePda = ref2
         ? PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref2).toBuffer()], PROGRAM_ID)[0]
         : null;
+      const ref3StatePda = ref3
+        ? PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref3).toBuffer()], PROGRAM_ID)[0]
+        : null;
 
       if (needsRegister) {
         const registerTx = await program.methods.registerUser(ref1 ? new PublicKey(ref1) : null)
@@ -225,6 +228,7 @@ function BuyPageInner() {
       }).remainingAccounts([
         ...(ref1StatePda ? [{ pubkey: ref1StatePda, isWritable: false, isSigner: false }] : []),
         ...(ref2StatePda ? [{ pubkey: ref2StatePda, isWritable: false, isSigner: false }] : []),
+        ...(ref3StatePda ? [{ pubkey: ref3StatePda, isWritable: false, isSigner: false }] : []),
       ]).transaction();
       payTx.recentBlockhash = payBlockhash;
       payTx.feePayer        = payer;

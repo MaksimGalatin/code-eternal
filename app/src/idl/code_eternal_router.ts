@@ -108,6 +108,7 @@ export const IDL: Idl = {
     { code: 6008, name: "UpdateCooldown",      msg: "Site URL updated too recently" },
     { code: 6009, name: "TierDowngrade",       msg: "Tier cannot be downgraded" },
     { code: 6010, name: "InvalidReferral",     msg: "Referral chain does not match on-chain state" },
+    { code: 6011, name: "InvalidMint",         msg: "Payment mint must be the authorized USDC mint" },
   ],
 } as unknown as Idl;
 

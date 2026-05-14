@@ -7,6 +7,12 @@ import { logger } from "./logger";
 
 const TEMPLATE_PATH = path.join(__dirname, "../templates/site.html");
 
+function sanitizeUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (!/^https:\/\//i.test(url)) return null;
+  return url;
+}
+
 const TIER_META: Record<number, { name: string; color: string }> = {
   1: { name: "Spark", color: "#7C3AED" },
   2: { name: "Family Archives", color: "#D4A24C" },
@@ -90,7 +96,7 @@ export async function generateAndDeploy(job: {
     telegram: job.telegram || null,
     telegramIsPrivate: job.telegram?.startsWith("+") ?? false,
     twitter: job.twitter || null,
-    website: job.website || null,
+    website: sanitizeUrl(job.website),
     passportId,
     qrDataUrl,
     identiconSvg,

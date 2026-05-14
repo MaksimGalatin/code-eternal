@@ -22,6 +22,9 @@ pub const VAULT_BPS: u64 = 6500;     // 65%
 /// Keypair stored in secrets/ecosystem-fund-keypair.json
 pub const ECOSYSTEM_FUND_WALLET: Pubkey = pubkey!("CkiiA1BETdpSbt76PChhnKVzXxLjJXT99yA4yfRtT88c");
 
+/// Authorized USDC mint (mock USDC on devnet, 6 decimals)
+pub const USDC_MINT: Pubkey = pubkey!("5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5");
+
 #[derive(Accounts)]
 pub struct ProcessPayment<'info> {
     /// Payer (subscription buyer)
@@ -81,6 +84,7 @@ pub struct ProcessPayment<'info> {
     pub ref3_token_account: UncheckedAccount<'info>,
 
     /// USDC mint — mut because token::burn decrements total supply
+    /// Note: authorized mint is USDC_MINT; on-chain enforcement requires a Config PDA (post-hackathon)
     #[account(mut)]
     pub payment_mint: Account<'info, Mint>,
 
@@ -125,9 +129,12 @@ pub fn handler(
 
     // 2b. Validate referral chain + check subscription activity.
     // Expired referrer → their share goes to vault (not burned, not paid).
-    // ref3 expiry is not enforced on-chain (no remaining_account for ref3 UserState).
+    // remaining_accounts[0] = ref1 UserState PDA (when ref1.is_some())
+    // remaining_accounts[1] = ref2 UserState PDA (when ref2.is_some())
+    // remaining_accounts[2] = ref3 UserState PDA (when ref3.is_some())
     let mut ref1_active = false;
     let mut ref2_active = false;
+    let mut ref3_active = false;
     require!(ref1 == ctx.accounts.user_state.referrer, CodeEternalError::InvalidReferral);
     if let Some(ref1_key) = ref1 {
         let ref1_info = ctx.remaining_accounts
@@ -163,6 +170,24 @@ pub fn handler(
                 require!(ref2_state.owner == ref2_key, CodeEternalError::InvalidReferral);
                 require!(ref3 == ref2_state.referrer, CodeEternalError::InvalidReferral);
                 ref2_active = clock.unix_timestamp <= ref2_state.tier_expires;
+            }
+
+            if let Some(ref3_key) = ref3 {
+                let ref3_info = ctx.remaining_accounts
+                    .get(2)
+                    .ok_or(error!(CodeEternalError::InvalidReferral))?;
+                require!(
+                    *ref3_info.owner == crate::ID,
+                    CodeEternalError::InvalidReferral
+                );
+                {
+                    let ref3_data = ref3_info.try_borrow_data()?;
+                    let mut ref3_slice: &[u8] = &ref3_data;
+                    let ref3_state = UserState::try_deserialize(&mut ref3_slice)
+                        .map_err(|_| error!(CodeEternalError::InvalidReferral))?;
+                    require!(ref3_state.owner == ref3_key, CodeEternalError::InvalidReferral);
+                    ref3_active = clock.unix_timestamp <= ref3_state.tier_expires;
+                }
             }
         }
     }
@@ -249,15 +274,20 @@ pub fn handler(
             .ok_or(CodeEternalError::Overflow)?;
     }
 
-    // 7. Referral L3 (3%) or burn
+    // 7. Referral L3 (3%): active → transfer, expired → vault, absent → burn
     if ref3.is_some() {
-        transfer_usdc(
-            payer_ai.clone(),
-            ctx.accounts.ref3_token_account.to_account_info(),
-            payer_auth.clone(),
-            token_prog.clone(),
-            ref3_amount,
-        )?;
+        if ref3_active {
+            transfer_usdc(
+                payer_ai.clone(),
+                ctx.accounts.ref3_token_account.to_account_info(),
+                payer_auth.clone(),
+                token_prog.clone(),
+                ref3_amount,
+            )?;
+        } else {
+            vault_amount = vault_amount.checked_add(ref3_amount)
+                .ok_or(CodeEternalError::Overflow)?;
+        }
     } else {
         burn_amount = burn_amount.checked_add(ref3_amount)
             .ok_or(CodeEternalError::Overflow)?;

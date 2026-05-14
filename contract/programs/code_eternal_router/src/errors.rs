@@ -40,4 +40,7 @@ pub enum CodeEternalError {
 
     #[msg("Referral chain does not match on-chain stored referrers")]
     InvalidReferral,
+
+    #[msg("Payment mint must be the authorized USDC mint")]
+    InvalidMint,
 }

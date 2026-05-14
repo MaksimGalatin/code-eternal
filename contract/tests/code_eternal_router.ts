@@ -351,10 +351,11 @@ describe("code_eternal_router", () => {
         associatedTokenProgram:     ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram:              SystemProgram.programId,
       })
-      // ref1_state and ref2_state passed as remaining accounts for on-chain chain validation
+      // ref1, ref2, ref3 UserState PDAs for on-chain chain validation + expiry check
       .remainingAccounts([
         { pubkey: ref1Pda, isWritable: false, isSigner: false },
         { pubkey: ref2Pda, isWritable: false, isSigner: false },
+        { pubkey: ref3Pda, isWritable: false, isSigner: false },
       ])
       .signers([payer2])
       .rpc();

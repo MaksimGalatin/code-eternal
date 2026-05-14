@@ -24,7 +24,7 @@ From every payment:
 | Burn | 5% | Always, on-chain via `token::burn` CPI |
 | Referral L1 | 15% | → vault if referrer subscription expired; burn if no referrer |
 | Referral L2 | 7% | → vault if referrer subscription expired; burn if no referrer |
-| Referral L3 | 3% | Burn if no referrer; no expiry check for L3 on-chain |
+| Referral L3 | 3% | → vault if referrer subscription expired; burn if no referrer |
 | Ecosystem Fund | 5% | Project-controlled wallet (development, grants, ops) |
 | Vault (treasury) | 65% | Protocol PDA |
 | **Total** | **100%** | ✅ |
@@ -943,9 +943,20 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - Grammy Telegram bot not yet implemented — add `TELEGRAM_BOT_TOKEN` to credentials.env when ready
 - PDF email attachment (post-hackathon) — current Resend email is HTML only
 - **Tier downgrade on renewal**: when subscription is expired (`clock.unix_timestamp > tier_expires`), any tier is accepted (allows buying tier 1 after being tier 3 and expiring). When active, `tier >= current_tier` is enforced. This is the current correct behavior.
-- **L3 referrer expiry not enforced on-chain** — ref3 always gets paid regardless of their subscription status (would require a 3rd remaining_account; skipped for simplicity)
 - **In-memory rate limiter not shared across Vercel instances** — each serverless instance has its own `Map`; replace with Redis/Upstash for true global rate limiting in production
 - **`/health` endpoint leaks internal service names** — site-gen should return just `{"ok":true}` instead of a descriptive message
+
+## Changes Applied (2026-05-14, Dev Environment + Security Fixes)
+
+- **Separate Privy app for dev** — App ID `cmp5kf0v000250clabi1awvhp` created; allowed origin `https://dev.app.codeofdigitaleternity.com`; Google login enabled. Webhook secret set. App secret and webhook secret stored in `secrets/dev/credentials.env`. Vercel dev project env vars updated (`NEXT_PUBLIC_PRIVY_APP_ID`, `PRIVY_APP_SECRET`, `PRIVY_WEBHOOK_SECRET`). Full user isolation: dev users registered in dev Privy app are never mixed with prod users.
+- **deploy-vercel-dev.yml** — new GitHub Actions workflow on `develop` branch: triggers on `app/src/**`, `app/public/**`, `app/package.json`, `app/next.config.*` changes; runs `vercel --prod` targeting `prj_z5KSp1EanIHCRzwPTxcshwSCRzk1` (dev project). Vercel SSO protection disabled on dev project (was blocking access). `dev.app.codeofdigitaleternity.com` now auto-deploys on every develop push.
+- **Dev container healthchecks fixed** — docker-compose.yml dev services (`listener-dev`, `site-gen-dev`) had healthchecks hardcoded to port 3001 but dev containers run on 3011/3012. Added `healthcheck` overrides with correct ports; deployed directly to VM via scp + force-recreate.
+- **TypeScript chess import fix** — `GamesArena.tsx` had `import { Chess } from "chess.js"` conflicting with React component named `Chess`. Fixed by renaming import to `ChessJS` (`import { Chess as ChessJS } from "chess.js"`); updated all 5 usages (2 type annotations, 3 constructors).
+- **Handlebars XSS fix (arweave.ts)** — `href="{{website}}"` in site template allowed `javascript:` injection. Fixed: `sanitizeUrl()` validates `https://` prefix; any non-https URL returns `null` (template then hides the link). Applied to `website` field before Handlebars rendering.
+- **L3 referral expiry enforced on-chain** — `process_payment.rs` now reads ref3 `UserState` from `remaining_accounts[2]` and checks `clock.unix_timestamp <= ref3_state.tier_expires`. Active → transfer, expired → vault (consistent with L1/L2 behavior). Frontend (`buy/page.tsx`) passes `ref3StatePda` in `remainingAccounts`. CI test updated to include `ref3Pda`.
+- **`InvalidMint` error variant** — added to `errors.rs` (code 6013 in Rust, 6011 in IDL). `USDC_MINT` constant added to `process_payment.rs` for documentation; on-chain constraint deferred to Config PDA post-hackathon (localnet tests use dynamic mint).
+- **Both IDL files updated** — `app/src/idl/code_eternal_router.ts` and `app/site-gen/idl/code_eternal_router.json` both have `InvalidMint` at code 6011.
+- **Image tag strategy** — `:latest` is permanently frozen (deploy.yml triggers only on main, which is branch-protected). Dev CI pushes `:dev` tag only. No `:latest` tag in dev workflow.
 
 ## Changes Applied (2026-05-14, Games Upgrade)
 
