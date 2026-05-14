@@ -17,6 +17,27 @@ services:
     environment:
       NODE_ENV: production
 
+  listener-dev:
+    image: maxshchuplov/code-eternal-listener:dev
+    profiles: [dev]
+    restart: unless-stopped
+    env_file: ../.env.dev
+    environment:
+      SITE_GEN_URL: http://site-gen-dev:3012
+      PORT: "3011"
+      NODE_ENV: production
+    depends_on:
+      - site-gen-dev
+
+  site-gen-dev:
+    image: maxshchuplov/code-eternal-site-gen:dev
+    profiles: [dev]
+    restart: unless-stopped
+    env_file: ../.env.dev
+    environment:
+      PORT: "3012"
+      NODE_ENV: production
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped
