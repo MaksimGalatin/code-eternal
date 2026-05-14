@@ -76,9 +76,9 @@ code-eternal/
 
 ### Auth & Payments
 - Privy 3.x (privy.io) — Google login + hidden Solana wallet (embedded, user never sees seed phrase)
-  - App ID: `cmoofvdt4008o0cjps5l8nvnu`
+  - **Prod** App ID: `cmoofvdt4008o0cjps5l8nvnu` — allowed origin: `https://app.codeofdigitaleternity.com`
+  - **Dev** App ID: `cmp5kf0v000250clabi1awvhp` — separate app (created 2026-05-14), allowed origin: `https://dev.app.codeofdigitaleternity.com`, webhook secret in `secrets/dev/credentials.env`
   - ✅ Embedded wallets enabled (`createOnLogin: "off"`, Solana wallet created explicitly via `createWallet()`) — HTTPS is live
-  - Allowed origin: `https://app.codeofdigitaleternity.com`
   - RPC configured via `config.solana.rpcs["solana:devnet"]` using `createSolanaRpc`/`createSolanaRpcSubscriptions` from `@solana/kit`
   - `signAndSendTransaction` must pass `chain: "solana:devnet"` or Privy defaults to mainnet
 - MoonPay via Privy `useFundWallet` — card → USDC on-ramp directly to embedded wallet (production)
@@ -596,32 +596,49 @@ node run-migration.js   # runs app/scripts/migrate.sql against Neon
 
 ## Docker Images
 
-All images are ARM64 (linux/arm64), built with `docker buildx` + QEMU in WSL2.
+All images are ARM64 (linux/arm64), built with `docker buildx` + QEMU in GitHub Actions.
 
 | Image | Base | Registry |
 |-------|------|----------|
-| `maxshchuplov/code-eternal-app` | node:24-alpine | Docker Hub (private) |
 | `maxshchuplov/code-eternal-listener` | node:24-alpine | Docker Hub (private) |
 | `maxshchuplov/code-eternal-site-gen` | node:24-alpine | Docker Hub (private) |
+
+### Image Tag Strategy (IMPORTANT)
+
+| Tag | Meaning | Who pushes | Used by |
+|-----|---------|-----------|---------|
+| `:latest` | Prod — frozen at hackathon v1.0 | `deploy.yml` on `main` (never runs — main is frozen) | prod containers on VM |
+| `:dev` | Dev — updated on every develop push | `deploy-dev.yml` on `develop` | dev containers on VM |
+| `:dev-{sha}` | Dev — pinned to specific commit | same as above | rollback reference |
+
+**`:latest` is permanently frozen.** `deploy.yml` only triggers on push to `main`, which is branch-protected. Dev CI only ever pushes `:dev` and `:dev-{sha}` — never `:latest`.
 
 **Key decisions:**
 - Node 24 — required by `@solana/codecs` and other deps
 - `apk add python3 make g++` in Dockerfile — needed for node-gyp (bufferutil etc.) on ARM64
-- `NEXT_PUBLIC_*` vars baked in at build time via `--build-arg` (Next.js requirement)
 - SQS replaced with direct HTTP POST: listener calls `POST site-gen:3002/jobs`
-- **Always use `--no-cache`** when rebuilding app image after source changes — Next.js webpack cache (`/app/.next/cache/webpack/`) gets baked into the image and stale content is served even after code changes
-- `app/.dockerignore` excludes `.next`, `node_modules`, `out`, `build`, `.git` — prevents stale webpack cache from entering the Docker build context via `COPY . .`
+- **Always use `--no-cache`** when rebuilding after source changes — stale layers cause silent bugs
 - `npm install` for WSL scripts must run on Linux filesystem (`~/`), NOT `/mnt/c/` — NTFS permission issues cause failures
 
 ---
 
 ## Secrets Management
 
-All secrets stored locally in `secrets/credentials.env` (gitignored).
-**When any new secret or keypair is generated, save it there immediately.**
+Secrets stored locally in `secrets/` (gitignored). **When any new secret is generated, save it there immediately.**
 
-On the VM: `/opt/code-eternal/.env` — same variables, manually copied.
-No AWS Secrets Manager (AWS infrastructure removed).
+```
+secrets/
+├── prod/credentials.env   — prod secrets (main branch)
+├── dev/credentials.env    — dev secrets (develop branch)
+├── dev/program-keypair.json — dev Solana program keypair
+└── ecosystem-fund-keypair.json
+```
+
+On the VM:
+- `/opt/code-eternal/.env`     — prod secrets, never overwritten by CI
+- `/opt/code-eternal/.env.dev` — dev secrets, never overwritten by CI
+
+No AWS Secrets Manager (removed).
 
 ---
 
