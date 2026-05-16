@@ -951,12 +951,24 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 - **Listener race condition** — `existingSite` query now filters `AND arweave_url IS NOT NULL` so a job with `status=done` but null URL can't be copied to new jobs.
 - **DB indexes** — `app/scripts/add-indexes.sql` adds missing indexes: `referral_payments(created_at)`, `site_generation_jobs(wallet, status)`, `site_generation_jobs(wallet, created_at DESC)`. Applied to dev Neon DB.
 
+### Changes Applied (2026-05-16, Refactor + TypeScript Cleanup)
+
+- **God component split** — `cabinet/page.tsx` reduced from 1354 → 748 lines (45%). Three new components:
+  - `app/src/components/AlfaTab.tsx` — AIfa chat UI
+  - `app/src/components/ContractTab.tsx` — Smart Contract info tab (owns `scShowFlow` state internally)
+  - `app/src/components/SiteTab.tsx` — Site creation form + avatar upload + `handleCreateSite` logic
+  - `app/src/types/cabinet.ts` — shared `SiteStatus` type consumed by cabinet + SiteTab
+- **`UserStateOnChain` type + `fetchUserStateAccount()` helper** — added to `app/src/idl/code_eternal_router.ts`. Single location for the `program.account as any` cast; all callers now use typed return (`PublicKey`, `BN` fields). Eliminates `as any` in `buy/page.tsx`, `useUserState.ts`.
+- **`buy/page.tsx` TypeScript fixes** — dummy AnchorProvider wallet uses generic `<T extends Transaction | VersionedTransaction>` instead of `any`; `catch (e: any)` → `catch (e)` with `e instanceof Error` narrowing; all 5 `program.account as any` casts removed.
+- **`useUserState.ts`** — uses `fetchUserStateAccount()` + explicit mapping from `UserStateOnChain` → `UserState` (converts `PublicKey` → `string`, `BN` → `number`).
+- **`GamesArena.tsx`** — chess.js `Square` and `Move` types imported; `sq as any` replaced with `sq as Square`; move map typed as `Move[]`; installed missing `chess.js` package from node_modules.
+- **`cabinet/page.tsx` type fixes** — `Income.recent` typed as `IncomePayment[]`; `TABS.labelKey` typed as `TranslationKey`; `t(... as any)` casts removed.
+- **`tsc --noEmit`: zero errors** on develop branch after all fixes.
+
 ### Remaining tech debt (post-hackathon)
-- **God component** — `cabinet/page.tsx` ~1500 lines, 7 tabs; split into per-tab components
-- **TypeScript `any`** — widespread in Anchor account fetches; generate typed IDL client
 - **Rate limiting** — in-memory per Vercel instance; needs Redis/Upstash for true global limits
 - **CSP `unsafe-inline/unsafe-eval`** — required by Privy SDK; can't remove without Privy support
-- **Inline `style={{}}`** — new object per render; move repeated styles to CSS classes
+- **Inline `style={{}}`** — new object per render; move repeated styles to CSS classes (CSS vendor-prefix `as any` kept intentionally)
 
 ## Known Issues (post-hackathon backlog)
 
