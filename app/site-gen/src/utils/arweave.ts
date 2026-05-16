@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { logger } from "./logger";
 
 const TEMPLATE_PATH = path.join(__dirname, "../templates/site.html");
+const IRYS_NODE_URL = process.env.IRYS_NODE_URL ?? "https://devnet.irys.xyz";
 
 function sanitizeUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -112,7 +113,7 @@ export async function generateAndDeploy(job: {
 
   // 2. Upload to Arweave via Irys
   const irys = new Irys({
-    url: "https://devnet.irys.xyz",
+    url: IRYS_NODE_URL,
     token: "solana",
     key: process.env.IRYS_PRIVATE_KEY!,
     config: {
@@ -131,7 +132,7 @@ export async function generateAndDeploy(job: {
   });
 
   // Follow the Irys redirect to get the real CDN URL (devnet.irys.xyz/<id> → datasprite-cdn.com/<id>)
-  let arweaveUrl = `https://devnet.irys.xyz/${receipt.id}`;
+  let arweaveUrl = `${IRYS_NODE_URL}/${receipt.id}`;
   try {
     const probe = await fetch(arweaveUrl, { method: "HEAD", redirect: "follow" });
     if (probe.url && probe.url !== arweaveUrl) {

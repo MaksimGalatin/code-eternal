@@ -10,9 +10,8 @@ const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || "8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep"
 );
 
-// Devnet USDC mint (mock — same one used in contract tests)
 export const DEVNET_USDC_MINT = new PublicKey(
-  "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+  process.env.NEXT_PUBLIC_USDC_MINT ?? "5f76mcT9Cgo8oRfWDnsHnZjj9ZqvjcqaXPcrEMEbQsy5"
 );
 
 export type WalletInfo = {
