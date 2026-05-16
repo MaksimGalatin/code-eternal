@@ -70,7 +70,7 @@ code-eternal/
 - Next.js 16 + TypeScript + Tailwind — app (`app/src/` directory)
 - **Vercel** — hosting for Next.js app (moved from Hetzner 2026-05-09, auto-deploys on push to main)
   - **Prod** project: `app.codeofdigitaleternity.com` (ID: `prj_DrlUafVTqw3AGdxG8wiLrr92RG1r`) — production branch: `main` ← frozen, never touch
-  - **Dev** project: `dev.app.codeofdigitaleternity.com` (ID: `prj_z5KSp1EanIHCRzwPTxcshwSCRzk1`) — deploys from `develop` via `.github/workflows/deploy-vercel-dev.yml` (triggers on `app/src/**`, `app/public/**`, `app/package.json`, `app/next.config.*`)
+  - **Dev** project: `dev.app.codeofdigitaleternity.com` (ID: `prj_z5KSp1EanIHCRzwPTxcshwSCRzk1`) — auto-deploys from `develop` via Vercel's native GitHub integration
   - Root Directory: `app`, framework: Next.js, Node: 24.x
   - All env vars set via Vercel CLI (see Environment Variables section)
 
@@ -107,7 +107,7 @@ code-eternal/
   - `main`: `.github/workflows/deploy.yml` — prod listener+site-gen `:latest` (triggers `app/listener/**`, `app/site-gen/**`, `app/docker/**`) ← never runs (main is frozen)
   - `main`: `.github/workflows/anchor-deploy.yml` — prod contract deploy (`8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep`)
   - `develop`: `.github/workflows/deploy-dev.yml` — dev listener+site-gen `:dev`, copies docker-compose+nginx to VM (triggers `app/listener/**`, `app/site-gen/**`, `app/docker/**`)
-  - `develop`: `.github/workflows/deploy-vercel-dev.yml` — dev Vercel prod deployment (triggers `app/src/**`, `app/public/**`, `app/package.json`, `app/next.config.*`)
+  - `develop`: Vercel auto-deploys `dev.app.codeofdigitaleternity.com` via native GitHub integration (no workflow needed)
   - `develop`: `.github/workflows/anchor-deploy-dev.yml` — dev contract deploy (`6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ`)
 
 ### External Services
@@ -949,7 +949,7 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 ## Changes Applied (2026-05-14, Dev Environment + Security Fixes)
 
 - **Separate Privy app for dev** — App ID `cmp5kf0v000250clabi1awvhp` created; allowed origin `https://dev.app.codeofdigitaleternity.com`; Google login enabled. Webhook secret set. App secret and webhook secret stored in `secrets/dev/credentials.env`. Vercel dev project env vars updated (`NEXT_PUBLIC_PRIVY_APP_ID`, `PRIVY_APP_SECRET`, `PRIVY_WEBHOOK_SECRET`). Full user isolation: dev users registered in dev Privy app are never mixed with prod users.
-- **deploy-vercel-dev.yml** — new GitHub Actions workflow on `develop` branch: triggers on `app/src/**`, `app/public/**`, `app/package.json`, `app/next.config.*` changes; runs `vercel --prod` targeting `prj_z5KSp1EanIHCRzwPTxcshwSCRzk1` (dev project). Vercel SSO protection disabled on dev project (was blocking access). `dev.app.codeofdigitaleternity.com` now auto-deploys on every develop push.
+- **Vercel dev auto-deploy** — `dev.app.codeofdigitaleternity.com` deploys via Vercel's native GitHub integration on every push to `develop`. The manual `deploy-vercel-dev.yml` workflow was removed (2026-05-16) — it was redundant and failing due to expired VERCEL_TOKEN.
 - **Dev container healthchecks fixed** — docker-compose.yml dev services (`listener-dev`, `site-gen-dev`) had healthchecks hardcoded to port 3001 but dev containers run on 3011/3012. Added `healthcheck` overrides with correct ports; deployed directly to VM via scp + force-recreate.
 - **TypeScript chess import fix** — `GamesArena.tsx` had `import { Chess } from "chess.js"` conflicting with React component named `Chess`. Fixed by renaming import to `ChessJS` (`import { Chess as ChessJS } from "chess.js"`); updated all 5 usages (2 type annotations, 3 constructors).
 - **Handlebars XSS fix (arweave.ts)** — `href="{{website}}"` in site template allowed `javascript:` injection. Fixed: `sanitizeUrl()` validates `https://` prefix; any non-https URL returns `null` (template then hides the link). Applied to `website` field before Handlebars rendering.
