@@ -1,6 +1,6 @@
 'use client';
 import React, { memo, useState, useEffect, useRef, useCallback } from "react";
-import { Chess as ChessJS } from "chess.js";
+import { Chess as ChessJS, type Square, type Move } from "chess.js";
 import { useLang, t, type Lang } from "@/lib/i18n";
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
@@ -242,7 +242,7 @@ function Chess({ lang, onWin }: { lang: Lang; onWin: (tokens: number, sid: strin
   })();
 
   function getTargets(sq: string): string[] {
-    return (chessRef.current.moves({ square: sq as any, verbose: true }) as any[]).map((m: any) => m.to);
+    return (chessRef.current.moves({ square: sq as Square, verbose: true }) as Move[]).map((m) => m.to);
   }
 
   function triggerAiMove() {

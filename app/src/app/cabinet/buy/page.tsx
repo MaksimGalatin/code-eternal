@@ -5,14 +5,14 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets, useCreateWallet, useSignAndSendTransaction } from "@privy-io/react-auth/solana";
 import bs58 from "bs58";
-import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Connection, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { IDL } from "@/idl/code_eternal_router";
+import { IDL, fetchUserStateAccount } from "@/idl/code_eternal_router";
 import { useLang, t, type TranslationKey } from "@/lib/i18n";
 import LangSwitcher from "@/components/LangSwitcher";
 
@@ -132,7 +132,11 @@ function BuyPageInner() {
 
       const provider = new AnchorProvider(
         connection,
-        { publicKey: payer, signTransaction: async (tx: any) => tx, signAllTransactions: async (txs: any[]) => txs },
+        {
+          publicKey: payer,
+          signTransaction: <T extends Transaction | VersionedTransaction>(tx: T) => Promise.resolve(tx),
+          signAllTransactions: <T extends Transaction | VersionedTransaction>(txs: T[]) => Promise.resolve(txs),
+        },
         { commitment: "confirmed" }
       );
       const program = new Program({ ...IDL, address: PROGRAM_ID.toBase58() }, provider);
@@ -159,7 +163,7 @@ function BuyPageInner() {
       let ref3: string | null = dbRef3;
 
       try {
-        const onChain: any = await (program.account as any).userState.fetch(userStatePDA);
+        const onChain = await fetchUserStateAccount(program, userStatePDA);
         // Already registered — use on-chain referrer chain (contract validates against this)
         ref1 = onChain.referrer ? onChain.referrer.toBase58() : null;
         ref2 = null;
@@ -167,14 +171,14 @@ function BuyPageInner() {
         if (ref1) {
           try {
             const r1Pda = PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref1).toBuffer()], PROGRAM_ID)[0];
-            const r1: any = await (program.account as any).userState.fetch(r1Pda);
+            const r1 = await fetchUserStateAccount(program, r1Pda);
             ref2 = r1.referrer ? r1.referrer.toBase58() : null;
           } catch { /* ref2 stays null */ }
         }
         if (ref2) {
           try {
             const r2Pda = PublicKey.findProgramAddressSync([Buffer.from("user"), new PublicKey(ref2).toBuffer()], PROGRAM_ID)[0];
-            const r2: any = await (program.account as any).userState.fetch(r2Pda);
+            const r2 = await fetchUserStateAccount(program, r2Pda);
             ref3 = r2.referrer ? r2.referrer.toBase58() : null;
           } catch { /* ref3 stays null */ }
         }
@@ -245,18 +249,22 @@ function BuyPageInner() {
 
       setTxSig(sig);
       setStep("success");
-    } catch (e: any) {
+    } catch (e) {
       console.error("Payment error:", e);
       try {
         const c2 = new Connection(RPC_URL, "confirmed");
         const p2 = new PublicKey(wallet.address);
         const [pda] = PublicKey.findProgramAddressSync([Buffer.from("user"), p2.toBuffer()], PROGRAM_ID);
-        const prov2 = new AnchorProvider(c2, { publicKey: p2, signTransaction: async (t: any) => t, signAllTransactions: async (t: any[]) => t }, {});
+        const prov2 = new AnchorProvider(c2, {
+          publicKey: p2,
+          signTransaction: <T extends Transaction | VersionedTransaction>(tx: T) => Promise.resolve(tx),
+          signAllTransactions: <T extends Transaction | VersionedTransaction>(txs: T[]) => Promise.resolve(txs),
+        }, {});
         const prog2 = new Program({ ...IDL, address: PROGRAM_ID.toBase58() }, prov2);
-        const state: any = await (prog2.account as any).userState.fetch(pda);
+        const state = await fetchUserStateAccount(prog2, pda);
         if (state.tier >= currentTierId) { setStep("success"); return; }
       } catch {}
-      setErrorMsg(e.message ?? "Transaction failed");
+      setErrorMsg(e instanceof Error ? e.message : "Transaction failed");
       setStep("error");
     } finally {
       payingRef.current = false;

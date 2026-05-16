@@ -1,4 +1,5 @@
-import type { Idl } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
+import type { BN, Program, Idl } from "@coral-xyz/anchor";
 
 export const IDL: Idl = {
   address: "8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep",
@@ -123,6 +124,25 @@ export type UserState = {
   site_status: number;
   bump: number;
 };
+
+// Type of account data as Anchor deserializes it (PublicKey for pubkeys, BN for i64/u64)
+export type UserStateOnChain = {
+  owner: PublicKey;
+  referrer: PublicKey | null;
+  tier: number;
+  registered_at: BN;
+  tier_expires: BN;
+  memory_score: BN;
+  arweave_url: number[];
+  site_status: number;
+  bump: number;
+};
+
+// Typed wrapper — isolates the `any` cast to one place in the codebase
+export function fetchUserStateAccount(program: Program<Idl>, address: PublicKey): Promise<UserStateOnChain> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (program.account as any).userState.fetch(address) as Promise<UserStateOnChain>;
+}
 
 export const TIER_NAMES: Record<number, string> = {
   0: "UNREGISTERED",

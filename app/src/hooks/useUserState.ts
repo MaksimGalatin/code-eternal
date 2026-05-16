@@ -3,7 +3,7 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { Program, AnchorProvider, web3 } from "@coral-xyz/anchor";
 import type { Idl } from "@coral-xyz/anchor";
-import { IDL, type UserState } from "@/idl/code_eternal_router";
+import { IDL, fetchUserStateAccount, type UserState } from "@/idl/code_eternal_router";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana.com";
 const PROGRAM_ID = new PublicKey(
@@ -61,7 +61,6 @@ export function useUserState(walletAddress: string | null) {
       try {
         const provider = new AnchorProvider(
           connection,
-          // read-only dummy wallet — we only need to fetch accounts
           {
             publicKey: pubkey,
             signTransaction: async (tx) => tx,
@@ -70,10 +69,18 @@ export function useUserState(walletAddress: string | null) {
           { commitment: "confirmed" }
         );
         const program = new Program({ ...IDL, address: PROGRAM_ID.toBase58() } as Idl, provider);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userState = (await (program.account as any).userState.fetch(
-          userStatePda
-        )) as UserState;
+        const raw = await fetchUserStateAccount(program, userStatePda);
+        userState = {
+          owner: raw.owner.toBase58(),
+          referrer: raw.referrer ? raw.referrer.toBase58() : null,
+          tier: raw.tier,
+          registered_at: raw.registered_at.toNumber(),
+          tier_expires: raw.tier_expires.toNumber(),
+          memory_score: raw.memory_score.toNumber(),
+          arweave_url: raw.arweave_url,
+          site_status: raw.site_status,
+          bump: raw.bump,
+        };
       } catch {
         // account doesn't exist yet — user not registered
       }
