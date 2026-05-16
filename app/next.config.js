@@ -18,7 +18,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https: wss:",
-      "frame-src https://auth.privy.io https://verify.walletconnect.com",
+      "frame-src https://auth.privy.io https://verify.walletconnect.com https://vercel.live",
       "worker-src blob:",
     ].join("; "),
   },
