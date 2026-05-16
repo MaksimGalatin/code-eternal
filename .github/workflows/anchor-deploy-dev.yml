@@ -47,7 +47,15 @@ jobs:
 
       - name: Build smart contract
         working-directory: contract
-        run: cargo-build-sbf 2>&1
+        run: |
+          cargo-build-sbf 2>&1
+          mkdir -p target/deploy
+          # cargo-build-sbf may place the .so in sbf target dir instead of deploy/
+          if [ ! -f target/deploy/code_eternal_router.so ]; then
+            SRC=$(find target/sbf-solana-solana -name "code_eternal_router.so" 2>/dev/null | head -1)
+            [ -n "$SRC" ] && cp "$SRC" target/deploy/code_eternal_router.so
+          fi
+          ls -la target/deploy/code_eternal_router.so
 
       - name: Install test dependencies
         working-directory: contract
@@ -62,7 +70,7 @@ jobs:
             --bpf-program 6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ \
               target/deploy/code_eternal_router.so &
           VALIDATOR_PID=$!
-          sleep 8
+          sleep 15
           solana config set --url http://127.0.0.1:8899
           solana airdrop 10 ~/.config/solana/id.json --url http://127.0.0.1:8899
           npm test
