@@ -934,6 +934,30 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 
 ---
 
+## Changes Applied (2026-05-16, Dev Environment Fixes + Code Quality)
+
+- **Buy flow fixed (dev)** — `new Program(IDL, provider)` was using `IDL.address = "8rzM..."` (prod) for transactions while PDAs were derived from `NEXT_PUBLIC_PROGRAM_ID` (dev). Fixed: `new Program({ ...IDL, address: PROGRAM_ID.toBase58() }, provider)` in `buy/page.tsx` and `useUserState.ts`. Now both PDA derivation and transactions target the same program. Same fix applied to cabinet Smart Contract tab hardcoded links.
+- **Dev vault ATAs created** — Devnet vault ATAs were missing for dev program. Created: dev vault ATA `CCAaR9hh427TkXQbroNpLE6MVGo7JNqwMe5ye4chHNsM`, reconfirmed prod vault ATA `22KqLspdCFUXuJLFaJ5KyYcLuARfzYziWvLPP1rjB6Vi` (7,085 USDC intact), ecosystem ATA `CDmxiWAU4YhT8ZbboAp3MHLYDZ9KeHdM8BVxtGFCvaKX` (545 USDC intact). Script: `app/scripts/init-vault-atas.js` (idempotent, run after devnet resets).
+- **`dev.app.codeofdigitaleternity.com`** — now served as Vercel Preview on the prod project (`app.codeofdigitaleternity.com`) with `gitBranch: develop`. All 13 env vars from old dev project copied to Preview env. Old `dev-app-codeofdigitaleternity` Vercel project can be deleted.
+- **`deploy-vercel-dev.yml` removed** — Vercel deploys develop branch automatically via native GitHub integration; the CI workflow was redundant and failing.
+- **`anchor-deploy-dev.yml` fixed** — `.so` fallback copy from `target/sbf-solana-solana/`, polling loop for validator readiness instead of `sleep 8`. Same fix applied to `anchor-deploy.yml`.
+- **CSP updated** — `https://vercel.live` added to `script-src` and `frame-src` (required by Vercel preview toolbar).
+- **`/api/games/reward` auth** — Privy JWT verification + wallet ownership check added (was completely unauthenticated).
+- **DB connection pool** — `app/src/lib/db.ts` pool `max` raised from 3 → 20 to prevent exhaustion under concurrent Vercel function load.
+- **Referral income query** — `api/referrals/income/route.ts` consolidated from 3 sequential SQL queries to 1 with CASE aggregation + `Promise.all` for the recent list.
+- **Cabinet polling** — site status poll capped at 36 attempts (3 minutes) to prevent infinite requests if site-gen is down.
+- **Cabinet scroll** — `useEffect` added to scroll AIfa chat to bottom on new messages (`messagesEndRef`).
+- **`SiteStatus` type** — added `username?: string` field; removed `as any` casts for `siteStatus.username` in cabinet page.
+- **Listener race condition** — `existingSite` query now filters `AND arweave_url IS NOT NULL` so a job with `status=done` but null URL can't be copied to new jobs.
+- **DB indexes** — `app/scripts/add-indexes.sql` adds missing indexes: `referral_payments(created_at)`, `site_generation_jobs(wallet, status)`, `site_generation_jobs(wallet, created_at DESC)`. Applied to dev Neon DB.
+
+### Remaining tech debt (post-hackathon)
+- **God component** — `cabinet/page.tsx` ~1500 lines, 7 tabs; split into per-tab components
+- **TypeScript `any`** — widespread in Anchor account fetches; generate typed IDL client
+- **Rate limiting** — in-memory per Vercel instance; needs Redis/Upstash for true global limits
+- **CSP `unsafe-inline/unsafe-eval`** — required by Privy SDK; can't remove without Privy support
+- **Inline `style={{}}`** — new object per render; move repeated styles to CSS classes
+
 ## Known Issues (post-hackathon backlog)
 
 - `UrlTooLong` error is reused for invalid site status — add `InvalidSiteStatus` variant post-hackathon
