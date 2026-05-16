@@ -232,7 +232,7 @@ export async function handlePaymentProcessed(rawEvent: any): Promise<void> {
   // If the user already has a completed site (from a previous payment or UI regen),
   // skip generating a new one — their eternal site stays as-is.
   const existingSite = await db.query(
-    "SELECT arweave_url FROM site_generation_jobs WHERE wallet = $1 AND status = 'done' ORDER BY id DESC LIMIT 1",
+    "SELECT arweave_url FROM site_generation_jobs WHERE wallet = $1 AND status = 'done' AND arweave_url IS NOT NULL ORDER BY id DESC LIMIT 1",
     [payerWallet]
   );
   if (existingSite.rows.length > 0) {

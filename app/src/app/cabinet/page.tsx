@@ -23,7 +23,7 @@ const TIERS = [
 ];
 const TIER_COLOR: Record<number, string> = { 1: "#7C3AED", 2: "#D4A24C", 3: "#10B981" };
 
-type SiteStatus  = { status: "none"|"pending"|"done"|"error"; arweaveUrl?: string|null; tier: number; regenCount?: number; regenLimit?: number };
+type SiteStatus  = { status: "none"|"pending"|"done"|"error"; arweaveUrl?: string|null; tier: number; regenCount?: number; regenLimit?: number; username?: string };
 type Income      = { l1: number; l2: number; l3: number; total: number; locked: number; recent: any[] };
 type Overview    = { burnedUsdc: number; burnTxs: number; activeMembers: number; sitesCreated: number };
 type Contributor = { rank: number; wallet: string; displayName: string|null; tier: number; tierName: string; amountUsdc: number };
@@ -115,6 +115,10 @@ function CabinetPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [alfaMsgs]);
+
+  useEffect(() => {
     if (ready && authenticated && wallets.length === 0) createWallet().catch(() => {});
   }, [ready, authenticated, wallets.length]);
 
@@ -142,14 +146,16 @@ function CabinetPage() {
 
   }, [wallet, user]);
 
-  // Poll site status every 5s while pending
+  // Poll site status while pending — max 36 attempts (3 min), then stop
   useEffect(() => {
     if (!wallet || siteStatus?.status !== "pending") return;
+    let attempts = 0;
     const id = setInterval(() => {
+      attempts++;
       fetch(`/api/users/site-status?wallet=${wallet.address}`)
         .then(r => r.json())
-        .then(data => { setSiteStatus(data); if (data.status !== "pending") clearInterval(id); })
-        .catch(() => {});
+        .then(data => { setSiteStatus(data); if (data.status !== "pending" || attempts >= 36) clearInterval(id); })
+        .catch(() => { if (attempts >= 36) clearInterval(id); });
     }, 5000);
     return () => clearInterval(id);
   }, [wallet, siteStatus?.status]);
@@ -431,8 +437,8 @@ function CabinetPage() {
                   </div>
                   {siteStatus.status === "done" && siteStatus.arweaveUrl && (
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      {(siteStatus as any).username && (
-                        <a href={`https://${(siteStatus as any).username}.codeofdigitaleternity.com`} target="_blank" rel="noopener noreferrer"
+                      {siteStatus.username && (
+                        <a href={`https://${siteStatus.username}.codeofdigitaleternity.com`} target="_blank" rel="noopener noreferrer"
                           style={{ background: "linear-gradient(135deg,#7C3AED,#5B21B6)", color: "white", padding: "8px 18px", borderRadius: "8px", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>
                           {t("cabinet.site.openPassport", lang)}
                         </a>

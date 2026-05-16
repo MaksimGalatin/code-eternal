@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { privyServer } from "@/lib/privy";
 import { rateLimit, getIp } from "@/lib/rateLimit";
 
 const TOKENS: Record<string, number> = {
@@ -17,6 +18,26 @@ export async function POST(req: Request) {
     return Response.json({ error: "Rate limited" }, { status: 429 });
   }
 
+  // Verify caller owns the wallet they claim
+  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!token) return Response.json({ error: "unauthorized" }, { status: 401 });
+
+  let authenticatedWallet: string;
+  try {
+    const claims = await privyServer.verifyAuthToken(token);
+    const privyUser = await privyServer.getUser(claims.userId);
+    const solanaAcct = (privyUser.linkedAccounts as any[]).find(
+      (a: any) =>
+        a.type === "wallet" &&
+        (a.chainType === "solana" || a.chain_type === "solana") &&
+        (a.walletClientType === "privy" || a.wallet_client_type === "privy")
+    );
+    if (!solanaAcct?.address) return Response.json({ error: "no solana wallet" }, { status: 403 });
+    authenticatedWallet = solanaAcct.address as string;
+  } catch {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   let body: { wallet?: unknown; gameType?: unknown; sessionId?: unknown };
   try {
     body = await req.json();
@@ -26,22 +47,19 @@ export async function POST(req: Request) {
 
   const { wallet, gameType, sessionId } = body;
 
-  if (
-    typeof wallet !== "string" ||
-    !WALLET_RE.test(wallet)
-  ) {
+  if (typeof wallet !== "string" || !WALLET_RE.test(wallet)) {
     return Response.json({ error: "Invalid wallet" }, { status: 400 });
+  }
+
+  if (wallet !== authenticatedWallet) {
+    return Response.json({ error: "wallet mismatch" }, { status: 403 });
   }
 
   if (typeof gameType !== "string" || !VALID_GAMES.has(gameType)) {
     return Response.json({ error: "Invalid gameType" }, { status: 400 });
   }
 
-  if (
-    typeof sessionId !== "string" ||
-    sessionId.length < 8 ||
-    sessionId.length > 128
-  ) {
+  if (typeof sessionId !== "string" || sessionId.length < 8 || sessionId.length > 128) {
     return Response.json({ error: "Invalid sessionId" }, { status: 400 });
   }
 
