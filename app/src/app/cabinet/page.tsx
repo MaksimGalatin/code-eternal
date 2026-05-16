@@ -771,10 +771,10 @@ function CabinetPage() {
 
               {/* Footer */}
               <div style={{ textAlign: "center", borderTop: "1px solid rgba(42,42,58,0.5)", paddingTop: "24px" }}>
-                <a href="https://explorer.solana.com/address/8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep?cluster=devnet"
+                <a href={`https://explorer.solana.com/address/${PROGRAM_ID_STR}?cluster=devnet`}
                   target="_blank" rel="noopener noreferrer"
                   style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "rgb(167,139,250)", fontSize: "12px", textDecoration: "none", border: "1px solid rgba(124,58,237,0.2)", borderRadius: "20px", padding: "6px 16px" }}>
-                  🔍 Smart Contract: 8rzMmrC6…GAep — Solana Explorer
+                  🔍 Smart Contract: {PROGRAM_ID_STR.slice(0,8)}…{PROGRAM_ID_STR.slice(-4)} — Solana Explorer
                 </a>
                 <p style={{ color: "rgb(42,42,58)", fontSize: "11px", marginTop: "12px", letterSpacing: "0.5px" }}>
                   Solana devnet · mock USDC · Arweave permanent storage
@@ -1237,9 +1237,9 @@ function CabinetPage() {
                 <span style={{ fontSize: "18px" }}>🔑</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: "11px", color: "rgb(107,114,128)", marginBottom: "2px" }}>Program ID</div>
-                  <div style={{ fontSize: "13px", fontFamily: "monospace", color: "#06B6D4", wordBreak: "break-all" }}>8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep</div>
+                  <div style={{ fontSize: "13px", fontFamily: "monospace", color: "#06B6D4", wordBreak: "break-all" }}>{PROGRAM_ID_STR}</div>
                 </div>
-                <a href="https://explorer.solana.com/address/8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep?cluster=devnet" target="_blank" rel="noopener noreferrer"
+                <a href={`https://explorer.solana.com/address/${PROGRAM_ID_STR}?cluster=devnet`} target="_blank" rel="noopener noreferrer"
                   style={{ fontSize: "11px", color: "#7C3AED", textDecoration: "none", whiteSpace: "nowrap" }}>
                   View →
                 </a>
