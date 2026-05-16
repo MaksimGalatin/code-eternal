@@ -135,7 +135,7 @@ function BuyPageInner() {
         { publicKey: payer, signTransaction: async (tx: any) => tx, signAllTransactions: async (txs: any[]) => txs },
         { commitment: "confirmed" }
       );
-      const program = new Program(IDL, provider);
+      const program = new Program({ ...IDL, address: PROGRAM_ID.toBase58() }, provider);
 
       const [userStatePDA] = PublicKey.findProgramAddressSync([Buffer.from("user"), payer.toBuffer()], PROGRAM_ID);
       const [vaultPDA]     = PublicKey.findProgramAddressSync([Buffer.from("vault")], PROGRAM_ID);
@@ -252,7 +252,7 @@ function BuyPageInner() {
         const p2 = new PublicKey(wallet.address);
         const [pda] = PublicKey.findProgramAddressSync([Buffer.from("user"), p2.toBuffer()], PROGRAM_ID);
         const prov2 = new AnchorProvider(c2, { publicKey: p2, signTransaction: async (t: any) => t, signAllTransactions: async (t: any[]) => t }, {});
-        const prog2 = new Program(IDL, prov2);
+        const prog2 = new Program({ ...IDL, address: PROGRAM_ID.toBase58() }, prov2);
         const state: any = await (prog2.account as any).userState.fetch(pda);
         if (state.tier >= currentTierId) { setStep("success"); return; }
       } catch {}

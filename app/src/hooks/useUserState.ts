@@ -69,7 +69,7 @@ export function useUserState(walletAddress: string | null) {
           },
           { commitment: "confirmed" }
         );
-        const program = new Program(IDL as Idl, provider);
+        const program = new Program({ ...IDL, address: PROGRAM_ID.toBase58() } as Idl, provider);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         userState = (await (program.account as any).userState.fetch(
           userStatePda
