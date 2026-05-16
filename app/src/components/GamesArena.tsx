@@ -1180,7 +1180,9 @@ function GamesArena({ wallet }: { wallet?: string }) {
         setToast({ tokens: data.tokens, gameType });
         toastTimer.current = setTimeout(() => setToast(null), 4000);
       }
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("reward endpoint unavailable:", err);
+    }
   }, [wallet]);
 
   function selectGame(id: GameId) {

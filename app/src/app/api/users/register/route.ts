@@ -17,12 +17,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const body = await req.json();
-  const { wallet, email, refCode } = body as {
-    wallet?: string;
-    email?: string;
-    refCode?: string;
-  };
+  let body: { wallet?: string; email?: string; refCode?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid request body" }, { status: 400 });
+  }
+  const { wallet, email, refCode } = body;
 
   if (!wallet) return NextResponse.json({ error: "wallet required" }, { status: 400 });
   try { new PublicKey(wallet); } catch { return NextResponse.json({ error: "invalid wallet" }, { status: 400 }); }

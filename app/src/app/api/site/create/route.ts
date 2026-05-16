@@ -51,18 +51,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { wallet, displayName, username, bio, manifesto, telegram, twitter, website, avatarDataUrl } = body as {
-    wallet?: string;
-    displayName?: string;
-    username?: string;
-    bio?: string;
-    manifesto?: string;
-    telegram?: string;
-    twitter?: string;
-    website?: string;
-    avatarDataUrl?: string;
-  };
+  let body: { wallet?: string; displayName?: string; username?: string; bio?: string; manifesto?: string; telegram?: string; twitter?: string; website?: string; avatarDataUrl?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid request body" }, { status: 400 });
+  }
+  const { wallet, displayName, username, bio, manifesto, telegram, twitter, website, avatarDataUrl } = body;
 
   if (!wallet) return NextResponse.json({ error: "wallet required" }, { status: 400 });
   try { new PublicKey(wallet); } catch { return NextResponse.json({ error: "invalid wallet" }, { status: 400 }); }
@@ -146,6 +141,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Rate limit checked after auth/validation but before any DB writes
+    const retryAfter = rateLimit(getIp(req), 20, 10 * 60 * 1000);
+    if (retryAfter !== null) {
+      const mins = Math.ceil(retryAfter / 60);
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
     await client.query(
       `UPDATE users SET
         display_name = COALESCE($1, display_name),
@@ -174,16 +179,6 @@ export async function POST(req: Request) {
     );
     const originalTxSig = jobRow.rows[0]?.tx_signature ?? "unknown";
     const regenTxSig = `ui-regen-${wallet.slice(0, 8)}-${Date.now()}`;
-
-    // Rate limit only counts actual dispatches — not validation failures or auth errors
-    const retryAfter = rateLimit(getIp(req), 20, 10 * 60 * 1000);
-    if (retryAfter !== null) {
-      const mins = Math.ceil(retryAfter / 60);
-      return NextResponse.json(
-        { error: `Too many requests. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` },
-        { status: 429, headers: { "Retry-After": String(retryAfter) } }
-      );
-    }
 
     const insertResult = await client.query(
       `INSERT INTO site_generation_jobs (wallet, tier, tx_signature, status, created_at)

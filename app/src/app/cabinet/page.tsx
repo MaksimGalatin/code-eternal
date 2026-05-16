@@ -123,10 +123,10 @@ function CabinetPage() {
     }).then(r => r.json()).then(({ refCode: c }) => {
       if (c) setMyRefCode(c);
       localStorage.removeItem("ref_code"); // clear after registration so it doesn't persist
-    }).catch(() => {});
+    }).catch((e) => console.error("register failed:", e));
 
     fetch(`/api/users/site-status?wallet=${wallet.address}`)
-      .then(r => r.json()).then(setSiteStatus).catch(() => {});
+      .then(r => r.json()).then(setSiteStatus).catch((e) => console.error("site-status failed:", e));
 
   }, [wallet, user]);
 
