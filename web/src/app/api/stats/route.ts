@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 
 // POST /api/stats — log a page view or crawler visit
 export async function POST(request: NextRequest) {
@@ -38,7 +39,10 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/stats — public stats dashboard data
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (rateLimit(getIp(request), 20, 60_000) !== null) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   try {
     const [totalPageViews, totalCrawlerVisits, recentCrawlers, topPages, recentVisits] =
       await Promise.all([

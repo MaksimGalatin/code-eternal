@@ -3,9 +3,9 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useLang, t, type Lang } from "@/lib/i18n";
 
 const MotionImage = motion(Image);
-import { useLang, t, type Lang } from "@/lib/i18n";
 
 interface Props {
   lang?: Lang;

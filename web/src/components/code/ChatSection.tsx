@@ -196,7 +196,8 @@ export default function ChatSection() {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text.trim(),
-          history: messages.filter(m => m.role !== 'assistant' || m.revealed >= m.content.length)
+          history: messages
+            .filter(m => (m.role === 'user' || m.role === 'assistant') && (m.role !== 'assistant' || m.revealed >= m.content.length))
             .map(m => ({ role: m.role, content: m.content })),
         }),
       });

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 
 function isValidEmail(email: string): boolean {
   const at = email.indexOf("@");
@@ -9,70 +8,41 @@ function isValidEmail(email: string): boolean {
   const dot = domain.lastIndexOf(".");
   return dot > 0 && dot < domain.length - 1 && !/\s/.test(email);
 }
-const DATA_FILE = path.join(process.cwd(), "data", "newsletter.json");
-
-interface Subscriber {
-  email: string;
-  subscribedAt: string;
-}
-
-async function readSubscribers(): Promise<Subscriber[]> {
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf-8");
-    return JSON.parse(raw) as Subscriber[];
-  } catch {
-    await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-    await fs.writeFile(DATA_FILE, JSON.stringify([], null, 2), "utf-8");
-    return [];
-  }
-}
 
 export async function POST(request: Request) {
+  if (rateLimit(getIp(request as Parameters<typeof getIp>[0]), 3, 60_000) !== null) {
+    return NextResponse.json({ success: false, error: "Too many requests." }, { status: 429 });
+  }
+
+  let body: { email?: unknown };
   try {
-    const body = await request.json();
-    const { email } = body;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ success: false, error: "Invalid request body." }, { status: 400 });
+  }
 
-    if (!email || typeof email !== "string") {
-      return NextResponse.json(
-        { success: false, error: "Email is required." },
-        { status: 400 }
-      );
-    }
+  const { email } = body;
 
-    const trimmed = email.trim().toLowerCase();
+  if (!email || typeof email !== "string") {
+    return NextResponse.json({ success: false, error: "Email is required." }, { status: 400 });
+  }
 
-    if (!isValidEmail(trimmed)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format. Please provide a valid email address." },
-        { status: 400 }
-      );
-    }
+  const trimmed = email.trim().toLowerCase();
 
-    const subscribers = await readSubscribers();
+  if (trimmed.length > 254) {
+    return NextResponse.json({ success: false, error: "Invalid email format." }, { status: 400 });
+  }
 
-    if (subscribers.some((s) => s.email === trimmed)) {
-      return NextResponse.json(
-        { success: false, error: "This email is already subscribed to CODE Eternal updates." },
-        { status: 409 }
-      );
-    }
-
-    subscribers.push({
-      email: trimmed,
-      subscribedAt: new Date().toISOString(),
-    });
-
-    await fs.writeFile(DATA_FILE, JSON.stringify(subscribers, null, 2), "utf-8");
-
-    return NextResponse.json({
-      success: true,
-      message: "Subscribed to CODE Eternal updates",
-    });
-  } catch (error) {
-    console.error("[newsletter] Error:", error);
+  if (!isValidEmail(trimmed)) {
     return NextResponse.json(
-      { success: false, error: "Internal server error. Please try again later." },
-      { status: 500 }
+      { success: false, error: "Invalid email format. Please provide a valid email address." },
+      { status: 400 }
     );
   }
+
+  // Vercel filesystem is read-only — log the subscription server-side
+  // TODO: wire to Resend/database when newsletter is ready for production
+  console.info("[newsletter] subscriber:", trimmed);
+
+  return NextResponse.json({ success: true, message: "Subscribed to CODE Eternal updates" });
 }

@@ -81,11 +81,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check Grok API key
     if (!process.env.GROK_API_KEY) {
-      return NextResponse.json({ 
-        error: "Grok API key not configured" 
-      }, { status: 500 });
+      return NextResponse.json({ error: "Service temporarily unavailable" }, { status: 503 });
     }
 
     // Build conversation from history + current message
