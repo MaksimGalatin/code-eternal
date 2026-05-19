@@ -104,7 +104,7 @@ export default function MemoryTab({ wallet, memoryCount, getAccessToken }: Props
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>🌌</div>
             <div style={{ fontSize: '16px', fontWeight: 600, color: 'rgb(232,232,240)', marginBottom: '6px' }}>No memories yet</div>
             <div style={{ fontSize: '13px', color: 'rgb(107,114,128)' }}>
-              Your conversations with AIfa are saved to Arweave every {20} messages.
+              Your conversations with AIfa are automatically saved to Arweave (or when you close the tab).
             </div>
           </div>
         )}

@@ -175,7 +175,7 @@ export const KNOWLEDGE_BASE = {
         id: "memory",
         name: "Memory Vault",
         description: "View all your past AIfa conversations permanently stored on Arweave. Each session shows title, summary, message count, and date. Click a session to expand and read the full conversation fetched directly from Arweave. Every session has a permanent Arweave link — it cannot be deleted.",
-        howTo: "Click any session card to expand it. Click 'View raw on Arweave' to open the permanent JSON file. Sessions are saved automatically — no action needed from you.",
+        howTo: "Click any session card to expand it. Click 'View raw on Arweave' to open the permanent JSON file. Sessions are saved automatically when ~80KB of conversation accumulates (fitting the Irys free tier), or instantly when you close the browser tab — no action needed from you.",
       },
       {
         id: "games",

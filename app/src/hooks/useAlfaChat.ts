@@ -120,7 +120,7 @@ export function useAlfaChat(
       const { reply } = await r.json();
       const finalMsgs: AlfaMsg[] = [...newMsgs, { from: "bot" as const, text: reply }];
       setAlfaMsgs(finalMsgs);
-      if (shouldSaveChunk(finalMsgs.length, alfaLastSaved)) {
+      if (shouldSaveChunk(finalMsgs, alfaLastSaved)) {
         saveMemoryChunk(finalMsgs);
       }
     } catch {
