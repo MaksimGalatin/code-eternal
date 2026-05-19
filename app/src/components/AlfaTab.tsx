@@ -1,5 +1,6 @@
 'use client';
 import React from "react";
+import { CHUNK_MAX_BYTES } from "@/hooks/useAlfaChat";
 
 // ── Inline SVG icons ────────────────────────────────────────────────────────
 const IBot = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>;
@@ -16,9 +17,38 @@ export interface AlfaTabProps {
   onSend: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   lang: string;
+  memorySessions: number;
+  saving: boolean;
+  unsavedBytes: number;
 }
 
-export default function AlfaTab({ msgs, loading, input, onInputChange, onSend, messagesEndRef }: AlfaTabProps) {
+export default function AlfaTab({
+  msgs, loading, input, onInputChange, onSend, messagesEndRef,
+  memorySessions, saving, unsavedBytes,
+}: AlfaTabProps) {
+  const pct = Math.min(100, Math.round((unsavedBytes / CHUNK_MAX_BYTES) * 100));
+  const unsavedKB = (unsavedBytes / 1024).toFixed(1);
+  const maxKB = Math.round(CHUNK_MAX_BYTES / 1024);
+
+  let memoryLabel: string;
+  let memoryColor: string;
+  if (saving) {
+    memoryLabel = "Saving to Arweave…";
+    memoryColor = "rgb(6,182,212)";
+  } else if (unsavedBytes === 0) {
+    memoryLabel = "Memory saved ✓";
+    memoryColor = "rgb(16,185,129)";
+  } else {
+    memoryLabel = `${unsavedKB} / ${maxKB} KB → Arweave`;
+    memoryColor = pct > 80 ? "rgb(245,158,11)" : "rgb(124,58,237)";
+  }
+
+  const barColor = saving
+    ? "linear-gradient(90deg, rgb(6,182,212), rgb(124,58,237))"
+    : pct > 80
+      ? "linear-gradient(90deg, rgb(245,158,11), rgb(239,68,68))"
+      : "linear-gradient(90deg, rgb(124,58,237), rgb(6,182,212))";
+
   return (
     <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
       <div className="glass-panel" style={{ borderRadius: "16px", overflow: "hidden", height: "calc(100vh - 180px)", display: "flex", flexDirection: "column" }}>
@@ -35,21 +65,30 @@ export default function AlfaTab({ msgs, loading, input, onInputChange, onSend, m
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "8px", background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}>
               <span style={{ color: "rgb(124,58,237)" }}><IBrain /></span>
-              <span style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 700, color: "rgb(124,58,237)" }}>13</span>
-              <span style={{ fontSize: "10px", color: "rgb(107,114,128)" }}>memories</span>
+              <span style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 700, color: "rgb(124,58,237)" }}>{memorySessions}</span>
+              <span style={{ fontSize: "10px", color: "rgb(107,114,128)" }}>saved</span>
             </div>
             <span style={{ color: "rgb(124,58,237)" }}><ISparkles /></span>
           </div>
         </div>
 
-        {/* Think-to-Earn progress bar */}
+        {/* Memory progress bar */}
         <div style={{ padding: "8px 16px", background: "rgba(10,10,15,0.6)", borderBottom: "1px solid rgb(26,26,46)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-            <span style={{ fontSize: "10px", fontWeight: 600, color: "rgb(124,58,237)" }}>🧠 Think-to-Earn</span>
-            <span style={{ fontSize: "10px", color: "rgb(107,114,128)" }}>13/25 — next milestone</span>
+            <span style={{ fontSize: "10px", fontWeight: 600, color: "rgb(124,58,237)" }}>🧠 Memory Vault</span>
+            <span style={{ fontSize: "10px", color: memoryColor, fontFamily: "monospace", transition: "color 0.3s" }}>
+              {memoryLabel}
+            </span>
           </div>
           <div style={{ width: "100%", height: "6px", borderRadius: "99px", overflow: "hidden", background: "rgb(26,26,46)" }}>
-            <div style={{ height: "100%", borderRadius: "99px", background: "linear-gradient(90deg, rgb(124,58,237), rgb(6,182,212))", width: "52%" }} />
+            <div style={{
+              height: "100%",
+              borderRadius: "99px",
+              background: barColor,
+              width: saving ? "100%" : `${pct}%`,
+              transition: "width 0.4s ease, background 0.3s",
+              animation: saving ? "pulse 1s infinite" : "none",
+            }} />
           </div>
         </div>
 

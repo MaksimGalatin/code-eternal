@@ -81,7 +81,7 @@ function CabinetPage() {
   const {
     msgs: alfaMsgs, loading: alfaLoading, input: alfaInput,
     setInput: setAlfaInput, onSend: sendAlfaMessage,
-    messagesEndRef, memorySessions,
+    messagesEndRef, memorySessions, saving: alfaSaving, unsavedBytes,
   } = useAlfaChat(wallet?.address, getAccessToken);
 
   useEffect(() => {
@@ -592,6 +592,9 @@ function CabinetPage() {
               onSend={sendAlfaMessage}
               messagesEndRef={messagesEndRef}
               lang={lang}
+              memorySessions={memorySessions}
+              saving={alfaSaving}
+              unsavedBytes={unsavedBytes}
             />
           )}
 
