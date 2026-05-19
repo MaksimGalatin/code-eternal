@@ -600,7 +600,7 @@ function CabinetPage() {
 
           {/* ══════════ MEMORY TAB ══════════ */}
           {activeTab === "memory" && (
-            <MemoryTab wallet={wallet?.address ?? null} memoryCount={memorySessions} getAccessToken={getAccessToken} />
+            <MemoryTab wallet={wallet?.address ?? null} getAccessToken={getAccessToken} />
           )}
 
           {/* ══════════ SITE TAB ══════════ */}

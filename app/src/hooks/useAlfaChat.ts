@@ -56,6 +56,8 @@ export function useAlfaChat(
   const alfaSavingRef = useRef(false);
   const [alfaSaving,     setAlfaSaving]     = useState(false);
   const [memorySessions, setMemorySessions] = useState(0);
+  // Prevents counting the same page-load session twice in the badge
+  const sessionCountedRef = useRef(false);
   // True once the user actually sends their first message (prevents saving seeded messages)
   const conversationStarted = useRef(false);
   // Inactivity timer — fires 5 min after last bot reply if there are unsaved messages
@@ -65,6 +67,22 @@ export function useAlfaChat(
   useEffect(() => { alfaLastSavedRef.current  = alfaLastSaved;  }, [alfaLastSaved]);
   useEffect(() => { alfaPrevTxIdRef.current   = alfaPrevTxId;   }, [alfaPrevTxId]);
   useEffect(() => { alfaChunkIndexRef.current = alfaChunkIndex; }, [alfaChunkIndex]);
+
+  // Load real session count from DB on wallet connect
+  useEffect(() => {
+    if (!walletAddress) return;
+    getAccessToken()
+      .then(token => {
+        if (!token) return;
+        return fetch(`/api/chat/sessions?wallet=${walletAddress}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      })
+      .then(r => r?.json())
+      .then(data => { if (Array.isArray(data?.sessions)) setMemorySessions(data.sessions.length); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletAddress]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -119,7 +137,11 @@ export function useAlfaChat(
         setAlfaChunkIndex(prev => { const n = prev + 1; alfaChunkIndexRef.current = n; return n; });
         setAlfaLastSaved(msgs.length);
         alfaLastSavedRef.current = msgs.length;
-        setMemorySessions(prev => prev + 1);
+        // Count once per session (not per chunk) — sessionCountedRef stays true for the rest of the page load
+        if (!sessionCountedRef.current) {
+          sessionCountedRef.current = true;
+          setMemorySessions(prev => prev + 1);
+        }
       }
     } catch { /* non-fatal */ }
     finally {

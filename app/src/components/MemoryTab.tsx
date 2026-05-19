@@ -24,11 +24,10 @@ const ILink = () => (
 
 interface Props {
   wallet: string | null;
-  memoryCount: number;
   getAccessToken: () => Promise<string | null>;
 }
 
-export default function MemoryTab({ wallet, memoryCount, getAccessToken }: Props) {
+export default function MemoryTab({ wallet, getAccessToken }: Props) {
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -86,7 +85,7 @@ export default function MemoryTab({ wallet, memoryCount, getAccessToken }: Props
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '8px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
           <span style={{ fontSize: '20px' }}>🧠</span>
-          <span style={{ fontSize: '18px', fontWeight: 700, color: 'rgb(124,58,237)', fontFamily: 'monospace' }}>{memoryCount}</span>
+          <span style={{ fontSize: '18px', fontWeight: 700, color: 'rgb(124,58,237)', fontFamily: 'monospace' }}>{loading ? '—' : sessions.length}</span>
           <span style={{ fontSize: '11px', color: 'rgb(107,114,128)' }}>saved sessions</span>
         </div>
       </div>
