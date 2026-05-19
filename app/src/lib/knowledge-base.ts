@@ -168,14 +168,20 @@ export const KNOWLEDGE_BASE = {
       {
         id: "alfa",
         name: "AIfa Terminal",
-        description: "Chat with AIfa — your personal AI companion powered by Grok (grok-3). Full knowledge of CODE ETERNAL. Conversations are automatically saved to Arweave every 20 messages (or when you close the tab) via the Memory Vault system.",
-        howTo: "Just type a message and press Enter or click Send. No limits on messages.",
+        description: "Chat with AIfa — your personal AI companion powered by Grok (grok-3). Full knowledge of CODE ETERNAL. The progress bar shows how many KB of unsaved conversation you have — it fills toward 80 KB then saves automatically. The brain icon shows how many sessions are saved in your Memory Vault.",
+        howTo: "Type a message and press Enter or click Send. Your conversation saves automatically — you don't need to do anything. The fastest way to save: switch to any other tab (Cabinet, Memory Vault, etc.).",
+        memorySaveTriggers: [
+          "Switch to another cabinet tab (immediate — fastest way)",
+          "~80 KB of unsaved messages accumulate (auto, fits Irys free tier)",
+          "5 minutes of inactivity after the last AIfa reply",
+          "Browser tab becomes hidden (minimize, switch to another browser tab, close)",
+        ],
       },
       {
         id: "memory",
         name: "Memory Vault",
-        description: "View all your past AIfa conversations permanently stored on Arweave. Each session shows title, summary, message count, and date. Click a session to expand and read the full conversation fetched directly from Arweave. Every session has a permanent Arweave link — it cannot be deleted.",
-        howTo: "Click any session card to expand it. Click 'View raw on Arweave' to open the permanent JSON file. Sessions are saved automatically when ~80KB of conversation accumulates (fitting the Irys free tier), or instantly when you close the browser tab — no action needed from you.",
+        description: "View all your past AIfa conversations permanently stored on Arweave. Each session shows title (AI-generated), summary, message count, and date. Click a session to expand and read the full messages fetched directly from Arweave. Every session has a permanent Arweave link — it cannot be deleted or modified.",
+        howTo: "Click any session card to expand it and read the saved messages. Click 'View raw on Arweave' to open the permanent JSON file. The counter in the header shows the real number of sessions from the database — it updates every time you open this tab.",
       },
       {
         id: "games",
@@ -239,7 +245,7 @@ export const KNOWLEDGE_BASE = {
     frontend: "Next.js 16, React 19, Tailwind CSS — deployed on Vercel",
     backend: "Express (Node.js) on Hetzner ARM64 VM, Docker Compose",
     database: "Neon PostgreSQL",
-    ai: "Grok API (grok-3-mini) for AIfa in-app chat",
+    ai: "Grok API (grok-3) for AIfa in-app chat",
     dns: "Cloudflare — wildcard subdomains via Worker proxy for username.codeofdigitaleternity.com",
     webhooks: "Helius — Solana RPC + real-time transaction webhooks",
   },
