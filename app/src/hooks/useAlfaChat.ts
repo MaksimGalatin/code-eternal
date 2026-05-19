@@ -19,6 +19,8 @@ const INIT_ALFA_MSGS: AlfaMsg[] = [
 
 // Save after this many ms of inactivity (no new bot reply) — catches users who read and leave
 const INACTIVITY_SAVE_MS = 5 * 60 * 1000; // 5 minutes
+// Hard cap: never upload more than this per chunk regardless of CHUNK_MAX_BYTES
+const HARD_CAP_BYTES = 90_000;
 
 export interface AlfaChatResult {
   msgs: AlfaMsg[];
@@ -46,7 +48,11 @@ export function useAlfaChat(
   const [alfaPrevTxId,   setAlfaPrevTxId]   = useState<string | null>(null);
   const [alfaChunkIndex, setAlfaChunkIndex] = useState(0);
   const [alfaLastSaved,  setAlfaLastSaved]  = useState(0);
-  // Ref for save-in-progress guard — avoids stale closure bug in visibilitychange
+  // Ref mirrors — always current inside async callbacks, no stale closure risk
+  const alfaLastSavedRef  = useRef(0);
+  const alfaPrevTxIdRef   = useRef<string | null>(null);
+  const alfaChunkIndexRef = useRef(0);
+  // Ref for save-in-progress guard
   const alfaSavingRef = useRef(false);
   const [alfaSaving,     setAlfaSaving]     = useState(false);
   const [memorySessions, setMemorySessions] = useState(0);
@@ -55,23 +61,45 @@ export function useAlfaChat(
   // Inactivity timer — fires 5 min after last bot reply if there are unsaved messages
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Keep refs in sync with state
+  useEffect(() => { alfaLastSavedRef.current  = alfaLastSaved;  }, [alfaLastSaved]);
+  useEffect(() => { alfaPrevTxIdRef.current   = alfaPrevTxId;   }, [alfaPrevTxId]);
+  useEffect(() => { alfaChunkIndexRef.current = alfaChunkIndex; }, [alfaChunkIndex]);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [alfaMsgs]);
 
   async function saveMemoryChunk(msgs: AlfaMsg[]) {
-    // Use ref for guard to avoid stale closure; also check state for extra safety
-    if (alfaSavingRef.current || !walletAddress || msgs.length <= alfaLastSaved) return;
+    const lastSaved = alfaLastSavedRef.current;
+    if (alfaSavingRef.current || !walletAddress || msgs.length <= lastSaved) return;
+
+    // Build delta — only messages since last save
+    let delta = msgs.slice(lastSaved);
+    if (delta.length === 0) return;
+
+    // Guard against oversized delta: drop oldest messages from the slice until it fits.
+    // This can only happen if a single AI reply is extremely long (>90KB) — very unlikely.
+    let deltaJson = JSON.stringify(delta);
+    if (deltaJson.length > HARD_CAP_BYTES) {
+      console.warn(`[AIfa memory] Delta exceeds ${HARD_CAP_BYTES} bytes (${deltaJson.length}). Trimming oldest messages.`);
+      while (delta.length > 1 && deltaJson.length > HARD_CAP_BYTES) {
+        delta = delta.slice(1);
+        deltaJson = JSON.stringify(delta);
+      }
+    }
+
     const token = await getAccessToken().catch(() => null);
     if (!token) return;
+
     alfaSavingRef.current = true;
     setAlfaSaving(true);
     try {
-      const chatMessages: ChatLogMessage[] = msgs.map((m, i) => ({
+      const chatMessages: ChatLogMessage[] = delta.map((m, i) => ({
         role: m.from === "user" ? "user" as const : "assistant" as const,
         content: m.text,
-        timestamp: Date.now() - (msgs.length - i) * 500,
+        timestamp: Date.now() - (delta.length - i) * 500,
       }));
       const r = await fetch("/api/chat/save-memory", {
         method: "POST",
@@ -79,16 +107,18 @@ export function useAlfaChat(
         body: JSON.stringify({
           wallet: walletAddress,
           sessionId: alfaSessionId,
-          prevTxId: alfaPrevTxId,
-          chunkIndex: alfaChunkIndex,
+          prevTxId: alfaPrevTxIdRef.current,
+          chunkIndex: alfaChunkIndexRef.current,
           messages: chatMessages,
         }),
       });
       if (r.ok) {
         const { txId } = await r.json();
         setAlfaPrevTxId(txId);
-        setAlfaChunkIndex(prev => prev + 1);
+        alfaPrevTxIdRef.current = txId;
+        setAlfaChunkIndex(prev => { const n = prev + 1; alfaChunkIndexRef.current = n; return n; });
         setAlfaLastSaved(msgs.length);
+        alfaLastSavedRef.current = msgs.length;
         setMemorySessions(prev => prev + 1);
       }
     } catch { /* non-fatal */ }
