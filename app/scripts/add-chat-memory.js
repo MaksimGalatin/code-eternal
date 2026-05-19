@@ -1,11 +1,14 @@
-// Migration: add chat memory columns and table
-// Run once: node app/scripts/add-chat-memory.js
-require("dotenv").config({ path: require("path").join(__dirname, "../../secrets/credentials.env") });
+// Migration: add chat memory columns and table.
+// Runs automatically as prebuild — idempotent (IF NOT EXISTS guards).
+// For local dev without DATABASE_URL in env: set it before running.
 const { Pool } = require("pg");
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
 async function run() {
+  if (!process.env.DATABASE_URL) {
+    console.log("DATABASE_URL not set — skipping migration.");
+    return;
+  }
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
