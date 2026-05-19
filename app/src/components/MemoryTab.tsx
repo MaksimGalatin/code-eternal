@@ -3,8 +3,7 @@ import React, { useEffect, useState } from 'react';
 import type { ChatSessionMeta } from '@/lib/chat-memory/types';
 import type { ChatFilePayload } from '@/lib/chat-memory/types';
 
-const IRYS_NODE_URL =
-  process.env.NEXT_PUBLIC_IRYS_NODE_URL ?? 'https://devnet.irys.xyz';
+const IRYS_NODE_URL = 'https://devnet.irys.xyz';
 
 const IArchive = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -26,9 +25,10 @@ const ILink = () => (
 interface Props {
   wallet: string | null;
   memoryCount: number;
+  getAccessToken: () => Promise<string | null>;
 }
 
-export default function MemoryTab({ wallet, memoryCount }: Props) {
+export default function MemoryTab({ wallet, memoryCount, getAccessToken }: Props) {
   const [sessions, setSessions] = useState<ChatSessionMeta[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -38,11 +38,15 @@ export default function MemoryTab({ wallet, memoryCount }: Props) {
   useEffect(() => {
     if (!wallet) return;
     setLoading(true);
-    fetch(`/api/chat/sessions?wallet=${wallet}`)
+    getAccessToken()
+      .then(token => fetch(`/api/chat/sessions?wallet=${wallet}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }))
       .then(r => r.json())
       .then(({ sessions: s }) => { if (s) setSessions(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet]);
 
   async function toggleSession(session: ChatSessionMeta) {

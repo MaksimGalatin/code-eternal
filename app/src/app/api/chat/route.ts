@@ -20,8 +20,9 @@ export async function POST(req: Request) {
   }
 
   // Load previous session summary from Irys if available
+  const SOLANA_ADDR_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   let memoryAddition = "";
-  if (wallet && typeof wallet === "string") {
+  if (wallet && typeof wallet === "string" && SOLANA_ADDR_RE.test(wallet)) {
     try {
       const { rows } = await db.query<{ last_chat_tx_id: string | null }>(
         "SELECT last_chat_tx_id FROM users WHERE wallet=$1",

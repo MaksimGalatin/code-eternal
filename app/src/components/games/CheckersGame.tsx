@@ -234,11 +234,11 @@ export function CheckersGame({
             const pick = bestCheckerAiMove(prev);
             if (!pick) { setStatus("red_wins"); aiLocked.current = false; return prev; }
             const nb2 = applyCheckerMove(prev, pick);
-            if (!allCheckerMoves(nb2, "r").length) setStatus("black_wins");
+            if (!allCheckerMoves(nb2, "r").length) { setStatus("black_wins"); }
+            else { setTurn("r"); }
             aiLocked.current = false;
             return nb2;
           });
-          setTurn("r");
         }, 400);
         return;
       }

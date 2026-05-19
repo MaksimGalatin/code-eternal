@@ -194,9 +194,9 @@ export function BackgammonGame({
       if (bestMv !== null && bestDieIdx >= 0) cur = applyBgMove(cur, bestMv.from, bestMv.to, bestDieIdx, lang);
       else break;
     }
-    if (cur.winner) { setSt({ ...cur, phase: "done" }); return; }
-    setSt({ ...cur, turn: "white", phase: "roll", dice: [], usedDice: [], selected: null,
-      msg: t("games.bg.yourTurn", lang) });
+    if (cur.winner) { setSt(_ => ({ ...cur, phase: "done" })); return; }
+    setSt(_ => ({ ...cur, turn: "white", phase: "roll", dice: [], usedDice: [], selected: null,
+      msg: t("games.bg.yourTurn", lang) }));
   }
 
   function handlePointClick(idx: number) {

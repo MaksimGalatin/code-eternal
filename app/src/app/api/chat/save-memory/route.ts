@@ -157,15 +157,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'upload failed' }, { status: 502 });
   }
 
-  // Persist to DB — update pointer on users + insert session index row
-  await db.query('UPDATE users SET last_chat_tx_id=$1 WHERE wallet=$2', [txId, wallet]);
-  await db.query(
-    `INSERT INTO chat_sessions
-       (wallet, tx_id, prev_tx_id, session_id, chunk_index, chat_title, summary, msg_count)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-     ON CONFLICT (tx_id) DO NOTHING`,
-    [wallet, txId, prevTxId ?? null, sessionId, chunkIndex, title, summary, messages.length],
-  );
+  // Persist to DB — non-fatal; Irys upload already succeeded so return txId regardless
+  try {
+    await db.query('UPDATE users SET last_chat_tx_id=$1 WHERE wallet=$2', [txId, wallet]);
+    await db.query(
+      `INSERT INTO chat_sessions
+         (wallet, tx_id, prev_tx_id, session_id, chunk_index, chat_title, summary, msg_count)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT (tx_id) DO NOTHING`,
+      [wallet, txId, prevTxId ?? null, sessionId, chunkIndex, title, summary, messages.length],
+    );
+  } catch (err) {
+    console.error('DB persist failed after Irys upload (txId preserved):', err);
+  }
 
   return NextResponse.json({ txId });
 }

@@ -39,8 +39,12 @@ export function useAlfaChat(
   const [alfaPrevTxId,   setAlfaPrevTxId]   = useState<string | null>(null);
   const [alfaChunkIndex, setAlfaChunkIndex] = useState(0);
   const [alfaLastSaved,  setAlfaLastSaved]  = useState(0);
+  // Ref for save-in-progress guard — avoids stale closure bug in visibilitychange
+  const alfaSavingRef = useRef(false);
   const [alfaSaving,     setAlfaSaving]     = useState(false);
   const [memorySessions, setMemorySessions] = useState(0);
+  // True once the user actually sends their first message (prevents saving seeded messages)
+  const conversationStarted = useRef(false);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -48,9 +52,11 @@ export function useAlfaChat(
   }, [alfaMsgs]);
 
   async function saveMemoryChunk(msgs: AlfaMsg[]) {
-    if (alfaSaving || !walletAddress || msgs.length <= alfaLastSaved) return;
+    // Use ref for guard to avoid stale closure; also check state for extra safety
+    if (alfaSavingRef.current || !walletAddress || msgs.length <= alfaLastSaved) return;
     const token = await getAccessToken().catch(() => null);
     if (!token) return;
+    alfaSavingRef.current = true;
     setAlfaSaving(true);
     try {
       const chatMessages: ChatLogMessage[] = msgs.map((m, i) => ({
@@ -77,12 +83,17 @@ export function useAlfaChat(
         setMemorySessions(prev => prev + 1);
       }
     } catch { /* non-fatal */ }
-    finally { setAlfaSaving(false); }
+    finally {
+      alfaSavingRef.current = false;
+      setAlfaSaving(false);
+    }
   }
 
-  // Save on tab hide
+  // Save on tab hide — only if user actually started a conversation
   useEffect(() => {
     function onHide() {
+      if (document.visibilityState !== "hidden") return;
+      if (!conversationStarted.current) return;
       if (hasUnsavedMessages(alfaMsgs.length, alfaLastSaved)) {
         saveMemoryChunk(alfaMsgs);
       }
@@ -95,6 +106,7 @@ export function useAlfaChat(
   async function onSend() {
     const text = alfaInput.trim();
     if (!text || alfaLoading) return;
+    conversationStarted.current = true;
     const newMsgs: AlfaMsg[] = [...alfaMsgs, { from: "user" as const, text }];
     setAlfaMsgs(newMsgs);
     setAlfaInput("");
