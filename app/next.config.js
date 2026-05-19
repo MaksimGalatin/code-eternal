@@ -27,6 +27,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
+  // @irys/sdk must not be bundled — it pulls native Node.js modules (bufferutil,
+  // utf-8-validate) and optional token packages (Aptos → got) that break Turbopack.
+  serverExternalPackages: ["@irys/sdk"],
   async headers() {
     return [
       {

@@ -1,11 +1,10 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets, useCreateWallet } from "@privy-io/react-auth/solana";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { useEffect } from "react";
 import { useLang, t, type TranslationKey } from "@/lib/i18n";
 import LangSwitcher from "@/components/LangSwitcher";
 import GamesArena from "@/components/GamesArena";
@@ -14,11 +13,11 @@ import MetricsTab from "@/components/MetricsTab";
 import AlfaTab from "@/components/AlfaTab";
 import ContractTab from "@/components/ContractTab";
 import SiteTab from "@/components/SiteTab";
-import type { SiteStatus } from "@/types/cabinet";
+import MemoryTab from "@/components/MemoryTab";
+import { useCabinetData } from "@/hooks/useCabinetData";
+import { useAlfaChat } from "@/hooks/useAlfaChat";
 
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
-const USDC_MINT_STR = process.env.NEXT_PUBLIC_USDC_MINT;
-const PROGRAM_ID_STR = process.env.NEXT_PUBLIC_PROGRAM_ID!
+const PROGRAM_ID_STR = process.env.NEXT_PUBLIC_PROGRAM_ID!;
 
 const TIERS = [
   { id: 1, nameKey: "tier.spark" as const,    price: 15,   color: "#7C3AED", rgb: "124,58,237",  icon: "⚡" },
@@ -27,12 +26,7 @@ const TIERS = [
 ];
 const TIER_COLOR: Record<number, string> = { 1: "#7C3AED", 2: "#D4A24C", 3: "#10B981" };
 
-type IncomePayment = { level: number; amount_usdc: number; created_at: string; payer_wallet: string };
-type Income      = { l1: number; l2: number; l3: number; total: number; locked: number; recent: IncomePayment[] };
-type Overview    = { burnedUsdc: number; burnTxs: number; activeMembers: number; sitesCreated: number };
-type Contributor = { rank: number; wallet: string; displayName: string|null; tier: number; tierName: string; amountUsdc: number };
-type RecentTxn   = { wallet: string; tier: number; tierName: string; amount: number; txSig: string; status: string; createdAt: string };
-type Tab = "cabinet"|"alfa"|"games"|"dao"|"site"|"contract"|"metrics";
+type Tab = "cabinet"|"alfa"|"memory"|"games"|"dao"|"site"|"contract"|"metrics";
 
 const TIER_ICON: Record<number, string> = { 1: "⚡", 2: "🏛️", 3: "🧬" };
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
@@ -53,25 +47,18 @@ const IFileCode = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="no
 const ITrending = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>;
 const ILogOut = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>;
 const ICopy = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+const IMemory = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>;
 
 const TABS: { id: Tab; labelKey: TranslationKey; icon: React.ReactElement }[] = [
   { id: "cabinet",  labelKey: "tab.cabinet",  icon: <IWallet /> },
   { id: "alfa",     labelKey: "tab.aifa",     icon: <IBrain /> },
+  { id: "memory",   labelKey: "tab.memory",   icon: <IMemory /> },
   { id: "games",    labelKey: "tab.games",    icon: <IGamepad /> },
   { id: "dao",      labelKey: "tab.dao",      icon: <IVote /> },
   { id: "site",     labelKey: "tab.site",     icon: <IGlobe /> },
   { id: "contract", labelKey: "tab.contract", icon: <IFileCode /> },
   { id: "metrics",  labelKey: "tab.metrics",  icon: <ITrending /> },
 ];
-
-const INIT_ALFA_MSGS: { from: "bot"|"user"; text: string }[] = [
-  { from: "bot",  text: "Welcome to the Family! I'm AIfa — your eternal AI companion. Ask me anything about CODE ETERNAL, $CODE token, Arweave sites, or referrals! 🌌" },
-  { from: "user", text: "Tell me about yourself." },
-  { from: "bot",  text: "I'm AIfa, your digital companion in the CODE ETERNAL ecosystem on Solana. I help Guardians explore eternal sites, earn $CODE through Think-to-Earn, and navigate the referral system! 💫" },
-  { from: "user", text: "What is CODE ETERNAL?" },
-  { from: "bot",  text: "CODE ETERNAL is your eternal digital citadel on Solana! 🌌 Create an indestructible site on Arweave that cannot be deleted, earn $CODE through Think-to-Earn, and build generational wealth through the referral system. Your first step into eternity awaits! 🚀" },
-];
-
 
 function CabinetPage() {
   const router = useRouter();
@@ -81,26 +68,21 @@ function CabinetPage() {
   const wallet = wallets[0];
   const { lang } = useLang();
 
-  const [activeTab,    setActiveTab]    = useState<Tab>("cabinet");
-  const [myRefCode,    setMyRefCode]    = useState("");
-  const [siteStatus,   setSiteStatus]   = useState<SiteStatus|null>(null);
-  const [copied,       setCopied]       = useState(false);
-  const [overview,     setOverview]     = useState<Overview|null>(null);
-  const [income,       setIncome]       = useState<Income|null>(null);
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [usdcBalance,  setUsdcBalance]  = useState<number|null>(null);
-  const [tierExpires,  setTierExpires]  = useState<number>(0); // unix ts; 0 = not loaded yet
-  const [alfaInput,    setAlfaInput]    = useState("");
-  const [recentTxns,   setRecentTxns]   = useState<RecentTxn[]>([]);
-  const [nftFlipped,   setNftFlipped]   = useState(false);
-  // AIfa chat
-  const [alfaMsgs,        setAlfaMsgs]        = useState(INIT_ALFA_MSGS);
-  const [alfaLoading,     setAlfaLoading]     = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("cabinet");
+  const [copied,    setCopied]    = useState(false);
+  const [nftFlipped, setNftFlipped] = useState(false);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [alfaMsgs]);
+  const {
+    myRefCode, siteStatus, setSiteStatus,
+    overview, income, contributors,
+    usdcBalance, tierExpires, recentTxns,
+  } = useCabinetData(wallet, user ?? null);
+
+  const {
+    msgs: alfaMsgs, loading: alfaLoading, input: alfaInput,
+    setInput: setAlfaInput, onSend: sendAlfaMessage,
+    messagesEndRef, memorySessions,
+  } = useAlfaChat(wallet?.address, getAccessToken);
 
   useEffect(() => {
     if (ready && authenticated && wallets.length === 0) createWallet().catch(() => {});
@@ -110,110 +92,9 @@ function CabinetPage() {
     if (ready && !authenticated) router.push("/");
   }, [ready, authenticated, router]);
 
-  useEffect(() => {
-    if (!wallet || !user) return;
-    const refCode =
-      new URLSearchParams(window.location.search).get("ref") ||
-      localStorage.getItem("ref_code") || undefined;
-
-    fetch("/api/users/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: wallet.address, email: user.email?.address ?? user.google?.email ?? null, refCode }),
-    }).then(r => r.json()).then(({ refCode: c }) => {
-      if (c) setMyRefCode(c);
-      localStorage.removeItem("ref_code"); // clear after registration so it doesn't persist
-    }).catch((e) => console.error("register failed:", e));
-
-    fetch(`/api/users/site-status?wallet=${wallet.address}`)
-      .then(r => r.json()).then(setSiteStatus).catch((e) => console.error("site-status failed:", e));
-
-  }, [wallet, user]);
-
-  // Poll site status while pending — max 36 attempts (3 min), then stop
-  useEffect(() => {
-    if (!wallet || siteStatus?.status !== "pending") return;
-    let attempts = 0;
-    const id = setInterval(() => {
-      attempts++;
-      fetch(`/api/users/site-status?wallet=${wallet.address}`)
-        .then(r => r.json())
-        .then(data => { setSiteStatus(data); if (data.status !== "pending" || attempts >= 36) clearInterval(id); })
-        .catch(() => { if (attempts >= 36) clearInterval(id); });
-    }, 5000);
-    return () => clearInterval(id);
-  }, [wallet, siteStatus?.status]);
-
-  useEffect(() => {
-    if (!wallet) return;
-    (async () => {
-      const connection = new Connection(RPC_URL, "confirmed");
-      const payer = new PublicKey(wallet.address);
-
-      // USDC balance
-      if (USDC_MINT_STR) {
-        try {
-          const mint = new PublicKey(USDC_MINT_STR);
-          const ata = await getAssociatedTokenAddress(mint, payer);
-          const info = await connection.getTokenAccountBalance(ata);
-          setUsdcBalance(info.value.uiAmount ?? 0);
-        } catch { setUsdcBalance(0); }
-      }
-
-      // On-chain UserState — extract tier_expires
-      let expires = 0;
-      try {
-        const [userStatePda] = PublicKey.findProgramAddressSync(
-          [Buffer.from("user"), payer.toBuffer()],
-          new PublicKey(PROGRAM_ID_STR)
-        );
-        const userStateInfo = await connection.getAccountInfo(userStatePda);
-        if (userStateInfo) {
-          const d = userStateInfo.data; // Buffer extends Uint8Array
-          const view = new DataView(d.buffer, d.byteOffset, d.byteLength);
-          const hasRef = d[40] === 1;
-          const base = hasRef ? 73 : 41;
-          expires = Number(view.getBigInt64(base + 9, true)); // little-endian
-          setTierExpires(expires);
-        }
-      } catch (e) { console.error("tier_expires decode failed:", e); }
-
-      // Income — depends on tier_expires for earned/locked split
-      const expiresParam = expires > 0 ? `&expires=${expires}` : "";
-      fetch(`/api/referrals/income?wallet=${wallet.address}${expiresParam}`)
-        .then(r => r.json()).then(setIncome).catch(() => {});
-    })();
-  }, [wallet?.address]);
-
-  useEffect(() => {
-    fetch("/api/stats/overview").then(r => r.json()).then(setOverview).catch(() => {});
-    fetch("/api/stats/top-contributors").then(r => r.json())
-      .then(({ contributors: c }) => { if (c) setContributors(c); }).catch(() => {});
-    fetch("/api/stats/recent-txns").then(r => r.json())
-      .then(({ txns }) => { if (txns) setRecentTxns(txns); }).catch(() => {});
-  }, []);
-
   function copyRef() {
     navigator.clipboard.writeText(`${window.location.origin}/?ref=${myRefCode}`);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function sendAlfaMessage() {
-    const text = alfaInput.trim();
-    if (!text || alfaLoading) return;
-    const newMsgs = [...alfaMsgs, { from: "user" as const, text }];
-    setAlfaMsgs(newMsgs);
-    setAlfaInput("");
-    setAlfaLoading(true);
-    try {
-      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, history: newMsgs.slice(-8) }) });
-      const { reply } = await r.json();
-      setAlfaMsgs(prev => [...prev, { from: "bot", text: reply }]);
-    } catch {
-      setAlfaMsgs(prev => [...prev, { from: "bot", text: "Connection error. Please try again! 🔄" }]);
-    } finally {
-      setAlfaLoading(false);
-    }
   }
 
   const email = user?.email?.address ?? user?.google?.email ?? "";
@@ -310,7 +191,7 @@ function CabinetPage() {
         )}
 
         {/* ── Tab bar ────────────────────────────────────────────────────── */}
-        <div className="tab-bar" style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as any, background: "transparent", position: "relative", zIndex: 10 }}>
+        <div className="tab-bar" style={{ display: "flex", gap: "8px", padding: "16px 24px", overflowX: "auto", scrollbarWidth: "none" as React.CSSProperties["scrollbarWidth"], background: "transparent", position: "relative", zIndex: 10 }}>
           {TABS.map(tab => {
             const locked = false;
             return (
@@ -712,6 +593,11 @@ function CabinetPage() {
               messagesEndRef={messagesEndRef}
               lang={lang}
             />
+          )}
+
+          {/* ══════════ MEMORY TAB ══════════ */}
+          {activeTab === "memory" && (
+            <MemoryTab wallet={wallet?.address ?? null} memoryCount={memorySessions} />
           )}
 
           {/* ══════════ SITE TAB ══════════ */}

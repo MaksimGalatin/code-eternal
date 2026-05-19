@@ -706,7 +706,7 @@ app/src/
 │   ├── page.tsx              # Login page → redirects to /cabinet ✅
 │   ├── globals.css           # Dark base (#0A0A0F), neutral sans-serif
 │   ├── cabinet/
-│   │   └── page.tsx          # Full cabinet: 7 tabs (Cabinet/AIfa/Games/DAO/Site/Contract/Metrics) ✅
+│   │   └── page.tsx          # Full cabinet: 8 tabs (Cabinet/AIfa/Memory/Games/DAO/Site/Contract/Metrics) ✅
 │   └── api/
 │       ├── users/register/route.ts          # POST — upsert user, generate ref_code ✅
 │       ├── users/site-status/route.ts       # GET — site job status + arweave URL from DB ✅
@@ -714,15 +714,31 @@ app/src/
 │       ├── referrals/income/route.ts        # GET — earnings + payment history (Pipeline 5.1) □
 │       ├── devnet/airdrop-usdc/route.ts     # POST — mint 1100 test USDC to wallet ✅
 │       ├── site/create/route.ts             # POST — UI-triggered site gen (checks tier, dispatches to site-gen) ✅
-│       ├── chat/route.ts                    # POST — Grok API proxy for AIfa chat ✅
+│       ├── chat/route.ts                    # POST — Grok API proxy for AIfa chat; injects memory context ✅
+│       ├── chat/save-memory/route.ts        # POST — Privy auth → Grok summary → Irys upload → DB ✅
+│       ├── chat/sessions/route.ts           # GET — list chat_sessions for Memory Vault portal ✅
 │       ├── stats/metrics/route.ts           # GET — burn count, tx count, wallets, treasury, history ✅
 │       ├── stats/overview/route.ts          # GET — burnedUsdc, burnTxs, activeMembers, sitesCreated ✅
 │       ├── stats/top-contributors/route.ts  # GET — top wallets by referral income ✅
 │       ├── stats/recent-txns/route.ts       # GET — recent payment txs (excludes ui-regen jobs) ✅
 │       ├── stats/burned/route.ts            # GET — total burn_events sum (Pipeline 5.2) □
 │       └── webhooks/privy/route.ts          # POST — Privy webhook handler ✅
+├── components/
+│   ├── AlfaTab.tsx           # AIfa chat UI ✅
+│   ├── MemoryTab.tsx         # Memory Vault portal: session timeline + click-to-expand from Irys ✅
+│   ├── SiteTab.tsx           # Site creation form + avatar ✅
+│   ├── ContractTab.tsx       # Smart Contract info ✅
+│   └── ...
 ├── lib/
-│   └── db.ts                 # Neon pg Pool with hot-reload guard ✅
+│   ├── db.ts                 # Neon pg Pool with hot-reload guard ✅
+│   ├── i18n.ts               # 4-language translations (en/ru/es/zh) ✅
+│   ├── knowledge-base.ts     # AIfa system prompt knowledge ✅
+│   └── chat-memory/          # AIfa permanent memory subsystem ✅
+│       ├── types.ts          # ChatLogMessage, ChatFilePayload, ChatSessionMeta
+│       ├── tags.ts           # Irys upload tag builder
+│       ├── graphql.ts        # Read-only Arweave GraphQL (mainnet portal)
+│       ├── context.ts        # Server-side: loadPayloadByTxId + prepareContextForAI
+│       └── trigger.ts        # Client-side: CHUNK_SIZE=20, shouldSaveChunk, hasUnsavedMessages
 ├── idl/
 │   └── code_eternal_router.ts  # Typed IDL for @coral-xyz/anchor ✅
 └── (styles in app/globals.css)
@@ -732,6 +748,7 @@ app/src/
 
 ```json
 "@coral-xyz/anchor": "^0.30.1"
+"@irys/sdk": "^0.2.11"
 "@privy-io/react-auth": "^3.x"
 "@solana/kit": "latest"
 "@solana/web3.js": "^1.98.0"
@@ -743,6 +760,8 @@ app/src/
 "react": "^19.0.0"
 "react-dom": "^19.0.0"
 ```
+
+**Important:** `@irys/sdk` must be in `serverExternalPackages` in `next.config.js` — Turbopack tries to bundle its entire ESM tree including the Aptos token adapter which imports `got` (not installed). `serverExternalPackages` forces `require()` at runtime instead.
 
 ---
 
@@ -928,9 +947,142 @@ Note: VM .env is never overwritten by CI/CD — it persists between deploys.
 
 ---
 
+## AIfa Permanent Memory — Architecture
+
+### Overview
+
+AIfa chat history is saved permanently to Arweave via Irys. Each saved chunk is a JSON file with Arweave tags for indexing. Neon DB stores a pointer (`users.last_chat_tx_id`) and a session index table (`chat_sessions`) for the portal UI.
+
+**Design decisions:**
+| Decision | Reason |
+|----------|--------|
+| Chats are **public** | Fits CODE ETERNAL philosophy — eternal, open memory |
+| No encryption | Explicit user consent; simplifies architecture |
+| Neon DB as index | Irys devnet GraphQL is unreliable; mainnet Arweave GraphQL used for production reads |
+| `users.last_chat_tx_id` (one column, not a new table) | Sufficient for context injection — no extra table needed for the pointer |
+| `chat_sessions` table | Portal needs to list sessions without fetching every Irys file |
+| Summary generated at save time | One extra Grok call when saving; avoids repeated summarisation on every chat start |
+| `CHUNK_SIZE = 20 messages` | Balances Irys upload frequency vs memory freshness |
+| Trigger: every 20 messages OR tab hide | Catches both long sessions and sudden closes |
+| `serverExternalPackages: ["@irys/sdk"]` | Turbopack bundling fix — Irys pulls Aptos adapter → `got` → build failure |
+
+### Data Flow
+
+```
+User sends message → /api/chat (POST)
+  → loads users.last_chat_tx_id from Neon
+  → fetches ChatFilePayload from Irys (summary + keyFacts)
+  → injects into AIfa system prompt via prepareContextForAI()
+  → calls Grok API → returns reply
+
+Every 20 messages (or tab hide) → /api/chat/save-memory (POST)
+  → Privy JWT auth (wallet ownership verified)
+  → Grok generates summary + keyFacts (max_tokens:400, temp:0.3)
+  → prepareTags() — App-Name, User-Identifier, Session-ID, Prev-TX-ID, Summary (in tag), ...
+  → Irys.upload(JSON, { tags }) → txId
+  → UPDATE users SET last_chat_tx_id = txId
+  → INSERT INTO chat_sessions (wallet, tx_id, session_id, chunk_index, chat_title, summary, msg_count)
+
+Memory Vault tab → /api/chat/sessions (GET)
+  → DISTINCT ON (session_id) → latest chunk per session
+  → portal shows timeline; click → fetch payload from Irys by tx_id → display messages
+```
+
+### ChatFilePayload Structure
+
+```json
+{
+  "version": 1,
+  "wallet": "AbC...xyz",
+  "sessionId": "nanoid-uuid",
+  "chunkIndex": 3,
+  "prevTxId": "abc123previousChunk",
+  "metadata": {
+    "summary": "User asked about referral tiers and Arweave...",
+    "keyFacts": ["Interested in tier 2", "Has 3 referrals"]
+  },
+  "messages": [
+    { "role": "user", "content": "...", "timestamp": 1747000000000 },
+    { "role": "assistant", "content": "...", "timestamp": 1747000001000 }
+  ]
+}
+```
+
+### Irys Tags
+
+| Tag | Value | Purpose |
+|-----|-------|---------|
+| `App-Name` | `CodeEternal-AIfa-Memory` | Namespace filter |
+| `User-Identifier` | wallet pubkey | Per-user query |
+| `Session-ID` | nanoid | Group chunks into one conversation |
+| `Sequence-Number` | chunk index | Order within session |
+| `Prev-TX-ID` | previous tx or `null` | Linked list traversal |
+| `Chat-Title` | AI-generated ≤150 chars | Portal display |
+| `Summary` | AI-generated ≤500 chars | Portal preview without fetching JSON |
+| `Timestamp` | unix ms string | Ordering fallback |
+
+### Neon DB Schema Additions
+
+```sql
+-- One column on existing users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_chat_tx_id varchar(256);
+
+-- Session index for Memory Vault portal
+CREATE TABLE IF NOT EXISTS chat_sessions (
+  id           serial primary key,
+  wallet       varchar(44) not null,
+  tx_id        varchar(256) not null unique,
+  prev_tx_id   varchar(256),
+  session_id   varchar(64) not null,
+  chunk_index  integer not null default 0,
+  chat_title   varchar(200),
+  summary      text,
+  msg_count    integer not null default 0,
+  created_at   timestamptz not null default now()
+);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_wallet ON chat_sessions(wallet);
+```
+
+Migration runs automatically as `prebuild` in `package.json` — idempotent, skips if `DATABASE_URL` not set.
+
+### Environment Variables Required (new)
+
+| Variable | Where | Value |
+|----------|-------|-------|
+| `IRYS_NODE_URL` | Vercel server-side | `https://devnet.irys.xyz` (devnet) / `https://node2.irys.xyz` (mainnet) |
+| `IRYS_PRIVATE_KEY` | Vercel server-side | Same base58 key as site-gen (Irys wallet `8NpeaoihGbipm7pNPHDMAu8ASXt6tBXZsuLoT9oYWM4X`) |
+| `HELIUS_RPC_URL` | Vercel server-side | Helius RPC endpoint — Irys SDK needs it as Solana provider |
+| `NEXT_PUBLIC_IRYS_NODE_URL` | Vercel public | Same as `IRYS_NODE_URL` — used by MemoryTab to fetch raw JSON client-side |
+| `NEXT_PUBLIC_ARWEAVE_GRAPHQL_URL` | Vercel public | `https://arweave.net/graphql` (mainnet) — for production Arweave GraphQL reads |
+
+### CI
+
+`.github/workflows/ci-app.yml` — runs on any branch except `main` when `app/src/**` or config files change. Steps: `npm ci` → `tsc --noEmit` → `npm run build` (with stub `NEXT_PUBLIC_*` env vars; no `DATABASE_URL` so prebuild skips gracefully).
+
+---
+
 ## Language Rule
 
 **All user-facing text in the app must be in English.** No Russian words anywhere in the UI — buttons, labels, tier names, descriptions, titles, loading states, tooltips. This applies to all pages: index, cabinet, buy, create-site, apply-1000, and any future pages.
+
+---
+
+## Changes Applied (2026-05-19, AIfa Permanent Memory)
+
+- **`app/src/lib/chat-memory/`** — new subsystem: `types.ts` (interfaces), `tags.ts` (Irys tag builder), `graphql.ts` (Arweave GraphQL read-only queries for mainnet), `context.ts` (server-side payload loader + `prepareContextForAI`), `trigger.ts` (`CHUNK_SIZE=20`, `shouldSaveChunk`, `hasUnsavedMessages`)
+- **`/api/chat/save-memory`** — new route: Privy JWT auth → Grok summary+keyFacts generation → Irys upload via `@irys/sdk` → `UPDATE users.last_chat_tx_id` → `INSERT INTO chat_sessions`
+- **`/api/chat/sessions`** — new route: `DISTINCT ON (session_id)` query for Memory Vault portal
+- **`/api/chat/route.ts`** — now loads `last_chat_tx_id` from Neon, fetches payload from Irys, injects summary into AIfa system prompt. Accepts optional `wallet` in request body.
+- **`MemoryTab.tsx`** — new component: session timeline from `/api/chat/sessions`, click-to-expand fetches payload from Irys, shows messages inline. Public — anyone can view by tx_id.
+- **`cabinet/page.tsx`** — 8th tab "Memory Vault" added; memory state (`alfaSessionId`, `alfaPrevTxId`, `alfaChunkIndex`, `alfaLastSaved`, `alfaSaving`); `saveMemoryChunk()` function; auto-trigger every 20 messages; `visibilitychange` save on tab hide; `wallet` passed to `/api/chat`
+- **`i18n.ts`** — `tab.memory` added in 4 languages
+- **`package.json`** — `@irys/sdk ^0.2.11` added; `prebuild` script added (`node scripts/add-chat-memory.js`)
+- **`next.config.js`** — `serverExternalPackages: ["@irys/sdk"]` — prevents Turbopack from bundling Irys ESM tree (Aptos token → `got` → build failure)
+- **`scripts/add-chat-memory.js`** — idempotent DB migration, runs as `prebuild` on every Vercel deploy
+- **`.github/workflows/ci-app.yml`** — new CI workflow: type check + build for Next.js app on feature branches and PRs to develop
+
+**New env vars required (Vercel, server-side):** `IRYS_PRIVATE_KEY`, `IRYS_NODE_URL`, `HELIUS_RPC_URL`, `NEXT_PUBLIC_IRYS_NODE_URL`, `NEXT_PUBLIC_ARWEAVE_GRAPHQL_URL`
+**Branch:** `feature/chat-memory` (from `develop`)
 
 ---
 
