@@ -1,0 +1,32 @@
+name: DB Migration
+
+on:
+  push:
+    branches: [develop, main]
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+
+      - name: Install pg
+        run: npm install --no-save pg
+
+      - name: Migrate dev DB
+        if: github.ref == 'refs/heads/develop'
+        run: node app/scripts/add-chat-memory.js
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+
+      - name: Migrate prod DB
+        if: github.ref == 'refs/heads/main'
+        run: node app/scripts/add-chat-memory.js
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
