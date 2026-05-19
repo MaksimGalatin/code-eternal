@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { rateLimit, getIp } from "@/lib/rateLimit";
 import { AIFA_SYSTEM_PROMPT } from "@/lib/knowledge-base";
+import { db } from "@/lib/db";
+import { loadPayloadByTxId, prepareContextForAI } from "@/lib/chat-memory/context";
 
 export async function POST(req: Request) {
   if (rateLimit(getIp(req), 20, 60_000) !== null) {
@@ -8,7 +10,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { message, history } = body;
+  const { message, history, wallet } = body;
   if (!message || typeof message !== "string") return NextResponse.json({ error: "message required" }, { status: 400 });
   if (message.length > 2000) return NextResponse.json({ error: "message too long (max 2000 chars)" }, { status: 400 });
 
@@ -17,9 +19,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply: "AIfa is initializing... Please try again in a moment! 🌌" });
   }
 
+  // Load previous session summary from Irys if available
+  let memoryAddition = "";
+  if (wallet && typeof wallet === "string") {
+    try {
+      const { rows } = await db.query<{ last_chat_tx_id: string | null }>(
+        "SELECT last_chat_tx_id FROM users WHERE wallet=$1",
+        [wallet],
+      );
+      const txId = rows[0]?.last_chat_tx_id;
+      if (txId) {
+        const payload = await loadPayloadByTxId(txId);
+        if (payload) {
+          const { systemPromptAddition } = prepareContextForAI(payload);
+          memoryAddition = systemPromptAddition;
+        }
+      }
+    } catch {
+      // Memory load failure is non-fatal — continue without it
+    }
+  }
+
+  const systemContent = memoryAddition
+    ? `${AIFA_SYSTEM_PROMPT}\n\n--- MEMORY FROM PREVIOUS SESSIONS ---\n${memoryAddition}`
+    : AIFA_SYSTEM_PROMPT;
+
   try {
     const messages: { role: string; content: string }[] = [
-      { role: "system", content: AIFA_SYSTEM_PROMPT },
+      { role: "system", content: systemContent },
     ];
 
     if (Array.isArray(history)) {

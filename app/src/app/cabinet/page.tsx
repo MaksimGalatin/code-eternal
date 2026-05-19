@@ -14,6 +14,10 @@ import MetricsTab from "@/components/MetricsTab";
 import AlfaTab from "@/components/AlfaTab";
 import ContractTab from "@/components/ContractTab";
 import SiteTab from "@/components/SiteTab";
+import MemoryTab from "@/components/MemoryTab";
+import { nanoid } from "nanoid";
+import { shouldSaveChunk, hasUnsavedMessages, CHUNK_SIZE } from "@/lib/chat-memory/trigger";
+import type { ChatLogMessage } from "@/lib/chat-memory/types";
 import type { SiteStatus } from "@/types/cabinet";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
@@ -32,7 +36,7 @@ type Income      = { l1: number; l2: number; l3: number; total: number; locked: 
 type Overview    = { burnedUsdc: number; burnTxs: number; activeMembers: number; sitesCreated: number };
 type Contributor = { rank: number; wallet: string; displayName: string|null; tier: number; tierName: string; amountUsdc: number };
 type RecentTxn   = { wallet: string; tier: number; tierName: string; amount: number; txSig: string; status: string; createdAt: string };
-type Tab = "cabinet"|"alfa"|"games"|"dao"|"site"|"contract"|"metrics";
+type Tab = "cabinet"|"alfa"|"memory"|"games"|"dao"|"site"|"contract"|"metrics";
 
 const TIER_ICON: Record<number, string> = { 1: "⚡", 2: "🏛️", 3: "🧬" };
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
@@ -53,10 +57,12 @@ const IFileCode = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="no
 const ITrending = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>;
 const ILogOut = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>;
 const ICopy = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+const IMemory = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>;
 
 const TABS: { id: Tab; labelKey: TranslationKey; icon: React.ReactElement }[] = [
   { id: "cabinet",  labelKey: "tab.cabinet",  icon: <IWallet /> },
   { id: "alfa",     labelKey: "tab.aifa",     icon: <IBrain /> },
+  { id: "memory",   labelKey: "tab.memory",   icon: <IMemory /> },
   { id: "games",    labelKey: "tab.games",    icon: <IGamepad /> },
   { id: "dao",      labelKey: "tab.dao",      icon: <IVote /> },
   { id: "site",     labelKey: "tab.site",     icon: <IGlobe /> },
@@ -97,6 +103,13 @@ function CabinetPage() {
   const [alfaMsgs,        setAlfaMsgs]        = useState(INIT_ALFA_MSGS);
   const [alfaLoading,     setAlfaLoading]     = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // AIfa memory
+  const [alfaSessionId,  ] = useState(() => nanoid());
+  const [alfaPrevTxId,    setAlfaPrevTxId]    = useState<string | null>(null);
+  const [alfaChunkIndex,  setAlfaChunkIndex]  = useState(0);
+  const [alfaLastSaved,   setAlfaLastSaved]   = useState(0);
+  const [alfaSaving,      setAlfaSaving]      = useState(false);
+  const [memorySessions,  setMemorySessions]  = useState(0);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -198,6 +211,51 @@ function CabinetPage() {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   }
 
+  async function saveMemoryChunk(msgs: typeof alfaMsgs) {
+    if (alfaSaving || !wallet || msgs.length <= alfaLastSaved) return;
+    const token = await getAccessToken().catch(() => null);
+    if (!token) return;
+    setAlfaSaving(true);
+    try {
+      const chatMessages: ChatLogMessage[] = msgs.map((m, i) => ({
+        role: m.from === "user" ? "user" as const : "assistant" as const,
+        content: m.text,
+        timestamp: Date.now() - (msgs.length - i) * 500,
+      }));
+      const r = await fetch("/api/chat/save-memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+          wallet: wallet.address,
+          sessionId: alfaSessionId,
+          prevTxId: alfaPrevTxId,
+          chunkIndex: alfaChunkIndex,
+          messages: chatMessages,
+        }),
+      });
+      if (r.ok) {
+        const { txId } = await r.json();
+        setAlfaPrevTxId(txId);
+        setAlfaChunkIndex(prev => prev + 1);
+        setAlfaLastSaved(msgs.length);
+        setMemorySessions(prev => prev + 1);
+      }
+    } catch { /* non-fatal */ }
+    finally { setAlfaSaving(false); }
+  }
+
+  // Save on tab hide (beforeunload equivalent for SPAs)
+  useEffect(() => {
+    function onHide() {
+      if (hasUnsavedMessages(alfaMsgs.length, alfaLastSaved)) {
+        saveMemoryChunk(alfaMsgs);
+      }
+    }
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alfaMsgs, alfaLastSaved]);
+
   async function sendAlfaMessage() {
     const text = alfaInput.trim();
     if (!text || alfaLoading) return;
@@ -206,9 +264,18 @@ function CabinetPage() {
     setAlfaInput("");
     setAlfaLoading(true);
     try {
-      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, history: newMsgs.slice(-8) }) });
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history: newMsgs.slice(-8), wallet: wallet?.address }),
+      });
       const { reply } = await r.json();
-      setAlfaMsgs(prev => [...prev, { from: "bot", text: reply }]);
+      const finalMsgs = [...newMsgs, { from: "bot" as const, text: reply }];
+      setAlfaMsgs(finalMsgs);
+      // Auto-save after every CHUNK_SIZE messages
+      if (shouldSaveChunk(finalMsgs.length, alfaLastSaved)) {
+        saveMemoryChunk(finalMsgs);
+      }
     } catch {
       setAlfaMsgs(prev => [...prev, { from: "bot", text: "Connection error. Please try again! 🔄" }]);
     } finally {
@@ -712,6 +779,11 @@ function CabinetPage() {
               messagesEndRef={messagesEndRef}
               lang={lang}
             />
+          )}
+
+          {/* ══════════ MEMORY TAB ══════════ */}
+          {activeTab === "memory" && (
+            <MemoryTab wallet={wallet?.address ?? null} memoryCount={memorySessions} />
           )}
 
           {/* ══════════ SITE TAB ══════════ */}

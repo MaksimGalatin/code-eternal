@@ -16,6 +16,7 @@ export const translations = {
     // Tabs
     "tab.cabinet": "Cabinet",
     "tab.aifa": "AIfa Terminal",
+    "tab.memory": "Memory Vault",
     "tab.games": "Games",
     "tab.dao": "DAO",
     "tab.site": "Site",
@@ -209,6 +210,7 @@ export const translations = {
     // Tabs
     "tab.cabinet": "Кабинет",
     "tab.aifa": "Терминал AIfa",
+    "tab.memory": "Хранилище памяти",
     "tab.games": "Игры",
     "tab.dao": "DAO",
     "tab.site": "Сайт",
@@ -402,6 +404,7 @@ export const translations = {
     // Tabs
     "tab.cabinet": "Gabinete",
     "tab.aifa": "Terminal AIfa",
+    "tab.memory": "Bóveda de Memoria",
     "tab.games": "Juegos",
     "tab.dao": "DAO",
     "tab.site": "Sitio",
@@ -595,6 +598,7 @@ export const translations = {
     // Tabs
     "tab.cabinet": "主页",
     "tab.aifa": "AIfa终端",
+    "tab.memory": "记忆库",
     "tab.games": "游戏",
     "tab.dao": "DAO",
     "tab.site": "站点",
