@@ -63,11 +63,21 @@ export function useAlfaChat(
   const conversationStarted = useRef(false);
   // Inactivity timer — fires 5 min after last bot reply if there are unsaved messages
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirror of alfaMsgs and walletAddress — always current inside async callbacks and event handlers
+  const alfaMsgsRef      = useRef<AlfaMsg[]>(INIT_ALFA_MSGS);
+  const walletAddressRef = useRef<string | undefined>(walletAddress);
 
-  // Keep refs in sync with state
-  useEffect(() => { alfaLastSavedRef.current  = alfaLastSaved;  }, [alfaLastSaved]);
-  useEffect(() => { alfaPrevTxIdRef.current   = alfaPrevTxId;   }, [alfaPrevTxId]);
-  useEffect(() => { alfaChunkIndexRef.current = alfaChunkIndex; }, [alfaChunkIndex]);
+  // Keep refs in sync with state/props
+  useEffect(() => { alfaLastSavedRef.current  = alfaLastSaved;   }, [alfaLastSaved]);
+  useEffect(() => { alfaPrevTxIdRef.current   = alfaPrevTxId;    }, [alfaPrevTxId]);
+  useEffect(() => { alfaChunkIndexRef.current = alfaChunkIndex;  }, [alfaChunkIndex]);
+  useEffect(() => { alfaMsgsRef.current       = alfaMsgs;        }, [alfaMsgs]);
+  useEffect(() => { walletAddressRef.current  = walletAddress;   }, [walletAddress]);
+
+  // Clear inactivity timer on unmount to prevent stale async saves
+  useEffect(() => {
+    return () => { if (inactivityTimer.current) clearTimeout(inactivityTimer.current); };
+  }, []);
 
   // Load real session count from DB on wallet connect
   useEffect(() => {
@@ -91,8 +101,9 @@ export function useAlfaChat(
   }, [alfaMsgs]);
 
   async function saveMemoryChunk(msgs: AlfaMsg[]) {
-    const lastSaved = alfaLastSavedRef.current;
-    if (alfaSavingRef.current || !walletAddress || msgs.length <= lastSaved) return;
+    const lastSaved   = alfaLastSavedRef.current;
+    const wallet      = walletAddressRef.current;
+    if (alfaSavingRef.current || !wallet || msgs.length <= lastSaved) return;
 
     // Build delta — only messages since last save
     let delta = msgs.slice(lastSaved);
@@ -124,7 +135,7 @@ export function useAlfaChat(
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
-          wallet: walletAddress,
+          wallet,
           sessionId: alfaSessionId,
           prevTxId: alfaPrevTxIdRef.current,
           chunkIndex: alfaChunkIndexRef.current,
@@ -151,27 +162,28 @@ export function useAlfaChat(
     }
   }
 
-  // Save on tab hide — only if user actually started a conversation
+  // Save on tab hide — reads from refs so the handler is never stale
   useEffect(() => {
     function onHide() {
       if (document.visibilityState !== "hidden") return;
       if (!conversationStarted.current) return;
-      if (hasUnsavedMessages(alfaMsgs.length, alfaLastSaved)) {
-        saveMemoryChunk(alfaMsgs);
+      if (hasUnsavedMessages(alfaMsgsRef.current.length, alfaLastSavedRef.current)) {
+        saveMemoryChunk(alfaMsgsRef.current);
       }
     }
     document.addEventListener("visibilitychange", onHide);
     return () => document.removeEventListener("visibilitychange", onHide);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [alfaMsgs, alfaLastSaved]);
+  }, []);
 
-  // Inactivity save — 5 min after last bot reply if unsaved messages exist
-  function scheduleInactivitySave(msgs: AlfaMsg[], lastSaved: number) {
+  // Inactivity save — 5 min after last bot reply; reads refs at fire time (not schedule time)
+  function scheduleInactivitySave() {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     if (!conversationStarted.current) return;
-    if (!hasUnsavedMessages(msgs.length, lastSaved)) return;
     inactivityTimer.current = setTimeout(() => {
-      saveMemoryChunk(msgs);
+      if (hasUnsavedMessages(alfaMsgsRef.current.length, alfaLastSavedRef.current)) {
+        saveMemoryChunk(alfaMsgsRef.current);
+      }
     }, INACTIVITY_SAVE_MS);
   }
 
@@ -198,7 +210,7 @@ export function useAlfaChat(
         saveMemoryChunk(finalMsgs);
       } else {
         // Schedule inactivity save in case user reads and closes without more messages
-        scheduleInactivitySave(finalMsgs, alfaLastSaved);
+        scheduleInactivitySave();
       }
     } catch {
       setAlfaMsgs(prev => [...prev, { from: "bot", text: "Connection error. Please try again! 🔄" }]);

@@ -147,7 +147,7 @@ export function BackgammonGame({
   const chkSz    = mobile ? 20 : 28;
   const sessionId = useRef(genId());
   const rewarded  = useRef(false);
-  const [st, setSt] = useState<BgState>(() => initBg(t("games.bg.rollToStart", "en")));
+  const [st, setSt] = useState<BgState>(() => initBg(t("games.bg.rollToStart", lang)));
 
   function roll() {
     if (st.phase !== "roll") return;
