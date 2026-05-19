@@ -1,0 +1,33 @@
+# CODE ETERNAL — Cursor Rules
+
+Full context: CLAUDE_CONTEXT.md — read it before making changes.
+
+## Critical Rules
+
+- main branch is FROZEN — never push directly, never migrate prod DB, never add prod Vercel env vars
+- :latest Docker images are FROZEN — dev CI pushes only :dev
+- All UI text must be in English — no Russian anywhere
+- Never commit secrets — rotate immediately if exposed
+
+## Code Quality
+
+- Don't bloat files — each line should reduce future token cost
+- No comments explaining what — only why (non-obvious constraints, workarounds)
+- Delete dead code and historical changelogs
+
+## Architecture
+
+- Next.js 16 on Vercel (app.codeofdigitaleternity.com / dev.app.*)
+- Listener + site-gen: Docker on Hetzner 128.140.0.118
+- Solana (Anchor 0.30.1): prod 8rzMmrC6UH5gCringWk1NsRXtfWkrfjz91tT5dmEGAep / dev 6EPLCgJA7RQ999rAVntjHSJnWzozPGGkcinZgYt15JXQ
+- Neon PostgreSQL: prod=main branch / dev=develop branch
+- Anchor builds must run from contract/ directory
+- Node scripts: WSL ~/  only (not /mnt/c/ — NTFS breaks npm)
+
+## Key Decisions
+
+- next/dynamic({ ssr: false }) for cabinet+buy — Privy hooks crash on SSR
+- Manual .transaction() instead of Anchor rpc() — rpc() incompatible with Privy embedded wallets
+- Program({ ...IDL, address: PROGRAM_ID.toBase58() }) — IDL.address hardcoded to prod, must override for dev
+- @irys/sdk in serverExternalPackages — Turbopack bundles Aptos adapter → missing got → build failure
+- chain: "solana:devnet" in signAndSendTransaction — Privy 3.x defaults to mainnet
