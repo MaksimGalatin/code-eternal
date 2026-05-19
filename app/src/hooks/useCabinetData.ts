@@ -3,9 +3,7 @@ import { useEffect, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import type { User } from "@privy-io/react-auth";
-import type { WalletWithMetadata } from "@privy-io/react-auth";
-
-type ConnectedWallet = WalletWithMetadata;
+import type { ConnectedStandardSolanaWallet } from "@privy-io/react-auth/solana";
 import type { SiteStatus } from "@/types/cabinet";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
@@ -31,7 +29,7 @@ export interface CabinetData {
 }
 
 export function useCabinetData(
-  wallet: ConnectedWallet | undefined,
+  wallet: ConnectedStandardSolanaWallet | undefined,
   user: User | null,
 ): CabinetData {
   const [myRefCode,    setMyRefCode]    = useState("");
