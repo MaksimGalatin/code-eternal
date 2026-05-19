@@ -738,7 +738,7 @@ app/src/
 │       ├── tags.ts           # Irys upload tag builder
 │       ├── graphql.ts        # Read-only Arweave GraphQL (mainnet portal)
 │       ├── context.ts        # Server-side: loadPayloadByTxId + prepareContextForAI
-│       └── trigger.ts        # Client-side: CHUNK_SIZE=20, shouldSaveChunk, hasUnsavedMessages
+│       └── trigger.ts        # Client-side: CHUNK_MAX_BYTES=80_000, getUnsavedBytes, shouldSaveChunk, hasUnsavedMessages
 ├── idl/
 │   └── code_eternal_router.ts  # Typed IDL for @coral-xyz/anchor ✅
 └── (styles in app/globals.css)
@@ -962,8 +962,10 @@ AIfa chat history is saved permanently to Arweave via Irys. Each saved chunk is 
 | `users.last_chat_tx_id` (one column, not a new table) | Sufficient for context injection — no extra table needed for the pointer |
 | `chat_sessions` table | Portal needs to list sessions without fetching every Irys file |
 | Summary generated at save time | One extra Grok call when saving; avoids repeated summarisation on every chat start |
-| `CHUNK_SIZE = 20 messages` | Balances Irys upload frequency vs memory freshness |
-| Trigger: every 20 messages OR tab hide | Catches both long sessions and sudden closes |
+| `CHUNK_MAX_BYTES = 80_000` | Maximises free Irys tier (100KB limit); each chunk stays ~80KB regardless of message count |
+| Trigger: 80KB unsaved OR 5-min inactivity OR tab hide | 80KB auto-saves at natural cadence; inactivity timer catches "read and leave" pattern; visibilitychange catches tab close |
+| Delta save (only messages since last save) | Prevents payload growth per chunk; each upload is always ~≤80KB |
+| User messages only stored on Irys | AIfa replies are deterministic and take 10x space; only user messages matter for memory. Summary still generated from full conversation before filtering. |
 | `serverExternalPackages: ["@irys/sdk"]` | Turbopack bundling fix — Irys pulls Aptos adapter → `got` → build failure |
 
 ### Data Flow
@@ -975,17 +977,20 @@ User sends message → /api/chat (POST)
   → injects into AIfa system prompt via prepareContextForAI()
   → calls Grok API → returns reply
 
-Every 20 messages (or tab hide) → /api/chat/save-memory (POST)
+When unsaved messages reach ~80KB, OR 5-min inactivity after last bot reply, OR tab hide:
+→ /api/chat/save-memory (POST)
   → Privy JWT auth (wallet ownership verified)
-  → Grok generates summary + keyFacts (max_tokens:400, temp:0.3)
+  → client sends full delta (user + AIfa messages since last save) for context
+  → Grok generates summary + keyFacts from full delta (max_tokens:400, temp:0.3)
+  → filters to user-only messages before building payload (AIfa replies discarded)
   → prepareTags() — App-Name, User-Identifier, Session-ID, Prev-TX-ID, Summary (in tag), ...
-  → Irys.upload(JSON, { tags }) → txId
+  → Irys.upload(JSON, { tags }) → txId  (payload always ≤ ~85KB)
   → UPDATE users SET last_chat_tx_id = txId
   → INSERT INTO chat_sessions (wallet, tx_id, session_id, chunk_index, chat_title, summary, msg_count)
 
-Memory Vault tab → /api/chat/sessions (GET)
+Memory Vault tab → /api/chat/sessions (GET, Privy JWT auth required)
   → DISTINCT ON (session_id) → latest chunk per session
-  → portal shows timeline; click → fetch payload from Irys by tx_id → display messages
+  → portal shows timeline; click → fetch payload from Irys by tx_id → display user messages
 ```
 
 ### ChatFilePayload Structure
@@ -1002,11 +1007,11 @@ Memory Vault tab → /api/chat/sessions (GET)
     "keyFacts": ["Interested in tier 2", "Has 3 referrals"]
   },
   "messages": [
-    { "role": "user", "content": "...", "timestamp": 1747000000000 },
-    { "role": "assistant", "content": "...", "timestamp": 1747000001000 }
+    { "role": "user", "content": "...", "timestamp": 1747000000000 }
   ]
 }
 ```
+**Note:** Only `role: "user"` messages are stored. AIfa replies are excluded before Irys upload — they take 10x space and are reproducible. Summary is generated from the full conversation before filtering.
 
 ### Irys Tags
 
@@ -1069,20 +1074,34 @@ Migration runs automatically as `prebuild` in `package.json` — idempotent, ski
 
 ## Changes Applied (2026-05-19, AIfa Permanent Memory)
 
-- **`app/src/lib/chat-memory/`** — new subsystem: `types.ts` (interfaces), `tags.ts` (Irys tag builder), `graphql.ts` (Arweave GraphQL read-only queries for mainnet), `context.ts` (server-side payload loader + `prepareContextForAI`), `trigger.ts` (`CHUNK_SIZE=20`, `shouldSaveChunk`, `hasUnsavedMessages`)
-- **`/api/chat/save-memory`** — new route: Privy JWT auth → Grok summary+keyFacts generation → Irys upload via `@irys/sdk` → `UPDATE users.last_chat_tx_id` → `INSERT INTO chat_sessions`
-- **`/api/chat/sessions`** — new route: `DISTINCT ON (session_id)` query for Memory Vault portal
-- **`/api/chat/route.ts`** — now loads `last_chat_tx_id` from Neon, fetches payload from Irys, injects summary into AIfa system prompt. Accepts optional `wallet` in request body.
-- **`MemoryTab.tsx`** — new component: session timeline from `/api/chat/sessions`, click-to-expand fetches payload from Irys, shows messages inline. Public — anyone can view by tx_id.
-- **`cabinet/page.tsx`** — 8th tab "Memory Vault" added; memory state (`alfaSessionId`, `alfaPrevTxId`, `alfaChunkIndex`, `alfaLastSaved`, `alfaSaving`); `saveMemoryChunk()` function; auto-trigger every 20 messages; `visibilitychange` save on tab hide; `wallet` passed to `/api/chat`
-- **`i18n.ts`** — `tab.memory` added in 4 languages
-- **`package.json`** — `@irys/sdk ^0.2.11` added; `prebuild` script added (`node scripts/add-chat-memory.js`)
-- **`next.config.js`** — `serverExternalPackages: ["@irys/sdk"]` — prevents Turbopack from bundling Irys ESM tree (Aptos token → `got` → build failure)
-- **`scripts/add-chat-memory.js`** — idempotent DB migration, runs as `prebuild` on every Vercel deploy
-- **`.github/workflows/ci-app.yml`** — new CI workflow: type check + build for Next.js app on feature branches and PRs to develop
+- **`app/src/lib/chat-memory/`** — new subsystem: `types.ts`, `tags.ts`, `graphql.ts`, `context.ts`, `trigger.ts`
+- **`/api/chat/save-memory`** — Privy JWT auth → Grok summary+keyFacts (from full conv) → filter to user-only messages → Irys upload → DB
+- **`/api/chat/sessions`** — `DISTINCT ON (session_id)` query; Privy JWT auth required
+- **`/api/chat/route.ts`** — loads `last_chat_tx_id` from Neon, fetches Irys payload, injects summary into system prompt
+- **`MemoryTab.tsx`** — session timeline; click-to-expand fetches from Irys; requires `getAccessToken` prop for auth
+- **`cabinet/page.tsx`** — Memory Vault tab; `useAlfaChat` now returns `unsavedBytes` + `saving`; passes `getAccessToken` to MemoryTab
+- **`AlfaTab.tsx`** — real KB progress bar (replaces hardcoded fake); shows `saving` state with animation
+- **`useAlfaChat.ts`** — `CHUNK_MAX_BYTES=80KB` byte trigger; delta-only save; `alfaLastSavedRef/alfaPrevTxIdRef/alfaChunkIndexRef` refs avoid stale closures; 5-min inactivity timer; `HARD_CAP_BYTES=90KB` trim guard
+- **`.github/workflows/migrate.yml`** — auto-migrates dev Neon on `develop` push, prod Neon on `main` push
+- **`.github/workflows/ci-app.yml`** — DELETED (Vercel handles type check + build)
+- **`knowledge-base.ts`** — added `cabinet` (8-tab UI guide with howTo), `codeToken`, `referralSystem` sections
 
-**New env vars required (Vercel, server-side):** `IRYS_PRIVATE_KEY`, `IRYS_NODE_URL`, `HELIUS_RPC_URL`, `NEXT_PUBLIC_IRYS_NODE_URL`, `NEXT_PUBLIC_ARWEAVE_GRAPHQL_URL`
-**Branch:** `feature/chat-memory` (from `develop`)
+**Env vars required (Vercel):** `IRYS_PRIVATE_KEY`, `IRYS_NODE_URL`, `HELIUS_RPC_URL`, `NEXT_PUBLIC_ARWEAVE_GRAPHQL_URL`
+**Note:** `NEXT_PUBLIC_IRYS_NODE_URL` removed — hardcoded to `https://devnet.irys.xyz` in MemoryTab
+
+## Changes Applied (2026-05-19, Bug Fixes Session)
+
+- **`next.config.js`** — `Authorization` added to CORS `Access-Control-Allow-Headers`
+- **`/api/chat/sessions/route.ts`** — Privy JWT auth added (was fully unauthenticated)
+- **`/api/chat/route.ts`** — Solana base58 regex validation before DB query for `wallet`
+- **`/api/chat/save-memory/route.ts`** — DB writes wrapped in try/catch (Irys upload already succeeded); user-only message filter before Irys upload
+- **`useAlfaChat.ts`** — `alfaSavingRef` for stale-closure-safe save guard; `conversationStarted` ref prevents saving seeded messages; `visibilityState` check fixed; delta-only save; stale-closure-safe refs
+- **`CheckersGame.tsx`** — `setTurn("r")` now only fires if AI did not win
+- **`MemoryTab.tsx`** — removed `NEXT_PUBLIC_IRYS_NODE_URL`; added `getAccessToken` prop + `Authorization` header to sessions fetch
+- **`BackgammonGame.tsx`** — functional updater `setSt(_ => ...)` in `doAiTurn`
+- **`site/create/route.ts`** — avatar error message removed "gif" (not accepted by `AVATAR_RE`)
+- **`useCabinetData.ts`** — `localStorage.removeItem("ref_code")` now only fires on successful registration (inside `if (c)` block); previously cleared ref code even on failed register
+- **`MetricsTab.tsx`** — sparkline division by zero fixed (`hist.length-1` → `Math.max(hist.length-1, 1)`)
 
 ---
 
