@@ -1,7 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets, useCreateWallet } from "@privy-io/react-auth/solana";
 import { useEffect } from "react";
@@ -82,7 +82,19 @@ function CabinetPage() {
     msgs: alfaMsgs, loading: alfaLoading, input: alfaInput,
     setInput: setAlfaInput, onSend: sendAlfaMessage,
     messagesEndRef, memorySessions, saving: alfaSaving, unsavedBytes,
+    saveIfNeeded: saveAlfaIfNeeded,
   } = useAlfaChat(wallet?.address, getAccessToken);
+
+  // Save AIfa chat when navigating away from the tab (visibilitychange only fires on browser tab hide)
+  const saveAlfaRef = useRef(saveAlfaIfNeeded);
+  saveAlfaRef.current = saveAlfaIfNeeded;
+  const prevTabRef = useRef(activeTab);
+  useEffect(() => {
+    if (prevTabRef.current === "alfa" && activeTab !== "alfa") {
+      saveAlfaRef.current();
+    }
+    prevTabRef.current = activeTab;
+  }, [activeTab]);
 
   useEffect(() => {
     if (ready && authenticated && wallets.length === 0) createWallet().catch(() => {});

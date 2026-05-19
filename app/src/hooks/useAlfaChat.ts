@@ -32,6 +32,7 @@ export interface AlfaChatResult {
   memorySessions: number;
   saving: boolean;
   unsavedBytes: number;
+  saveIfNeeded: () => void;
 }
 
 export function useAlfaChat(
@@ -206,6 +207,12 @@ export function useAlfaChat(
     }
   }
 
+  function saveIfNeeded() {
+    if (!conversationStarted.current) return;
+    if (!hasUnsavedMessages(alfaMsgs.length, alfaLastSavedRef.current)) return;
+    saveMemoryChunk(alfaMsgs);
+  }
+
   return {
     msgs: alfaMsgs,
     loading: alfaLoading,
@@ -216,5 +223,6 @@ export function useAlfaChat(
     memorySessions,
     saving: alfaSaving,
     unsavedBytes: getUnsavedBytes(alfaMsgs, alfaLastSaved),
+    saveIfNeeded,
   };
 }
