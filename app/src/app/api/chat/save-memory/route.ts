@@ -135,7 +135,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'storage not configured' }, { status: 503 });
   }
 
+  // Generate summary from the full conversation (both sides) for better quality
   const { summary, keyFacts, title } = await generateSummaryAndFacts(messages);
+
+  // Store only user messages on Arweave — AIfa replies are reproducible and take 10x more space
+  const userMessages = messages.filter(m => m.role === 'user');
 
   const payload: ChatFilePayload = {
     version: 1,
@@ -144,7 +148,7 @@ export async function POST(req: Request) {
     chunkIndex,
     prevTxId: prevTxId ?? null,
     metadata: { summary, keyFacts },
-    messages,
+    messages: userMessages,
   };
 
   const tags = prepareTags(payload, title);
