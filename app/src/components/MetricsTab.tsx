@@ -54,7 +54,8 @@ function MetricsTab({ recentTxns }: Props) {
   const hist = M?.burnHistory ?? Array.from({length:12},(_,i)=>({month:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],amount:0}));
   const maxH = Math.max(...hist.map(h=>h.amount), 1);
   const W = 600, H = 80;
-  const sparkPts = hist.map((h,i) => `${(i/(hist.length-1))*W},${H-(h.amount/maxH)*H*0.85-4}`).join(" ");
+  const sparkDenom = Math.max(hist.length - 1, 1);
+  const sparkPts = hist.map((h,i) => `${(i/sparkDenom)*W},${H-(h.amount/maxH)*H*0.85-4}`).join(" ");
   const fillPts = `0,${H} ${sparkPts} ${W},${H}`;
 
   const STAT_CARDS = [

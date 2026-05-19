@@ -89,7 +89,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid website URL" }, { status: 400 });
   if (avatarDataUrl) {
     if (!AVATAR_RE.test(avatarDataUrl))
-      return NextResponse.json({ error: "invalid avatar: must be jpeg/png/gif/webp data URL" }, { status: 400 });
+      return NextResponse.json({ error: "invalid avatar: must be jpeg/png/webp data URL" }, { status: 400 });
     if (avatarDataUrl.length > AVATAR_MAX_LEN)
       return NextResponse.json({ error: "avatar too large (max ~90 KB)" }, { status: 400 });
   }

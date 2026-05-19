@@ -59,8 +59,10 @@ export function useCabinetData(
     })
       .then(r => r.json())
       .then(({ refCode: c }) => {
-        if (c) setMyRefCode(c);
-        localStorage.removeItem("ref_code");
+        if (c) {
+          setMyRefCode(c);
+          localStorage.removeItem("ref_code");
+        }
       })
       .catch((e) => console.error("register failed:", e));
 
