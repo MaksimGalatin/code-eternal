@@ -66,20 +66,15 @@ ${conversation.slice(0, 8000)}`,
   }
 }
 
-async function uploadToIrys(
-  payload: ChatFilePayload,
-  tags: Array<{ name: string; value: string }>,
-): Promise<string> {
+async function initIrys() {
   // Dynamic import so webpack doesn't bundle @irys/sdk into every route
   const { default: Irys } = await import('@irys/sdk');
-  const irys = new Irys({
+  return new Irys({
     url: IRYS_NODE_URL,
     token: 'solana',
     key: IRYS_PRIVATE_KEY!,
     config: { providerUrl: HELIUS_RPC_URL! },
   });
-  const receipt = await irys.upload(JSON.stringify(payload), { tags });
-  return receipt.id as string;
 }
 
 export async function POST(req: Request) {
@@ -137,8 +132,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'storage not configured' }, { status: 503 });
   }
 
-  // Generate summary from the full conversation (both sides) for better quality
-  const { summary, keyFacts, title } = await generateSummaryAndFacts(messages);
+  // Grok summary + Irys SDK init run in parallel — neither depends on the other
+  let summaryResult: { summary: string; keyFacts: string[]; title: string };
+  let irys: Awaited<ReturnType<typeof initIrys>>;
+  try {
+    [summaryResult, irys] = await Promise.all([
+      generateSummaryAndFacts(messages),
+      initIrys(),
+    ]);
+  } catch (err) {
+    console.error('Irys init failed:', err);
+    return NextResponse.json({ error: 'upload failed' }, { status: 502 });
+  }
+  const { summary, keyFacts, title } = summaryResult;
 
   // Store only user messages on Arweave — AIfa replies are reproducible and take 10x more space
   const userMessages = messages.filter(m => m.role === 'user');
@@ -157,7 +163,8 @@ export async function POST(req: Request) {
 
   let txId: string;
   try {
-    txId = await uploadToIrys(payload, tags);
+    const receipt = await irys.upload(JSON.stringify(payload), { tags });
+    txId = receipt.id as string;
   } catch (err) {
     console.error('Irys upload failed:', err);
     return NextResponse.json({ error: 'upload failed' }, { status: 502 });
