@@ -38,6 +38,8 @@ async function generateSummaryAndFacts(
 2. "summary": 2-3 sentence summary of what was discussed
 3. "keyFacts": array of up to 5 notable facts about the user revealed in this conversation (interests, goals, name, preferences). Empty array if none.
 
+Respond in the same language as the conversation.
+
 Conversation:
 ${conversation.slice(0, 8000)}`,
           },
