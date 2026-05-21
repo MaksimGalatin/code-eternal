@@ -42,9 +42,16 @@ export async function GET(req: Request) {
     [wallet],
   );
 
-  const sessions = rows.sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  const sessions = rows
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map(r => ({
+      txId: r.tx_id,
+      sessionId: r.session_id,
+      title: r.chat_title,
+      summary: r.summary,
+      msgCount: r.msg_count,
+      createdAt: r.created_at,
+    }));
 
   return NextResponse.json({ sessions });
 }
