@@ -48,9 +48,9 @@ export function useAlfaChat(
   const [alfaSessionId]                       = useState(() => nanoid());
   const [alfaPrevTxId,   setAlfaPrevTxId]   = useState<string | null>(null);
   const [alfaChunkIndex, setAlfaChunkIndex] = useState(0);
-  const [alfaLastSaved,  setAlfaLastSaved]  = useState(0);
+  const [alfaLastSaved,  setAlfaLastSaved]  = useState(INIT_ALFA_MSGS.length);
   // Ref mirrors — always current inside async callbacks, no stale closure risk
-  const alfaLastSavedRef  = useRef(0);
+  const alfaLastSavedRef  = useRef(INIT_ALFA_MSGS.length);
   const alfaPrevTxIdRef   = useRef<string | null>(null);
   const alfaChunkIndexRef = useRef(0);
   // Ref for save-in-progress guard
