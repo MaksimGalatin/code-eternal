@@ -233,10 +233,15 @@ function CursorGlow() {
   );
 }
 
-export default function HomeContent() {
+export default function HomeContent({ initialLang = "en" }: { initialLang?: "en" | "ru" | "es" | "zh" }) {
   const hydrated = useLang((s) => s._hasHydrated);
   const setLang = useLang((s) => s.setLang);
   const currentLang = useLang((s) => s.lang);
+
+  // Set store state dynamically during server rendering or client hydration setup
+  if (!hydrated) {
+    useLang.setState({ lang: initialLang });
+  }
 
   // Scroll to top ONLY on the very first mount — never again.
   // Empty dependency array ensures this runs exactly once and never
@@ -282,12 +287,7 @@ export default function HomeContent() {
     }
   }, [hydrated, currentLang, setLang]);
 
-  // Prevent hydration mismatch: server renders default lang (en),
-  // client may have different lang stored in localStorage.
-  // Wait until Zustand rehydrates before rendering translatable content.
-  if (!hydrated) {
-    return null;
-  }
+
 
   return (
     <main

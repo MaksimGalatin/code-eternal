@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import HomeContent from "@/components/code/HomeContent";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.codeofdigitaleternity.com";
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : undefined) ||
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : undefined) ||
+  "https://aifa.digital";
 
 const META_BY_LANG: Record<string, { title: string; description: string; htmlLang: string; ogLocale: string }> = {
   en: {
@@ -48,13 +56,16 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       title: meta.title,
       description: meta.description,
       locale: meta.ogLocale,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: meta.title }],
+      images: [
+        { url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: meta.title },
+        { url: ogImage, width: 1200, height: 630, alt: meta.title }
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: meta.title,
       description: meta.description,
-      images: [twImage],
+      images: [`${SITE_URL}/og-image.png`, twImage],
     },
     alternates: {
       canonical: lang === "en" ? SITE_URL : `${SITE_URL}?lang=${lang}`,
@@ -68,6 +79,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
-export default function Home({ searchParams }: Props) {
-  return <HomeContent />;
+export default async function Home({ searchParams }: Props) {
+  const params = await searchParams;
+  const lang = (params.lang || "en") as "en" | "ru" | "es" | "zh";
+  return <HomeContent initialLang={lang} />;
 }
